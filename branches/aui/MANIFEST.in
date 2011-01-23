@@ -1,0 +1,5 @@
+include peak-o-mat.py winregistry.py
+include DOCUMENTATION COPYING CHANGELOG peak-o-mat.ico
+recursive-include peak_o_mat *.xrc *.py
+recursive-include data *.dat
+include example.lpj
