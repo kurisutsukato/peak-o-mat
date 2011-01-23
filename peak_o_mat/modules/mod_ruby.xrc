@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource>
+<object class="wxPanel" name="mod_ruby">
+  <style>wxNO_BORDER</style>
+  <object class="wxBoxSizer">
+    <orient>wxVERTICAL</orient>
+    <object class="sizeritem">
+      <object class="wxBoxSizer">
+        <orient>wxHORIZONTAL</orient>
+        <object class="sizeritem">
+          <object class="wxFlexGridSizer">
+            <object class="sizeritem">
+              <object class="wxStaticText">
+                <label>ruby R1 line</label>
+              </object>
+              <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+              <border>4</border>
+            </object>
+            <object class="sizeritem">
+              <object class="wxChoice" name="xrc_ch_r1">
+                <size>80,-1</size>
+              </object>
+              <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+              <border>2</border>
+            </object>
+            <object class="sizeritem">
+              <object class="wxStaticText" name="xrc_lab_r1">
+                <label>6800 A</label>
+              </object>
+              <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+              <border>4</border>
+            </object>
+            <object class="sizeritem">
+              <object class="wxStaticText">
+                <label>6929.47 A Ne line</label>
+              </object>
+              <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+              <border>4</border>
+            </object>
+            <object class="sizeritem">
+              <object class="wxChoice" name="xrc_ch_neon">
+                <size>80,-1</size>
+              </object>
+              <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+              <border>2</border>
+            </object>
+            <object class="sizeritem">
+              <object class="wxStaticText" name="xrc_lab_neon">
+                <label>6900 A</label>
+              </object>
+              <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+              <border>4</border>
+            </object>
+            <object class="sizeritem">
+              <object class="wxStaticText">
+                <label>temperature</label>
+              </object>
+              <option>1</option>
+              <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+              <border>4</border>
+            </object>
+            <object class="sizeritem">
+              <object class="wxTextCtrl" name="xrc_txt_temp">
+                <size>80,-1</size>
+                <style>wxTE_RIGHT</style>
+              </object>
+              <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+              <border>2</border>
+            </object>
+            <object class="spacer"/>
+            <object class="sizeritem">
+              <object class="wxStaticText">
+                <label>pressure</label>
+              </object>
+              <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+              <border>4</border>
+            </object>
+            <object class="sizeritem">
+              <object class="wxStaticText" name="xrc_lab_press">
+                <label>???</label>
+              </object>
+              <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+              <border>4</border>
+            </object>
+            <object class="spacer"/>
+            <object class="sizeritem">
+              <object class="wxStaticText">
+                <label>melting pressure</label>
+              </object>
+              <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+              <border>4</border>
+            </object>
+            <object class="sizeritem">
+              <object class="wxStaticText" name="xrc_lab_melt">
+                <label>???</label>
+              </object>
+              <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+              <border>4</border>
+            </object>
+            <object class="spacer"/>
+            <cols>3</cols>
+            <growablerows>3</growablerows>
+          </object>
+          <flag>wxALL</flag>
+          <border>5</border>
+        </object>
+      </object>
+      <option>1</option>
+      <flag>wxALL</flag>
+      <border>5</border>
+    </object>
+  </object>
+</object>
+</resource>

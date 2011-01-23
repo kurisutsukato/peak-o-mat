@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource>
+  <object class="wxPanel" name="mod_XXX">
+    <object class="wxBoxSizer">
+      <orient>wxVERTICAL</orient>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="xrc_lab_time">
+              <label>current time</label>
+              <style>wxALIGN_CENTRE</style>
+            </object>
+            <option>1</option>
+            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+        </object>
+        <option>1</option>
+        <flag>wxEXPAND</flag>
+      </object>
+    </object>
+  </object>
+</resource>
