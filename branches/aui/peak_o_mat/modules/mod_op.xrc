@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource>
+  <object class="wxPanel" name="mod_op">
+    <style>wxNO_BORDER</style>
+    <object class="wxBoxSizer">
+      <orient>wxHORIZONTAL</orient>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxVERTICAL</orient>
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <orient>wxHORIZONTAL</orient>
+              <object class="sizeritem">
+                <object class="wxStaticText">
+                  <label>Set operation</label>
+                </object>
+                <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                <border>2</border>
+              </object>
+              <object class="sizeritem">
+                <object class="unknown" name="xrc_op"/>
+                <option>1</option>
+                <flag>wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+                <border>2</border>
+              </object>
+              <object class="sizeritem">
+                <object class="wxButton" name="xrc_btn_repeat">
+                  <label>repeat last</label>
+                  <enabled>0</enabled>
+                </object>
+                <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                <border>2</border>
+              </object>
+            </object>
+            <flag>wxALL|wxEXPAND</flag>
+            <border>5</border>
+          </object>
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <orient>wxHORIZONTAL</orient>
+              <object class="sizeritem">
+                <object class="wxBoxSizer">
+                  <object class="sizeritem">
+                    <object class="wxStaticText">
+                      <label>Smoothing</label>
+                      <font>
+                        <style>normal</style>
+                        <weight>bold</weight>
+                        <underlined>0</underlined>
+                        <family>default</family>
+                      </font>
+                    </object>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <object class="sizeritem">
+                        <object class="wxButton" name="xrc_btn_sg">
+                          <label>Savitzky Golay</label>
+                        </object>
+                        <flag>wxALL|wxEXPAND</flag>
+                        <border>2</border>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="xrc_txt_sgwindow">
+                          <size>40,-1</size>
+                          <value>9</value>
+                          <tooltip>Window length in points</tooltip>
+                          <style>wxTE_RIGHT</style>
+                        </object>
+                        <flag>wxALL|wxEXPAND</flag>
+                        <border>2</border>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="xrc_txt_sgorder">
+                          <size>40,-1</size>
+                          <value>5</value>
+                          <tooltip>Order of the polynomial (must be uneven).</tooltip>
+                          <style>wxTE_RIGHT</style>
+                        </object>
+                        <flag>wxALL|wxEXPAND</flag>
+                        <border>2</border>
+                      </object>
+                      <orient>wxHORIZONTAL</orient>
+                    </object>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <orient>wxHORIZONTAL</orient>
+                      <object class="sizeritem">
+                        <object class="wxButton" name="xrc_btn_average">
+                          <label>Moving average</label>
+                        </object>
+                        <option>1</option>
+                        <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>2</border>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="xrc_txt_average">
+                          <size>40,-1</size>
+                          <value>5</value>
+                          <tooltip>Number of points</tooltip>
+                          <style>wxTE_RIGHT</style>
+                        </object>
+                        <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>2</border>
+                        <minsize>40,-1</minsize>
+                      </object>
+                    </object>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <orient>wxHORIZONTAL</orient>
+                      <object class="sizeritem">
+                        <object class="wxButton" name="xrc_btn_waverage">
+                          <label>Moving average /w weights</label>
+                        </object>
+                        <option>1</option>
+                        <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>2</border>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="xrc_txt_wavg_step">
+                          <size>40,-1</size>
+                          <value>1</value>
+                          <tooltip>Step size</tooltip>
+                          <style>wxTE_RIGHT</style>
+                        </object>
+                        <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>2</border>
+                        <minsize>40,-1</minsize>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="xrc_txt_wavg_width">
+                          <size>40,-1</size>
+                          <value>5</value>
+                          <tooltip>Standard deviation of gaussian weight.</tooltip>
+                          <style>wxTE_RIGHT</style>
+                        </object>
+                        <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>2</border>
+                        <minsize>40,-1</minsize>
+                      </object>
+                    </object>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <orient>wxHORIZONTAL</orient>
+                      <object class="sizeritem">
+                        <object class="wxButton" name="xrc_btn_avg_sel">
+                          <label>average selection</label>
+                          <tooltip>average over the selected sets</tooltip>
+                        </object>
+                        <option>1</option>
+                        <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>2</border>
+                      </object>
+                    </object>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <object class="sizeritem">
+                        <object class="wxButton" name="xrc_btn_spl">
+                          <label>spline smoothing</label>
+                        </object>
+                        <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>2</border>
+                      </object>
+                      <orient>wxHORIZONTAL</orient>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="xrc_txt_splpts">
+                          <size>40,-1</size>
+                          <value>30</value>
+                          <tooltip>number of points to be used for spline evaluation</tooltip>
+                          <style>wxTE_RIGHT</style>
+                        </object>
+                        <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>2</border>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="xrc_txt_spls">
+                          <size>40,-1</size>
+                          <value>0.2</value>
+                          <tooltip>smoothing factor (0 &lt; s &lt; 1.0)</tooltip>
+                          <style>wxTE_RIGHT</style>
+                        </object>
+                        <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>2</border>
+                      </object>
+                    </object>
+                  </object>
+                  <orient>wxVERTICAL</orient>
+                </object>
+                <flag>wxRIGHT|wxEXPAND</flag>
+                <border>5</border>
+              </object>
+              <object class="sizeritem">
+                <object class="wxStaticBoxSizer">
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <object class="sizeritem">
+                        <object class="wxButton" name="xrc_btn_derivate">
+                          <label>derivate</label>
+                        </object>
+                        <flag>wxALL|wxEXPAND</flag>
+                        <border>2</border>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxButton" name="xrc_btn_normalise">
+                          <label>normalise</label>
+                        </object>
+                        <flag>wxALL|wxEXPAND</flag>
+                        <border>2</border>
+                      </object>
+                    </object>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <object class="sizeritem">
+                        <object class="wxButton" name="xrc_btn_interpolate">
+                          <label>sample</label>
+                        </object>
+                        <option>1</option>
+                        <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>2</border>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="xrc_txt_interpolate">
+                          <size>60,-1</size>
+                          <value>400</value>
+                          <tooltip>number of points</tooltip>
+                          <style>wxTE_RIGHT</style>
+                        </object>
+                        <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>2</border>
+                        <minsize>60,-1</minsize>
+                      </object>
+                      <orient>wxHORIZONTAL</orient>
+                    </object>
+                  </object>
+                  <label>misc</label>
+                  <orient>wxVERTICAL</orient>
+                </object>
+                <flag>wxRIGHT|wxEXPAND</flag>
+                <border>5</border>
+              </object>
+              <object class="sizeritem">
+                <object class="wxPanel" name="xrc_pan_predef">
+                  <object class="wxStaticBoxSizer">
+                    <object class="sizeritem">
+                      <object class="wxGridSizer">
+                        <object class="sizeritem">
+                          <object class="wxButton" name="xrc_btn_A2eV">
+                            <label>Ang &lt;-&gt; eV</label>
+                          </object>
+                          <flag>wxALL|wxEXPAND</flag>
+                          <border>2</border>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxButton" name="xrc_btn_A2cm">
+                            <label>Ang &lt;-&gt; cm</label>
+                          </object>
+                          <flag>wxALL|wxEXPAND</flag>
+                          <border>2</border>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxButton" name="xrc_btn_eV2cm">
+                            <label>eV -&gt; cm-1</label>
+                          </object>
+                          <flag>wxALL|wxEXPAND</flag>
+                          <border>2</border>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxButton" name="xrc_btn_cm2eV">
+                            <label>cm-1 -&gt; eV</label>
+                          </object>
+                          <flag>wxALL|wxEXPAND</flag>
+                          <border>2</border>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxButton" name="xrc_btn_nm2cm">
+                            <label>nm -&gt; rel cm-1</label>
+                          </object>
+                          <flag>wxALL|wxEXPAND</flag>
+                          <border>2</border>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxTextCtrl" name="xrc_txt_nm">
+                            <style/>
+                          </object>
+                          <flag>wxALL|wxEXPAND</flag>
+                          <border>2</border>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxButton" name="xrc_btn_cm2nm">
+                            <label>rel cm-1 -&gt; nm</label>
+                          </object>
+                          <flag>wxALL|wxEXPAND</flag>
+                          <border>2</border>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxTextCtrl" name="xrc_txt_cm"/>
+                          <flag>wxALL|wxEXPAND</flag>
+                          <border>2</border>
+                        </object>
+                        <cols>2</cols>
+                      </object>
+                      <flag>wxALL</flag>
+                      <border>5</border>
+                    </object>
+                    <label>spectroscopy</label>
+                    <orient>wxVERTICAL</orient>
+                  </object>
+                </object>
+              </object>
+            </object>
+            <flag>wxALL|wxEXPAND</flag>
+            <border>5</border>
+          </object>
+        </object>
+        <option>1</option>
+        <flag>wxALL|wxEXPAND</flag>
+        <border>5</border>
+      </object>
+    </object>
+  </object>
+</resource>

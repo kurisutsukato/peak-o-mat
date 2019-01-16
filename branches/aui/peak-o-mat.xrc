@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource class="wxDialog">
+  <object class="wxFrame" name="frame_annotations">
+    <object class="wxPanel" name="pan_annotations">
+      <object class="wxBoxSizer">
+        <orient>wxHORIZONTAL</orient>
+        <object class="sizeritem">
+          <object class="wxBoxSizer">
+            <orient>wxVERTICAL</orient>
+            <object class="sizeritem">
+              <object class="wxStaticText">
+                <label>This page is saved with the project data. Put your notes here.</label>
+              </object>
+              <flag>wxBOTTOM</flag>
+              <border>4</border>
+            </object>
+            <object class="sizeritem">
+              <object class="wxTextCtrl" name="txt_annotations">
+                <style>wxTE_MULTILINE|wxTE_RICH|wxTE_RICH2</style>
+              </object>
+              <option>1</option>
+              <flag>wxEXPAND</flag>
+            </object>
+          </object>
+          <option>1</option>
+          <flag>wxALL|wxEXPAND</flag>
+          <border>10</border>
+        </object>
+      </object>
+    </object>
+    <size>700,400</size>
+    <title>Notes</title>
+    <style>wxDEFAULT_FRAME_STYLE|wxFRAME_FLOAT_ON_PARENT</style>
+  </object>
+  
+  
+  <object class="wxDialog" name="xrc_dlg_import">
+    <object class="wxBoxSizer">
+      <orient>wxVERTICAL</orient>
+      <object class="sizeritem">
+        <object class="wxStaticText">
+          <label>You have selected multiple data sets. Choose whether to load in a single plot or one plot each.</label>
+          <wrap>400</wrap>
+        </object>
+        <option>1</option>
+        <flag>wxTOP|wxLEFT|wxRIGHT|wxEXPAND</flag>
+        <border>20</border>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <object class="spacer">
+            <option>1</option>
+          </object>
+          <object class="sizeritem">
+            <object class="wxButton" name="xrc_btn_oneeach">
+              <label>one plot each</label>
+            </object>
+            <flag>wxALL|wxEXPAND</flag>
+            <border>5</border>
+          </object>
+          <object class="sizeritem">
+            <object class="wxButton" name="xrc_btn_single">
+              <label>single plot</label>
+            </object>
+            <flag>wxALL|wxEXPAND</flag>
+            <border>5</border>
+          </object>
+          <orient>wxHORIZONTAL</orient>
+        </object>
+        <flag>wxALL|wxEXPAND</flag>
+        <border>10</border>
+      </object>
+    </object>
+    <title>peak-o-mat - Import Data</title>
+    <style>wxCAPTION</style>
+  </object>
+  <object class="wxDialog" name="xrc_dlg_export">
+    <object class="wxBoxSizer">
+      <orient>wxVERTICAL</orient>
+      <object class="sizeritem">
+        <object class="wxCheckBox" name="xrc_chk_ext">
+          <label>add extension</label>
+        </object>
+        <flag>wxALL</flag>
+        <border>10</border>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="xrc_lab_ext">
+              <label>extension:</label>
+            </object>
+            <flag>wxRIGHT|wxALIGN_CENTRE_VERTICAL</flag>
+            <border>2</border>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="xrc_txt_ext">
+              <value>dat</value>
+            </object>
+            <option>1</option>
+            <flag>wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+        </object>
+        <flag>wxBOTTOM|wxLEFT|wxRIGHT|wxEXPAND</flag>
+        <border>10</border>
+      </object>
+      <object class="sizeritem">
+        <object class="wxCheckBox" name="xrc_chk_visible">
+          <label>export only visible sets</label>
+        </object>
+        <flag>wxBOTTOM|wxLEFT|wxRIGHT</flag>
+        <border>10</border>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="xrc_lab_dir">
+              <label>directory:</label>
+            </object>
+            <flag>wxRIGHT|wxALIGN_CENTRE_VERTICAL</flag>
+            <border>10</border>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="xrc_txt_dir">
+              <size>300,-1</size>
+            </object>
+            <option>1</option>
+            <flag>wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxButton" name="xrc_btn_dir">
+              <label>select</label>
+            </object>
+            <flag>wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+        </object>
+        <flag>wxBOTTOM|wxLEFT|wxRIGHT|wxEXPAND</flag>
+        <border>10</border>
+      </object>
+      <object class="sizeritem">
+        <object class="wxCheckBox" name="xrc_chk_overwrite">
+          <label>overwrite</label>
+          <checked>1</checked>
+        </object>
+        <flag>wxBOTTOM|wxLEFT|wxRIGHT</flag>
+        <border>10</border>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine"/>
+        <flag>wxEXPAND</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="spacer">
+            <size>0,0</size>
+            <option>1</option>
+          </object>
+          <object class="sizeritem">
+            <object class="wxButton" name="xrc_btn_export">
+              <label>Export</label>
+            </object>
+            <flag>wxRIGHT|wxALIGN_CENTRE_VERTICAL</flag>
+            <border>2</border>
+          </object>
+          <object class="sizeritem">
+            <object class="wxButton" name="xrc_btn_cancel">
+              <label>Cancel</label>
+            </object>
+            <flag>wxRIGHT|wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+        </object>
+        <flag>wxALL|wxEXPAND</flag>
+        <border>10</border>
+      </object>
+    </object>
+    <title>peak-o-mat - Export Data</title>
+    <style>wxCAPTION</style>
+  </object>
+
+</resource>

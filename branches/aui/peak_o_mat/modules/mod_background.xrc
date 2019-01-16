@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource class="spacer">
+  <object class="wxPanel" name="mod_background">
+    <object class="wxBoxSizer">
+      <object class="sizeritem">
+        <object class="wxStaticText">
+          <label>Detect background (SNIP algorithm)</label>
+          <font>
+            <weight>bold</weight>
+          </font>
+        </object>
+        <flag>wxTOP|wxLEFT|wxRIGHT</flag>
+        <border>15</border>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>Iterations</label>
+            </object>
+            <flag>wxRIGHT|wxALIGN_CENTRE_VERTICAL</flag>
+            <border>15</border>
+          </object>
+          <object class="sizeritem">
+            <object class="wxSlider" name="xrc_sl_iteration">
+              <size>300,-1</size>
+              <value>20</value>
+              <min>1</min>
+              <max>100</max>
+              <tickfreq>1</tickfreq>
+              <pagesize>10</pagesize>
+              <style>wxSL_HORIZONTAL|wxSL_LABELS</style>
+            </object>
+            <option>0</option>
+            <flag>wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+          <orient>wxHORIZONTAL</orient>
+        </object>
+        <option>0</option>
+        <flag>wxALL|wxEXPAND</flag>
+        <border>15</border>
+      </object>
+      <orient>wxVERTICAL</orient>
+      <object class="spacer">
+        <option>1</option>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <object class="spacer">
+            <option>1</option>
+          </object>
+          <object class="sizeritem">
+            <object class="wxCheckBox" name="xrc_chk_group">
+              <label>Apply to group</label>
+            </object>
+            <flag>wxRIGHT|wxALIGN_CENTRE_VERTICAL</flag>
+            <border>15</border>
+          </object>
+          <object class="sizeritem">
+            <object class="wxButton" name="xrc_btn_create">
+              <label>Create dataset</label>
+            </object>
+            <flag>wxRIGHT</flag>
+            <border>15</border>
+          </object>
+          <object class="sizeritem">
+            <object class="wxButton" name="xrc_btn_substract">
+              <label>Substract background</label>
+            </object>
+          </object>
+          <orient>wxHORIZONTAL</orient>
+        </object>
+        <flag>wxBOTTOM|wxLEFT|wxRIGHT|wxEXPAND</flag>
+        <border>15</border>
+      </object>
+    </object>
+  </object>
+</resource>
