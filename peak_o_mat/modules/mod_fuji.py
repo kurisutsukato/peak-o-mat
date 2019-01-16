@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import urllib2
-import httplib
+import urllib.request, urllib.error, urllib.parse
+import http.client
 import sys
 import os
 import re
@@ -24,13 +24,13 @@ class Getter(threading.Thread):
         self.timeToQuit.set()
 
     def run(self):
-        url = 'http://www.fujigoko.tv/livecam13/cam.jpg'
+        url = 'https://cam.fujigoko.tv/livecam28/cam1_1945.jpg'
 
         head,client = 'User-Agent','Mozilla/5.001 (windows; U; NT4.0; en-us) Gecko/25250101'
 
-        req = urllib2.Request(url)
+        req = urllib.request.Request(url)
         req.add_header(head,client)
-        opener = urllib2.build_opener()
+        opener = urllib.request.build_opener()
         try:
             data = opener.open(req).read()
         except:
@@ -42,10 +42,11 @@ class Getter(threading.Thread):
         
         #self.bmp = wx.Bitmap(name)
         #os.unlink(name)
+        print(len(data))
         wx.CallAfter(self.window.read_bmp, name)
         
 class Module(module.Module):
-    title = u'\u5bcc\u58eb\u5c71'
+    title = '\u5bcc\u58eb\u5c71'
     
     def __init__(self, *args):
         module.Module.__init__(self, __file__, *args)
@@ -68,12 +69,12 @@ class Module(module.Module):
         self.OnSize(None)
         
     def OnSize(self, event):
-        self.width, self.height = self.panel.GetClientSizeTuple()
-        self._buffer = wx.EmptyBitmap(self.width, self.height)
+        self.width, self.height = self.panel.GetClientSize()
+        self._buffer = wx.Bitmap(self.width, self.height)
         self.update()
         
     def OnPaint(self, event):
-        dc = wx.BufferedPaintDC(self.panel, self._buffer)
+        dc = wx.BufferedPaintDC(self.panel, self._buffer, wx.BUFFER_CLIENT_AREA)
 
     def OnTimer(self, evt):
         self.message('fetching image...',target=1)
@@ -82,17 +83,17 @@ class Module(module.Module):
 
     def update(self, evt=None):
         dc = wx.BufferedDC(wx.ClientDC(self.panel), self._buffer)
-        dc.BeginDrawing()
+        #dc.BeginDrawing()
         dc.SetBackground( wx.Brush("White") )
         dc.Clear() # make sure you clear the bitmap!
         if self.bmp is not None:
             dc.DrawBitmap(self.bmp, 0, 2, False)
-        dc.EndDrawing()
+        #dc.EndDrawing()
         
     def read_bmp(self, name):
         bmp = wx.Bitmap(name)
         img = bmp.ConvertToImage()
-        img = img.GetSubImage(wx.Rect(0,82,799,180))
+        img = img.GetSubImage(wx.Rect(0,82,799,220))
         w,h = [float(x) for x in [img.GetWidth(),img.GetHeight()]]
         asp = w/h
         self.imgh = self.height-4

@@ -16,21 +16,18 @@
 ##     along with this program; if not, write to the Free Software
 ##     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import numpy as N
+import numpy as np
 
 from scipy.interpolate import interp1d
 
 import copy
 import re
-import string
-import types
-import os, sys, locale
-import time
+import os, sys
 
-import settings as config
-from misc import PomError
+from . import settings as config
+from .misc import PomError
 
-from wx.lib.pubsub import pub as Publisher
+from .symbols import pom_globals
 
 class TrafoList(list):
     def __iter__(self):
@@ -40,17 +37,10 @@ class TrafoList(list):
     def __getitem__(self, item):
         data = list.__getitem__(self, item)
         if len(data) == 3:
-            data = list(data)+[False]
+            data = list(data)+[False] # das hier scheint fuer backward compatibility zu sein
         return data
 
-    def __setitem__(self, item, value):
-        list.__setitem__(self, item, value)
-        Publisher.sendMessage(('changed'))
 
-    def append(self, data):
-        list.append(self, data)
-        Publisher.sendMessage(('changed'))
-        
 class Spec(object):
     """
 A class for storing spectral data. Spec arithmetics using +-/* act only on the y-values
@@ -62,58 +52,58 @@ done automatically if the x-values differ.
 
     def __init__(self, *args):
         """
-Spec(name)
-name: load 2-column table data from file 'name'
+Spec(filename)
+filename: load 2-column table data from file 'name'
 
 Spec(x,y,name)
-x: array/list with x-data
-y: array/list with y-data
-name: desired name
+x : array/list holding the x-values
+y : array/list holding the y-values
+name : short description of the data
 """
         self.hide = False
-        
+        # TODO:
+        # 1) accept lists as x- and y-input .... war glaube ich ein Irrtum
+        # 2) crop nan values from input
         self._inverse = False
+        self._unsorted = False
         self._mod = None
         self._weights = None
         self._limits = None
         self._trafo = TrafoList([])
-        self._mask = N.zeros((0), dtype=N.int8)
-        self._rawdata = N.empty((0,0),dtype=N.float64)
+        self._mask = np.zeros((0), dtype=np.int8)
+        self._rawdata = np.empty((2,0),dtype=np.float64)
 
         self.parse_args(*args)
 
     def parse_args(self, *args):
         if len(args) == 3:
             x,y,name = args
-            data = N.array([x,y])
-            self.data = data.take(data[0].argsort(),1)
+            data = np.asarray([x,y])
+            self.data = data
         elif len(args) == 1:
             if isinstance(args[0], Spec):
                 self.data = args[0].xy.copy()
                 self.mod = copy.deepcopy(args[0].mod)
                 name = 'copy_of_'+args[0].name
-            elif type(args[0]) in [str,unicode]:
+            elif type(args[0]) in [str,str]:
                 name = os.path.basename(args[0])
                 base, suf = os.path.splitext(args[0])
                 if suf == '.ms0':
                     self.data = self.read_ms0(args[0])
                 else:
                     data = self.read(args[0])
-                    self.data = data.take(data[0].argsort(),1)
+                    self.data = data
             else:
-                raise TypeError, 'wrong arguments'+self.__init__.__doc__
+                raise TypeError('wrong arguments'+self.__init__.__doc__)
         else:
-            raise TypeError, 'wrong arguments'+self.__init__.__doc__
+            raise TypeError('wrong arguments'+self.__init__.__doc__)
 
         if config.truncate:
-            self.truncate()
-        
+            self.truncate(config.truncate_max_pts, config.truncate_interpolate)
         self.name = name
-        self.mask = N.zeros(self.data.shape[1])
-        #print 'spec.x increasing', reduce(lambda x,y: y if x<= y else N.inf, self.x) != N.inf
-        
-    def truncate(self):
-        pts = config.truncate_max_pts
+        self.mask = np.zeros(self.data.shape[1])
+
+    def truncate(self, pts, interpolate=True):
         if len(self.data[0]) > pts:
             self.truncated = True
             if not hasattr(config, 'interpolate'):
@@ -123,14 +113,14 @@ name: desired name
                 l = len(self.data[0])
                 if l > pts:
                     inc = float(l)/float(pts) 
-                    at = N.arange(0.0, l, inc, float).astype(int)
+                    at = np.arange(0.0, l, inc, float).astype(int)
                     self.data = self.data.take(at, 1)
             else:
                 a,b = min(self.data[0])+1e-2,max(self.data[0])-1e-2
-                x = N.arange(a,b,(b-a)/pts)
+                x = np.arange(a,b,(b-a)/pts)
                 interpolate = interp1d(self.data[0], self.data[1])
                 y = interpolate(x)
-                self.data = N.array([x,y])
+                self.data = np.array([x,y])
 
     def __copy__(self):
         return Spec(self.x.copy(), self.y.copy(), 'copy_%s'%self.name)
@@ -151,14 +141,17 @@ path : obviously, the path
         try:
             f = open(path, 'w')
         except IOError:
-            print 'unable to access %s' % (path)
+            print('unable to access %s' % (path))
             return False
         
-        data = N.transpose(N.array([self.x,self.y]))
+        data = np.transpose(np.array([self.x,self.y]))
         if config.floating_point_is_comma:
             data = [[('%.15g'%x).replace('.',','),('%.15g'%y).replace('.',',')] for x,y in data]
-        for x,y in data:
-            f.write('%s\t%s\n'%('%.15g'%x,'%.15g'%y))
+            for x,y in data:
+                f.write('%s\t%s\n'%(x,y))
+        else:
+            for x,y in data:
+                f.write('%s\t%s\n'%('%.15g'%x,'%.15g'%y))
         f.close()
         return True
         
@@ -167,13 +160,13 @@ path : obviously, the path
         try:
             f = open(path, "r")
         except IOError:
-            print path, 'not found'
+            print(path, 'not found')
             return 0,0
         for line in f:
             if line.find(r'"') != 0:
                 data.append(float(line))
         l = len(data)/2
-        data = N.transpose(N.resize(N.array(data), (l, 2)))
+        data = np.transpose(np.resize(np.array(data), (l, 2)))
 
         return data
             
@@ -184,7 +177,7 @@ path : obviously, the path
         try:
             f = open(path.encode(sys.getfilesystemencoding()))
         except IOError:
-            raise PomError,'unable to open \'%s\''%path
+            raise PomError('unable to open \'%s\''%path)
 
         if config.floating_point_is_comma:
             delimiters = [r'\s+',';','\t']
@@ -227,29 +220,49 @@ path : obviously, the path
             data = [[float(x) for x in line] for line in data]
         except ValueError:
             data = [[float(x.replace(',','.')) for x in line] for line in data]
-            config.floating_point_is_comma = True
+            #config.floating_point_is_comma = True
 
         if len(data) == 0:
-            raise PomError, 'unable to parse %s'%path
+            raise PomError('unable to parse %s'%path)
 
-        return N.transpose(data)[:2] # ignore additional columns
+        return np.transpose(data)[:2] # ignore additional columns
 
     def __boundingBox(self):
         """\
 returns boundingBox of the data as
 """
-        minXY = N.minimum.reduce(N.transpose([self.x,self.y]))
-        maxXY = N.maximum.reduce(N.transpose([self.x,self.y]))
+        minXY = np.minimum.reduce(np.transpose([self.x,self.y]))
+        maxXY = np.maximum.reduce(np.transpose([self.x,self.y]))
         return minXY,maxXY
 
     def crop(self, xrng, cp=False):
-        a,b = N.searchsorted(self.data[0], xrng)
+        a,b = np.searchsorted(self.data[0], xrng)
         if cp:
             x,y = self.data[:,a:b+1]
             return Spec(x,y,'cropped_%s'%self.name)
         else:
             self.data = self.data[:,a:b+1]
+
+    def make_mask_permanent(self):
+        tmp = self.trafo[:]
+        self.data = self.data[:,self.mask == 0]
+        self.trafo = tmp # assignment to self.data deletes the trafo list... I am not sure if this is really necessary
+
+    def make_trafo_permanent(self):
+        tmp = self.mask
+        self.data = [self._x, self._y]
+        self.mask = tmp
         
+    def mrproper(self):
+        data = self.data
+        cond = np.logical_and(np.isfinite(data[0]),np.isfinite(data[1]))
+        data = np.compress(cond,data,1)
+        cond = np.logical_and(np.isreal(data[0]),np.isreal(data[1]))
+        data = np.compress(cond,data,1)
+        cond = 1-np.logical_or(np.isnan(data[0]),np.isnan(data[1]))
+        data = np.compress(cond,data,1)
+        self.data = data
+
     def derivate(self, cp=False):
         """\
 calculates the derivative
@@ -261,21 +274,21 @@ calculates the derivative
         if cp:
             return Spec(x,dy,'d_dx_%s'%self.name)
         else:
-            self.data = N.array([x,dy])
+            self.data = np.array([x,dy])
             self.mask = None
             self.trafo = None
             return None
         
     def average(self, avg, cp=False):
         """
-Smoothes the data by averageing neighbouring points.
+moving average with 'avg' points
 avg : number of points to average
 """
         l = len(self.y)
-        newy = N.zeros((0,l-avg))
+        newy = np.zeros((0,l-avg))
         newx = []
         for i in range(avg):
-            newy = N.concatenate((newy,N.reshape(self.y[i:l-avg+i], (1,l-avg))))
+            newy = np.concatenate((newy,np.reshape(self.y[i:l-avg+i], (1,l-avg))))
         newy = sum(newy)/avg
         s = avg/2
         e = avg-s
@@ -283,15 +296,34 @@ avg : number of points to average
         if cp:
             return Spec(newx,newy, '%dpt_avg_%s'%(avg, self.name))
         else:
-            self.data = N.array([newx, newy])
+            self.data = np.array([newx, newy])
             return None
-        
+
+    def weighted_average(self, step_size=0.05, width=1, cp=False):
+        bin_centers  = np.arange(np.min(self.x),np.max(self.x)-0.5*step_size,step_size)+0.5*step_size
+        bin_avg = np.zeros(len(bin_centers))
+
+        #We're going to weight with a Gaussian function
+        def gaussian(x,amp=1,mean=0,sigma=1):
+            return amp*np.exp(-(x-mean)**2/(2*sigma**2))
+
+        for index in range(0,len(bin_centers)):
+            bin_center = bin_centers[index]
+            weights = gaussian(self.x,mean=bin_center,sigma=width)
+            bin_avg[index] = np.average(self.y,weights=weights)
+
+        if cp:
+            return Spec(bin_centers,bin_avg, 'wavg_%s'%(self.name))
+        else:
+            self.data = np.array([bin_centers,bin_avg])
+            return None
+
     def sg_filter(self, window, order, cp=False):
         newy = savitzky_golay(self.y, window, order)
         if cp:
             return Spec(self.x, newy, 'SGfiltered_%s'%self.name)
         else:
-            self.data = N.array([self.x, newy])
+            self.data = np.array([self.x, newy])
             return None
 
     def interpolate(self, x, cp=False):
@@ -304,18 +336,18 @@ returns the interpolation of the y-data at the given positions.
         if cp:
             return Spec(x,interp, '%dpts_interp_%s'%(len(x), self.name))
         else:
-            self.data = N.array([x,interp],dtype=N.float64)
+            self.data = np.array([x,interp],dtype=np.float64)
             return None
 
     def norm(self, cp=False):
         """
 normalize the y-values to 1
 """
-        y = N.array(self.y/max(self.y))
+        y = np.array(self.y/max(self.y))
         if cp:
             return Spec(self.x,y,'norm_'+self.name)
         else:
-            self.data = N.array([self.x,y])
+            self.data = np.array([self.x,y])
             return None
 
     def delete(self, bbox):
@@ -323,15 +355,20 @@ normalize the y-values to 1
 Deletes data points within bounding box.
 bbox : boundingbox of points to be removed
 """
-        bbx,bby = N.transpose(bbox)
-        bbx = N.searchsorted(self._x, bbx)
-        mask = N.zeros(self._x.shape)
-        for x,y in enumerate(self._y[bbx[0]:bbx[1]]):
+        sortindex = np.argsort(self._x)
+        xsorted = np.take(self._x, sortindex)
+        ysorted = np.take(self._y, sortindex)
+        bbx,bby = np.transpose(bbox)
+        bbx = np.searchsorted(xsorted, bbx)
+        mask = np.zeros(xsorted.shape)
+        for x,y in enumerate(ysorted[bbx[0]:bbx[1]]):
             if bby[0] < y < bby[1]:
                 mask[x+bbx[0]] = 1
+        mask = np.take(mask, np.argsort(sortindex))
+
         if self._inverse:
             mask = mask[::-1]
-        self.mask = N.logical_or(self.mask, mask).astype(int)
+        self.mask = np.logical_or(self.mask, mask).astype(int)
             
     def loadpeaks(self, mod=None, addbg=False):
         if mod is None:
@@ -340,11 +377,11 @@ bbox : boundingbox of points to be removed
         return peaks
 
     def _getxrange(self):
-        return N.minimum.reduce(self.x),N.maximum.reduce(self.x)
+        return np.minimum.reduce(self.x),np.maximum.reduce(self.x)
     xrng = property(_getxrange, doc='data\'s xrange as 2-tuple')
 
     def _getyrange(self):
-        return N.minimum.reduce(self.y),N.maximum.reduce(self.y)
+        return np.minimum.reduce(self.y),np.maximum.reduce(self.y)
     yrng = property(_getyrange, doc='data\'s yrange as 2-tuple')
 
     def _getxyrange(self):
@@ -358,8 +395,8 @@ bbox : boundingbox of points to be removed
     weights = property(_getWeights, _storeWeights, doc='y-weight')
     
     def _set_limits(self, limits=None):
-        if type(limits) not in [tuple,type(None),N.ndarray,list]:
-            raise TypeError, 'limits: tuple or None required'
+        if type(limits) not in [tuple,type(None),np.ndarray,list]:
+            raise TypeError('limits: tuple or None required')
         self._limits = limits
     def _get_limits(self):
         return self._limits
@@ -378,29 +415,28 @@ bbox : boundingbox of points to be removed
         return self._mod
     def _set_mod(self, mod):
         self._mod = copy.deepcopy(mod)
-    mod = property(_get_mod, _set_mod, doc='Model associated with the current spectrum')
+    model = property(_get_mod, _set_mod, doc='Model associated with the current spectrum')
+    mod = model
 
     def _set_mask(self, mask):
         if mask is None:
-            self._mask = N.zeros(self.data[0].shape)
+            self._mask = np.zeros(self.data[0].shape)
         else:
             self._mask = mask
     def _get_mask(self):
         return self._mask
     mask = property(_get_mask, _set_mask, doc='mask storing deleted points')
     
-    def _get_data(self, axis, unmasked=False):
+    def _get_data(self, axis, unmasked=False, limited=False):
         ind = ['x','y'].index(axis)
-        data = self.data+0
-        loc = locals()
-        loc.update(N.__dict__)
-        loc['x'] = data[0]
-        loc['y'] = data[1]
+        data = np.copy(self.data)
+
+        locs = {'x': data[0], 'y': data[1]}
 
         for type,tr,comment,skip in self.trafo:
             if skip:
                 continue
-            data[['x','y'].index(type),:] = eval(tr,globals(),loc)
+            data[['x','y'].index(type),:] = eval(tr, pom_globals, locs)
 
         if unmasked:
             if self._inverse:
@@ -408,21 +444,32 @@ bbox : boundingbox of points to be removed
             else:
                 return data[ind]
         else:            
-            cond = N.logical_and(N.isfinite(data[0]),N.isfinite(data[1]))
-            data = N.compress(cond,data,1)
-            mask = N.compress(cond,self.mask)
-            cond = N.logical_and(N.isreal(data[0]),N.isreal(data[1]))
-            data = N.compress(cond,data,1)
-            mask = N.compress(cond,mask)
+            cond = np.logical_and(np.isfinite(data[0]),np.isfinite(data[1]))
+            # TODO
+            # mod_calib, mode custom, show lines
+            '''
+cond = np.logical_and(np.isfinite(data[0]),np.isfinite(data[1]))
+TypeError: ufunc 'isfinite' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''
+'''
+            data = np.compress(cond,data,1)
+            mask = np.compress(cond,self.mask)
+            cond = np.logical_and(np.isreal(data[0]),np.isreal(data[1]))
+            data = np.compress(cond,data,1)
+            mask = np.compress(cond,mask)
 
-            data = N.compress(mask==0,data,1)
+            data = np.compress(mask==0,data,1)
 
             if axis == 'x':
-                if data[ind][0] > data[ind][-1]:
-                    self._inverse = True
-                    data = data[:,::-1]
-                else:
+                if (np.take(data[ind],np.argsort(data[ind])) != data[ind]).any():
+                    self._unsorted = True
                     self._inverse = False
+                else:
+                    self._unsorted = False
+                    if data[ind,0] > data[ind,-1]:
+                        self._inverse = True
+                        data = data[:,::-1]
+                    else:
+                        self._inverse = False
             else:
                 if self._inverse:
                     data = data[:,::-1]
@@ -432,7 +479,8 @@ bbox : boundingbox of points to be removed
     def _get_rawdata(self):
         return self._rawdata
     def _set_rawdata(self, data):
-        data = data.take(data[0].argsort(),1)
+        data = np.asarray(data)
+        #data = data.take(data[0].argsort(),1)
         self._rawdata = data
         self.mask = None
         self.trafo = None
@@ -452,26 +500,36 @@ bbox : boundingbox of points to be removed
         return self._get_data('y', True)
 
     def _get_xy(self):
-        return N.array([self.x,self.y])
+        return np.array([self.x,self.y])
 
     def _get_x_limited(self):
         if self.limits is not None:
-            limits = N.searchsorted(self.x, self.limits)
-            return self.x[limits[0]:limits[1]]
+            si = np.argsort(self.x)
+            xs = np.take(self.x, si)
+            low,up = np.searchsorted(xs, self.limits)
+            idx = np.sort(si[low:up])
+            return np.take(self.x, idx)
         else:
             return self.x
 
     def _get_y_limited(self):
         if self.limits is not None:
-            limits = N.searchsorted(self.x, self.limits)
-            return self.y[limits[0]:limits[1]]
+            si = np.argsort(self.x)
+            xs = np.take(self.x, si)
+            low,up = np.searchsorted(xs, self.limits)
+            idx = np.sort(si[low:up])
+            return np.take(self.y, idx)
         else:
             return self.y
 
     def _get_xy_limited(self):
         if self.limits is not None:
-            limits = N.searchsorted(self.x, self.limits)
-            return self.xy[:,limits[0]:limits[1]]
+            si = np.argsort(self.x)
+            xs = np.take(self.x, si)
+            low,up = np.searchsorted(xs, self.limits)
+            idx = np.sort(si[low:up])
+            res = np.take(self.xy, idx, axis = 1)
+            return res
         else:
             return self.xy
 
@@ -488,7 +546,7 @@ bbox : boundingbox of points to be removed
         if not isinstance(other, Spec):
             return False
 
-        if N.alltrue(self.x == other.x) and N.alltrue(self.y == other.y):
+        if np.alltrue(self.x == other.x) and np.alltrue(self.y == other.y):
             return True
         else:
             return False
@@ -497,57 +555,57 @@ bbox : boundingbox of points to be removed
         if not isinstance(other, Spec):
             return True
 
-        if N.alltrue(self.x != other.x) or N.alltrue(self.y != other.y):
+        if np.alltrue(self.x != other.x) or np.alltrue(self.y != other.y):
             return True
         else:
             return False
         
     def __len__(self):
         return len(self.x)
+
+    def __and__(self, other):
+        if not isinstance(other, Spec):
+            raise NotImplementedError('& operator used between non-Spec objects')
+        res = self.join(other)
+        return res
     
     def __div__(self, other):
         if not isinstance(other, Spec):
             return Spec(self.x, self.y/other, '%s/%s'%(self.name,other))
-        if not N.alltrue(self.x == other.x):
+        if not np.alltrue(self.x == other.x):
             a, b = self._overlap(self.x, other.x)
             interpolate = interp1d(other.x,other.y)
             interp = interpolate(self.x[a:b])
-            ret = Spec(self.x[a:b], N.divide(self.y[a:b],interp), '%s/%s'%(self.name,other.name))
+            ret = Spec(self.x[a:b], np.divide(self.y[a:b],interp), '%s/%s'%(self.name,other.name))
         else:
-            ret =  Spec(self.x, N.divide(self.y,other.y), '%s/%s'%(self.name,other.name))
-        return ret
-    
-    def __rdiv__(self, other):
-        if not isinstance(other, Spec):
-            return Spec(self.x, other/self.y, '%s/%s'%(other,self.name))
-        if not N.alltrue(self.x == other.x):
-            a, b = self._overlap(self.x, other.x)
-            interpolate = interp1d(other.x,other.y)
-            interp = interpolate(self.x[a:b])
-            ret = Spec(self.x[a:b], N.divide(interp,self.y[a:b]), '%s/%s'%(other.name,self.name))
-        else:
-            ret =  Spec(self.x, N.divide(other.y,self.y), '%s/%s'%(other.name,self.name))
+            ret =  Spec(self.x, np.divide(self.y,other.y), '%s/%s'%(self.name,other.name))
         return ret
     
     def __mul__(self, other):
         if not isinstance(other, Spec):
-            return Spec(self.x, self.y*other, '%s*%s'%(self.name,other))
-        if not N.alltrue(self.x == other.x):
+            if np.isscalar(other):
+                name = 'scalar'
+            else:
+                name = 'array'
+            return Spec(self.x, self.y*other, '%s*%s'%(self.name,name))
+        if not np.alltrue(self.x == other.x):
             a, b = self._overlap(self.x, other.x)
             interpolate = interp1d(other.x,other.y)
             interp = interpolate(self.x[a:b])
-            ret = Spec(self.x[a:b], N.multiply(self.y[a:b],interp), '%s*%s'%(self.name,other.name))
+            ret = Spec(self.x[a:b], np.multiply(self.y[a:b],interp), '%s*%s'%(self.name,other.name))
         else:
-            ret =  Spec(self.x, N.multiply(self.y,other.y), '%s*%s'%(self.name,other.name))
+            ret =  Spec(self.x, np.multiply(self.y,other.y), '%s*%s'%(self.name,other.name))
         return ret
-
-    __rmul__ = __mul__
 
     def __add__(self, other):
         if not isinstance(other, Spec):
-            return Spec(self.x, self.y+other, '%s+%s'%(self.name,other))
+            if np.isscalar(other):
+                name = 'scalar'
+            else:
+                name = 'array'
+            return Spec(self.x, self.y+other, '%s+%s'%(self.name,name))
         else:
-            if not N.alltrue(self.x == other.x):
+            if not np.alltrue(self.x == other.x):
                 a, b = self._overlap(self.x, other.x)
                 interpolate = interp1d(other.x,other.y)
                 interp = interpolate(self.x[a:b])
@@ -556,22 +614,54 @@ bbox : boundingbox of points to be removed
                 ret = Spec(self.x, self.y+other.y, '%s+%s'%(self.name,other.name))
             return ret
 
-    __radd__ = __add__
-
     def __neg__(self):
-        return Spec(self.x, -self.y, "neg")
-    
+        return Spec(self.x, -self.y, '-%s'%self.name)
+
+    def join(self, other):
+        if self.x[0] < other.x[0] and self.x[-1] < other.x[0]:
+            res = Spec(np.concatenate((self.x,other.x)),np.concatenate((self.y,other.y)),self.name+'&'+other.name)
+            return res
+        elif self.x[0] > other.x[0] and self.x[0] > other.x[-1]:
+            res = Spec(np.concatenate((other.x,self.x)),np.concatenate((other.y,self.y)),self.name+'&'+other.name)
+            return res
+        else:
+            raise Exception('Sets cannot be joined because of overlapping x-values.')
+
     def _overlap(self, a, b):
-        if N.alltrue(a == b):
+        if np.alltrue(a == b):
             return a[0],a[-1]
-        mima = [max(a[0],b[0]),min(a[-1],b[-1])]
-        index = N.searchsorted(a, mima)
-        return index[0],index[1]
+        min_x, max_x = [max(a.min(),b.min()),min(a.max(),b.max())]
+
+        sortindex = np.argsort(a)
+        asorted = np.take(a, sortindex)
+        lower, upper = np.searchsorted(asorted, [min_x,max_x])
+        if max_x in self.x:
+            upper += 1
+
+        return lower,upper
+
+    def __isub__(self, other):
+        if not isinstance(other, Spec):
+            if np.isscalar(other):
+                name = 'scalar'
+            else:
+                name = 'array'
+            self._rawdata[1] -= other
+            return self
+        if not np.alltrue(self.x == other.x):
+            raise NotImplementedError('infix operation not possible between datasets with non equal x-axis')
+        else:
+            self._rawdata[1] -= other.y
+            return self
 
     def __sub__(self, other):
         if not isinstance(other, Spec):
-            return Spec(self.x, self.y-other, '%s-%s'%(self.name,other))
-        if not N.alltrue(self.x == other.x):
+            if np.isscalar(other):
+                name = 'scalar'
+            else:
+                name = 'array'
+            return Spec(self.x, self.y-other, '%s-%s'%(self.name,name))
+        if not np.alltrue(self.x == other.x):
             a, b = self._overlap(self.x, other.x)
             interpolate = interp1d(other.x,other.y)
             interp = interpolate(self.x[a:b])
@@ -580,23 +670,11 @@ bbox : boundingbox of points to be removed
             ret = Spec(self.x, self.y-other.y, '%s-%s'%(self.name,other.name))
         return ret
         
-    def __rsub__(self, other):
-        if not isinstance(other, Spec):
-            return Spec(self.x, other-self.y, '%s-%s'%(other,self.name))
-        if not N.alltrue(self.x == other.x):
-            a, b = self._overlap(self.x, other.x)
-            interpolate = interp1d(other.x,other.y)
-            interp = interpolate(self.x[a:b])
-            ret = Spec(self.x[a:b], interp-self.y[a:b], '%s-%s'%(other.name,self.name))
-        else:
-            ret = Spec(self.x, other.y-self.y, '%s-%s'%(other.name,self.name))
-        return ret
-
     def __pow__(self, expon):
-        if N.isscalar(expon):
-            return Spec(self.x, N.power(self.y, expon), 'sub')
+        if np.isscalar(expon):
+            return Spec(self.x, np.power(self.y, expon), 'power(%s,%s)'%(self.name,expon))
         else:
-            raise TypeError, 'only scalar exponents allowed'
+            raise TypeError('only scalar exponents allowed')
         
     def __repr__(self):
         return 'set name: %s'%(self.name)
@@ -624,24 +702,46 @@ def savitzky_golay(y, window_size, order, deriv=0):
         the smoothed signal (or it's n-th derivative).
     """
     try:
-        window_size = N.abs(N.int(window_size))
-        order = N.abs(N.int(order))
-    except ValueError, msg:
+        window_size = np.abs(np.int(window_size))
+        order = np.abs(np.int(order))
+    except ValueError as msg:
         raise ValueError("window_size and order have to be of type int")
     if window_size % 2 != 1 or window_size < 1:
         raise TypeError("window_size must be a positive odd number")
     if window_size < order + 2:
         raise TypeError("window_size is too small for the polynomials order")
-    order_range = range(order+1)
+    order_range = list(range(order+1))
     half_window = (window_size -1) // 2
     # precompute coefficients
-    b = N.mat([[k**i for i in order_range] for k in range(-half_window, half_window+1)])
-    m = N.linalg.pinv(b).A[deriv]
+    b = np.mat([[k**i for i in order_range] for k in range(-half_window, half_window+1)])
+    m = np.linalg.pinv(b).A[deriv]
     # pad the signal at the extremes with
     # values taken from the signal itself
-    firstvals = y[0] - N.abs( y[1:half_window+1][::-1] - y[0] )
-    lastvals = y[-1] + N.abs(y[-half_window-1:-1][::-1] - y[-1])
-    y = N.concatenate((firstvals, y, lastvals))
-    return N.convolve( m, y, mode='valid')
+    firstvals = y[0] - np.abs(y[1:half_window+1][::-1] - y[0] )
+    lastvals = y[-1] + np.abs(y[-half_window-1:-1][::-1] - y[-1])
+    y = np.concatenate((firstvals, y, lastvals))
+    return np.convolve( m, y, mode='valid')
 
-    
+import unittest
+
+class SpecTests(unittest.TestCase):
+    def setUp(self):
+        x = np.array([2,5,8,10],dtype=float)
+        y = np.sin(x)
+        self.s = Spec(x,y,'sin')
+
+    def test_limit_reverse(self):
+        self.s.trafo.append(('x','1/x','inverse'))
+        self.s.limits = (3.0,8.0)
+        self.assertEqual(self.s.x.tolist(),[0.5,0.2,0.125,0.1])
+        self.assertEqual(self.s.x_limited.tolist(),[0.2,0.125,0.1])
+
+    def test_mask_reverse(self):
+        self.s.mask = [1,1,0,0]
+        self.assertEqual(self.s.x.tolist(),[8,10])
+        self.s.trafo.append(('x','1/x','inverse'))
+        self.assertEqual(self.s.x.tolist(),[0.125,0.1])
+        self.assertEqual(self.s._get_x_unmasked().tolist(),[0.5,0.2,0.125,0.1])
+
+if __name__ == '__main__':
+    unittest.main()

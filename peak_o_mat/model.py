@@ -1,45 +1,27 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
-##     Copyright (C) 2003 Christian Kristukat (ckkart@hoc.net)     
-
-##     This program is free software; you can redistribute it and/or modify
-##     it under the terms of the GNU General Public License as published by
-##     the Free Software Foundation; either version 2 of the License, or
-##     (at your option) any later version.
-
-##     This program is distributed in the hope that it will be useful,
-##     but WITHOUT ANY WARRANTY; without even the implied warranty of
-##     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-##     GNU General Public License for more details.
-
-##     You should have received a copy of the GNU General Public License
-##     along with this program; if not, write to the Free Software
-##     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-import string
 import operator
 import re
-try:
-    from re import Scanner
-except ImportError:
-    from sre import Scanner
+from re import Scanner
+import sys
 
 import copy as cp
 from operator import mul, add
 
-import numpy as N
+import numpy as np
+#np.seterr(divide='ignore')
 
-import peaks
+from . import lineshapebase
+from .pickers import DummyPicker
+
+from .symbols import pom_globals
 
 def ireduce(func, iterable, init=None):
     iterable = iter(iterable)
     if init is None:
-        init = iterable.next()
+        init = next(iterable)
         yield init
     else:
         try:
-            init = func(init, iterable.next())
+            init = func(init, next(iterable))
             yield init
         except StopIteration:
             yield init
@@ -48,6 +30,9 @@ def ireduce(func, iterable, init=None):
         yield init
         
 class ModelTableProxy(list):
+    """provides a list-type read-write interface to the model object
+    used e.g. by the parameter grid
+    """
     class Constant(object):
         __const__ = True
         def __init__(self, name, area):
@@ -80,7 +65,7 @@ class ModelTableProxy(list):
                 try:
                     return getattr(self.var, self.attrmap[item])
                 except:
-                    print 'var getitem',item
+                    print('var getitem',item)
 
         def __setitem__(self, item, value):
             if item in [1,3,4,5]:
@@ -91,21 +76,24 @@ class ModelTableProxy(list):
             return
         self.model = model
         a = {}
-        
+
+        # the following code is needed to add the :area information for
+        # each peak-like feature
         counts = []
         for component in model:
             counts.append(len(component))
-            for key,par in component.iteritems():
+            for key,par in component.items():
                 a[par.count] = component.name,key,par
 
-        counts = ireduce(operator.add, counts)
-        
-        for name,key,par in a.values():
+        if len(counts) > 0:
+            counts = ireduce(operator.add, counts)
+
+        for name,key,par in list(a.values()):
             #if not par.hidden:
             self.append(self.Variable(name,key,par))
 
-        for ins,component in reversed(zip(list(counts),model)):
-            if component.area() == N.inf:
+        for ins,component in reversed(list(zip(list(counts),model))):
+            if component.area() == np.inf:
                 continue
             self.insert(ins,self.Constant('%s:area'%(component.name),component.area))
 
@@ -119,27 +107,44 @@ class Model(list):
     the model's 'components', e.g. CB, GA, etc.
     """
 
-    tokens = None
-
-    def __init__(self, tokens='', listener=None):
+    def __init__(self, tokens, listener=None):
         """
 tokens: a space separated list of valid function symbols
 """
+        list.__init__(self)
+        self.ok = False
         self.parser = None
         self.parsed = False
         self.func = None
         self.listener = listener
-        
-        if tokens != '':
-            if tokens.isupper():
-                self.tokens = tokens.strip()
-                if self.check() is False:
-                    raise KeyError, "token not valid"
-            else:
-                self.func = tokens.strip()
-                self.tokens = 'CUSTOM'
+        self.tokens = ''
+
+        if tokens.isupper()  or tokens == '':# and lineshapebase.lineshapes.tokens_known(tokens):
+            self.predefined = True
+            self.tokens = tokens
         else:
-            self.tokens = ''
+            self.predefined = False
+            self.tokens = 'CUSTOM'
+            self.func = tokens.strip()
+
+    def __repr__(self):
+        return '<%s.%s at %s>' % (
+            self.__class__.__module__,
+            self.__class__.__name__,
+            hex(id(self))
+            )
+
+    def __str__(self):
+        if self.tokens == 'CUSTOM':
+            return self.func
+        else:
+            return self.tokens
+
+    def keys(self):
+        return [q.name for q in self]
+
+    def copy(self):
+        return cp.deepcopy(self)
 
     def __deepcopy__(self, memo):
         m = Model('')
@@ -150,31 +155,21 @@ tokens: a space separated list of valid function symbols
         m.parsed = self.parsed
         return m
 
-    def __setattr__(self, attr, val):
-        if hasattr(self, 'tokens') and self.tokens is not None and attr in self.tokens.split(' '):
-                print '%s.%s is read only'%(unicode(self), attr)
-        else:
-            object.__setattr__(self, attr, val)
-            
     def __getattr__(self, attr):
+        if attr.startswith('__') and attr.endswith('__'):
+            return super(Model, self).__getattr__(attr)
         if hasattr(self, 'tokens') and self.tokens is not None and attr in self.tokens.split(' '):
             self.parse()
             return list.__getitem__(self,self.tokens.split(' ').index(attr))
         else:
-            raise AttributeError, '%s has no Attribute \'%s\''%(self,attr)
-        
+            raise AttributeError('%s has no Attribute \'%s\''%(repr(self),attr))
+
     def __getitem__(self, item):
-        if hasattr(self, 'tokens') and self.tokens is not None and item in self.tokens.split(' '):
-            return getattr(self,item)
+        if type(item) == int:
+            return list.__getitem__(self, item)
         else:
-            try:
-                ret = list.__getitem__(self, item)
-            except TypeError as err:
-                print item, err
-                raise IndexError(item)
-            else:
-                return ret
-            
+            return getattr(self,item)
+
     def __eq__(self, other):
         if not hasattr(other, 'tokens'):
             #print 'can\'t compare: empty model'
@@ -193,10 +188,58 @@ tokens: a space separated list of valid function symbols
         else:
             return False
 
+    def analyze(self):
+        names = []
+        txt = ''
+        self.ok = False
+
+        if self.func is not None:
+            try:
+                self.parse()
+            except SyntaxError:    # raises only if forbidden characters are encountered
+                txt = 'Invalid model (SyntaxError)'
+            else:
+                names = self.get_parameter_names()
+                try:
+                    ev = QuickEvaluate(self)
+                    out = ev(np.array([-2,1]),np.zeros(20))
+                except SyntaxError:
+                    txt = 'Incomplete or invalid model.'
+                except TypeError as err:
+                    tpe, val, tb = sys.exc_info()
+                    if str(val).find('bad operand') != -1:
+                        txt = 'Incomplete or invalid model.'
+                    else:
+                        txt = 'TypeError: %s'%err
+                except NameError as err:
+                    txt = 'NameError: %s'%err
+                except AttributeError as err:
+                    txt = 'AttributeError: %s'%err
+                    pass
+                except ValueError as err:
+                    txt = 'ValueError: %s'%err
+                else:
+                    if len(list(self['CUSTOM'].keys())) > 0 and self['CUSTOM'].has_x:
+                        txt = 'Model valid.'
+                        self.ok = True
+                    elif not self['CUSTOM'].has_x:
+                        txt = "'x' is missing from model definition."
+                    else:
+                        txt = 'No fit parameters found.'
+            self.parsed = False
+        else:
+            if self.tokens != '' and not lineshapebase.lineshapes.known_tokens(self.tokens):
+                txt = 'Unknown tokens.'
+            else:
+                txt= 'Model valid.'
+                self.ok = True
+
+        return txt,names
+
     def get_parameter_names(self):
         out = []
         for f in self:
-            for name in f.iterkeys():
+            for name in f.keys():
                 if name not in out:
                     out.append(name)
         return out
@@ -204,7 +247,7 @@ tokens: a space separated list of valid function symbols
     def get_parameter_by_name(self, name):
         ret = []
         for f in self:
-            for k,v in f.iteritems():
+            for k,v in f.items():
                 if k == name:
                     ret.append(v.value)
         return ret
@@ -214,7 +257,7 @@ tokens: a space separated list of valid function symbols
 
     def parameters_as_csv(self, **args):
         tbl = self.parameters_as_table(**args)
-        tbl = '\n'.join([','.join([unicode(y) for y in x]) for x in tbl])
+        tbl = '\n'.join([','.join([str(y) for y in x]) for x in tbl])
         return tbl
     
     def parameters_as_table(self, selection='all', witherrors=False):
@@ -229,7 +272,7 @@ tokens: a space separated list of valid function symbols
         """
         pars = []
         for f in self:
-            for name,par in f.items():
+            for name,par in list(f.items()):
                 if par.hidden:
                     continue
                 if name == selection or selection == 'all':
@@ -238,7 +281,7 @@ tokens: a space separated list of valid function symbols
                     else:
                         pars.append((f.name,name,par.value))
             if 'area' == selection or selection == 'all':
-                if f.area() != N.inf:
+                if f.area() != np.inf:
                     if witherrors:
                         pars.append((f.name,'area',f.area(),0.0))
                     else:
@@ -250,7 +293,7 @@ tokens: a space separated list of valid function symbols
         if self.tokens == 'CUSTOM':
             return False
         for f in self:
-            if peaks.functions[f.name].picker != peaks.DummyPicker:
+            if lineshapebase.lineshapes[f.name].picker != DummyPicker:
                 return True
         return False
 
@@ -266,15 +309,6 @@ tokens: a space separated list of valid function symbols
                     return False
             return True
 
-    def check(self):
-        """\
-        Check if the tokens are valid.
-        """
-        for i in re.split(u'\s+|\*|\+', self.tokens):
-            if i not in peaks.functions:
-                return False
-        return True
-
     def parse(self):
         """\
         Starts the parser. Needed before every other operation.
@@ -283,9 +317,11 @@ tokens: a space separated list of valid function symbols
             return
 
         try:
+            self[:] = []
             self.parser = TokParser(self, self.tokens, self.func)
             self.parsed = True
         except KeyError:
+            print('model key error')
             pass
 
     def clear(self):
@@ -293,8 +329,8 @@ tokens: a space separated list of valid function symbols
         Set all parameters to zero.
         """
         for component in self:
-            for el in component.iterkeys():
-                component[el].value = 'ns'    
+            for el in component.keys():
+                component[el].value = np.nan    
                 component[el].error = 0.0   
 
     def set_parameters(self, param):
@@ -311,7 +347,7 @@ param: A list - one element for each component - of dictionaries whoose
 
         count = 0
         for n,component in enumerate(param):
-            for key,val in component.items():
+            for key,val in list(component.items()):
                 if isinstance(val,Var):
                     self[n][key].value = val.value
                     self[n][key].constr = val.constr
@@ -321,13 +357,28 @@ param: A list - one element for each component - of dictionaries whoose
                 else:
                     self[n][key].value = val
 
+    def update_from_fit(self, fitresult):
+        """\
+fitresult: result of Fit.run()
+
+Update the model with the results from a fit.
+        """
+        beta, sd_beta, msg = fitresult
+
+        for component in self:
+            for key,var in list(component.items()):
+                var.value = beta[var.count]
+                var.error = sd_beta[var.count]
+        if self.listener is not None:
+            self.listener()
+
     def _newpars(self, a, b):
         """\
         This function should not be called by the user. Use set_parameters
         instead.
         """
         for component in self:
-            for key,var in component.items():
+            for key,var in list(component.items()):
                 var.value = a[var.count]
                 if b is not None:
                     var.error = b[var.count]
@@ -341,50 +392,52 @@ param: A list - one element for each component - of dictionaries whoose
                 separately
         """
         
-        x = N.atleast_1d(x)
-            
+        x = np.atleast_1d(x)
+
         background = None
         
         if self.parsed is False:
             self.parsed = True
             self.parse()
 
-        evaly = []
+        evaly = np.zeros((0,len(x)))
         newy = []
 
-        glbs = globals().copy()
-        glbs.update(N.__dict__)
-        
         op = {'*':mul,'+':add,'':add}
-        
+        locs = {'x':x}
+
         for component in self:
-            locs = {'x':x}
-            for key,val in component.iteritems():
+            for key,val in component.items():
                 locs[key] = val.value
-            locs.update(peaks.__dict__)
             try:
                 if self.func is not None:
-                    newy = eval(self.func,glbs,locs)
+                    newy = eval(self.func,pom_globals,locs)
                 else:
-                    newy = eval(component.func,glbs,locs)
-            except (ValueError, TypeError, ZeroDivisionError),msg:
-                pass
+                    newy = eval(component.func,pom_globals,locs)
+            except (ValueError, TypeError, ZeroDivisionError) as msg:
+                continue #does never happen
             else:   
-                if N.logical_not(N.isfinite(newy)).any():
-                    tmpy = N.zeros(newy.shape,float)
-                    N.put(tmpy, N.isfinite(newy), N.compress(N.isfinite(newy),newy))
-                    newy = tmpy
-                if single:
-                    if component.name in peaks.functions.background:
+                if single and np.isfinite(newy).all():
+                    if component.name in lineshapebase.lineshapes.background:
                         background = newy
-                    evaly.append(newy)
+                    evaly = np.vstack((np.asarray(evaly),newy))
+                    continue
+                if np.logical_not(np.isfinite(newy)).any():
+                    tmpy = np.zeros(newy.shape,float)
+                    np.put(tmpy, np.isfinite(newy), np.compress(np.isfinite(newy),newy))
+                    newy = tmpy
+                if len(evaly) == 0:
+                    evaly = newy
                 else:
+                    #print 'eval: all finite', np.isfinite(evaly).all()
                     if len(evaly) == 0:
                         evaly = newy
                     else:
                         evaly = op[component.op](evaly, newy)   # add or multiply components
 
-        evaly = N.array(evaly)
+        if single:
+            evaly = np.atleast_2d(evaly)
+        
         if single and addbg:
             for n in range(evaly.shape[0]):
                 if background is not None:
@@ -392,13 +445,13 @@ param: A list - one element for each component - of dictionaries whoose
             if background is not None:
                 evaly = evaly[1:]
 
-        if len(evaly) == 0:
-            evaly = False
-        return evaly
-
-    def background(self, x):
+        return None if len(evaly) == 0 else evaly
+    
+    def background(self, x, ignore_last=False):
         out = 0.0
         peaks = self.evaluate(x, single=True)
+        if ignore_last:
+            peaks = peaks[:-1]
         if peaks is not False and len(peaks) > 0:
             for p,f in zip(peaks,self):
                 if f.is_filled():
@@ -413,9 +466,10 @@ param: A list - one element for each component - of dictionaries whoose
         lines = []
 
         ys = self.evaluate(x, single=True, addbg=addbg)
-        for y in ys:
-            points = N.array([x,y])
-            lines.append(points)
+        if ys is not None:
+            for y in ys:
+                points = np.array([x,y])
+                lines.append(points)
 
         return lines
 
@@ -454,7 +508,7 @@ class TokParser(object):
         parsed,rubbish = scanner.scan(self.pstr)
 
         if rubbish != '':
-            raise Exception, 'parsed: %s, rubbish %s'%(parsed, rubbish)
+            raise Exception('parsed: %s, rubbish %s'%(parsed, rubbish))
 
         for tok,op in parsed:
             comp = Component(tok, op, count)
@@ -463,103 +517,121 @@ class TokParser(object):
         
 class Component(dict):
     def __init__(self, tok, op, count):
+        dict.__init__(self)
+
+        self.has_x = False
+        
         self.name = tok
         self.op = op
         try:
-            self.func = peaks.functions[tok].func
+            self.func = lineshapebase.lineshapes[tok].func
         except KeyError:
             self.func = tok
             self.name = 'CUSTOM'
         self.dummy = []
         self.par_count_start = count
         self.count = count
-        dict.__init__(self)
         self.parse()
 
+    def __repr__(self):
+        return '<%s.%s at %s>' % (
+            self.__class__.__module__,
+            self.__class__.__name__,
+            hex(id(self))
+            )
+
+    def __str__(self):
+        return '%s: function of '%self.name+','.join("'%s'"%q for q in list(self.keys()))
+
     def clear(self):
-        for k in self.iterkeys():
-            self[k].value = 'ns'
+        for k in self.keys():
+            self[k].value = np.nan
             self[k].error = 0.0
 
     def var_found(self,scanner,name):
-        if name in ['caller','e','pi']:
-            return name
-        if name not in self.keys():
-            self[name] = Var('ns', count=self.count)
+        if name not in list(self.keys()):
+            self[name] = Var(np.nan, count=self.count)
             self.dummy.append(name)
             ret = 'a[%d]'%self.count
             self.count += 1
         else:
             ret = 'a[%d]'%(self.dummy.index(name)+self.par_count_start)
         return ret
-            
+
+    def x_found(self, p, x):
+        self.has_x = True
+        return x
+    
     def parse(self):
         scanner = Scanner([
-            (r"x", lambda y,x: x),
+            (r"(?<![a-z0-9])x(?![a-z0-9(])", self.x_found),
+            (r"c_[a-zA-Z0-9_]+", lambda y,x: x),
             (r"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", lambda y,x: x),
-            (r"[a-zA-Z]+\.", lambda y,x: x),
-            (r"[a-z]+\(", lambda y,x: x),
-            (r"[a-zA-Z_]\w*", self.var_found),
-            #(r"\d+\.\d*", lambda y,x: x),
-            (r"\d+", lambda y,x: x),
+            (r"[A-Za-z_][A-Za-z0-9_]*((\.[A-Za-z_][A-Za-z0-9_]*)|\()+", lambda y,x: x),
+            (r"[a-zA-Z_][a-zA-Z0-9_]*", self.var_found),
             (r"\+|-|\*|/", lambda y,x: x),
             (r"\s+", None),
             (r"\)+", lambda y,x: x),
             (r"\(+", lambda y,x: x),
+            (r"<", lambda y,x: x),
+            (r">", lambda y,x: x),
             (r",", lambda y,x: x),
             ])
 
         parsed,rubbish = scanner.scan(self.func)
         parsed = ''.join(parsed)
         if rubbish != '':
-            raise Exception, 'parsed: %s, rubbish %s'%(parsed, rubbish)
+            #print 'original string', self.func
+            #print 'parsed',parsed
+            #print 'rubbish', rubbish
+            raise SyntaxError(rubbish)
 
-        #self.code = compile(parsed, '<string>', 'eval')
         self.code = parsed
 
     def __getattr__(self, attr):
-        if attr in self.keys():
+        if attr.startswith('__') and attr.endswith('__'):
+            return super(Component, self).__getattr__(attr)
+        if attr in list(self.keys()):
             return self[attr]
         else:
-            raise AttributeError, '%s has no Attribute \'%s\''%(self,attr)
+            raise AttributeError('%s has no Attribute \'%s\''%(self,attr))
 
     def __setattr__(self, attr, value):
-        if attr in self.keys():
-            raise AttributeError, '''\
-<Component object> does not allow to overwrite \'%s\' attribute.
-Use \'%s.value\' instead.'''%(attr,attr)
+        if attr in list(self.keys()):
+            raise AttributeError('''\
+%s does not allow to overwrite \'%s\' attribute.
+Use \'%s.value\' instead.'''%(repr(self),attr,attr))
         else:
             dict.__setattr__(self, attr, value)
 
     def is_filled(self):
-        for k,v in self.items():
-            if v.value == 'ns':
+        for k,v in list(self.items()):
+            if v.value == np.nan:
                 return False
         return True
 
     def val(self, vardic):
-        for k,v in vardic.iteritems():
+        for k,v in vardic.items():
             self[k].value = v
 
     def area(self):
-        if self.name not in peaks.functions.peak:
-            return N.inf
+        if self.name not in lineshapebase.lineshapes.peak:
+            return np.inf
         locs = {}
-        for key,val in self.items():
+
+        for key,val in list(self.items()):
             locs[key] = val.value
-        locs.update(peaks.__dict__)
-        glbs = globals().copy()
-        glbs.update(N.__dict__)
+
         try:
-            x = eval('N.arange(pos-12*fwhm,pos+12*fwhm,fwhm/50.0)',glbs,locs)
+            x = eval('np.arange(pos-12*fwhm,pos+12*fwhm,fwhm/50.0)',pom_globals,locs)
         except:
-            return N.inf
+            return np.inf
         else:
             locs['x'] = x
             try:
-                y = eval(peaks.functions[self.name].func,glbs,locs)
+                y = eval(lineshapebase.lineshapes[self.name].func,pom_globals,locs)
             except ValueError:
-                return N.inf
+                return np.inf
             else:
                 dx = x[1:]-x[:-1]
                 dy = (y[1:]+y[:-1])/2.0
@@ -575,18 +647,17 @@ class Var(object):
         self.hidden = hidden
         if constr == 2:
             if type(bounds) not in [tuple, list]:
-                raise TypeError, 'need upper and lower bounds as tuple'
+                raise TypeError('need upper and lower bounds as tuple')
             self.amin = bounds[0]
             self.amax = bounds[1]
         else:
-            self.amin = 'ns'
-            self.amax = 'ns'
+            self.amin = np.nan
+            self.amax = np.nan
 
     def _coerce(self):
         if self.constr != 2:
             return self.value
         else:
-            eps = 1e-16
             t = (self.value - (self.amin+self.amax)/2.0)/((self.amax-self.amin)/2.0)
             return (-1/(t-1*(2*(t>0)-1))-1*(2*(t>0)-1))
 
@@ -611,6 +682,7 @@ class curry_var(object):
 class QuickEvaluate(object):
     def __init__(self, model):
         self.model = model
+        #print 'instantiated QuickEvaluate', model.func, model
         self.pre_fit()
         
     def pre_fit(self):
@@ -618,254 +690,58 @@ class QuickEvaluate(object):
         replace = re.compile(r'(c)(?=[^a-zA-Z0-9])')
         for component in self.model:
             func += component.op+component.code
+       
         self.func = compile(func, '<string>', 'eval')
 
         self.par_all = {}
         self.par_fit = {}
         self.par_demap = {}
 
-        eps = 1e-6
         for component in self.model:
-            for name,var in component.items():
+            for name,var in list(component.items()):
                 self.par_all[var.count] = var.value_mapped
                 if var.constr == 0:
                     self.par_fit[var.count] = var.value
                 elif var.constr == 2:
                     self.par_fit[var.count] = var.value_mapped
                     self.par_demap[var.count] = curry_var(var)
-
+        
     def fill(self, a, b):
-        pars = N.array(self.par_all.values())
-        N.put(pars, self.par_fit.keys(), a)
-        for k,v in self.par_demap.iteritems():
+        pars = np.array(list(self.par_all.values()))
+        np.put(pars, list(self.par_fit.keys()), a)
+        for k,v in self.par_demap.items():
             pars[k] = v(pars[k])
 
-        errors = N.zeros(pars.shape)
-        N.put(errors, self.par_fit.keys(), b)
+        errors = np.zeros(pars.shape)
+        np.put(errors, list(self.par_fit.keys()), b)
         return pars, errors
                     
     def __call__(self, x, a):
-        fitpars = N.array(self.par_all.values())
-        N.put(fitpars, self.par_fit.keys(), a)
-        for k,v in self.par_demap.iteritems():
+        fitpars = np.array(list(self.par_all.values()))
+
+        np.put(fitpars, list(self.par_fit.keys()), a)
+        for k,v in self.par_demap.items():
             fitpars[k] = v(fitpars[k])
-            
-        locs = locals().copy()
-        locs['a'] = fitpars
-        locs.update(peaks.__dict__)
-        glbs = globals().copy()
-        glbs.update(N.__dict__)
-        
-        return eval(self.func, glbs, locs)
+
+        locs = {'a': fitpars, 'x': x}
+         
+        tmp = np.atleast_1d(eval(self.func, pom_globals, locs))
+        #print 'all finite', np.isfinite(tmp).all()
+        tmp[np.logical_not(np.isfinite(tmp))] = 0.0
+        return tmp
 
 def test1():
-    import numpy as N
-    import pylab as P
-    mod = Model('a*x**2+b*x+c')
-    mod.CUSTOM.a.value = 3
-    mod.CUSTOM.b.value = 2
-    mod.CUSTOM.c.value = -1
-
-    x = N.linspace(0,3,30)
-    y = mod.evaluate(x)
-    P.plot(x,y)
-    P.show()
-    
-def test2():
-    import pylab as P
-    import numpy as N
-
-    from spec import Spec
-    from fit import Fit
-    
-    ruby = Spec('../data/ruby.dat')
-    ruby.limits = (6932.5,6945)
-    a = Model('CB GA LO')
-
-    a.LO.val({'amp':2.0,'fwhm':1.0,'pos':6944})
-    a.GA.val({'amp':1.0,'fwhm':2.0,'pos':6934})
-    a.CB.val({'const':0.0})
-    
-    P.plot(ruby.x,ruby.y,'ro',label='data')
-    xmin,xmax = ruby.xrng
-    x = ruby.x_limited
-    y = a.evaluate(x)
-    P.plot(x,y,label='initial guess',linewidth=2)
-
-    fitter = Fit(ruby, a)
-    msg = fitter.run()
-    print msg
-    print a.parameters_as_csv(witherrors=True)
-    
-    y = a.evaluate(x)
-    P.plot(x,y,label='fit',linewidth=2)
-    P.legend(loc=0)
-    P.show()
-
-class Dummy:
-    def run(self):
-        for i in range(1000000):
-            float(i)**2
-        return 'finished'
-        
-def tester():
-    from spec import Spec
-    from fit import Fit
-    #import pylab
-    #import numpy as N
-    
-    guess = [-0.00223424709178,	0.399642288964,	0.7924511231,	4.98397478171,
-             295.878115142,	1.39757418222,	8.43441886136,	283.22648685,
-             0.367868351203,	4.98397478171,	264.057353074,	0.179183894139,
-             7.28427083481,	251.405724782,	0.903054324102,	11.11809759,
-             191.981410077,	0.276354863517,	4.60059210619,	182.396843189
-             ]
-
-    dic = [('LB',['lin','const'])]+[('LO%d'%(i+1),['amp','fwhm','pos']) for i in range(6)]
-
-    mod = Model('LB LO1 LO2 LO3 LO4 LO5 LO6')
-    mod.parse()
-    for f,pars in dic:
-        for p in pars:
-            val = guess.pop(0)
-            getattr(getattr(mod,f),p).value = val
-
-    #x = N.linspace(100,400,1024)
-    #y = mod.evaluate(x)
-    #pylab.plot(x,y)
-    set = Spec('../data/1.92RBM.dat')
-    #pylab.plot(set.x,set.y)
-    #pylab.show()
-    return Fit(set, mod, stepsize=1e-15)
-
-def _test4():
-    import wx
-    from wx.lib.evtmgr import eventManager as em
-    
-    import numpy as N
-    import time
-    from misc import WorkerThread
-    
-    from spec import Spec
-    from fit import Fit
-    import misc
-    import copy
-
-    import pylab
-    
-    class TestFrame(wx.Frame):
-        def __init__(self):
-            wx.Frame.__init__(self, None, -1 ,'testing')
-            self.panel = wx.Panel(self, -1)
-            self.btnfork = wx.Button(self.panel, -1, 'fork', pos = (100,100), size=(100,30))
-            self.btnfork.Bind(wx.EVT_BUTTON, self.fork)
-            self.btnrun = wx.Button(self.panel, -1, 'run', pos = (100,140), size=(100,30))
-            self.btnrun.Bind(wx.EVT_BUTTON, self.run)
-            em.Register(self.fertig, misc.EVT_RESULT, self)
-            self.fitter = Dummy()
-            self.Show()
-            
-        def run(self, evt):
-            print 'start fit'
-            self.btnfork.Disable()
-            wx.Yield()
-            print self.fitter.run()
-            wx.Yield()
-            self.btnfork.Enable()
-            wx.Yield()
-
-        def fork(self, evt):
-            print 'start fit'
-            self.btnfork.Disable()
-            w = WorkerThread(self, self.fitter)
-            w.start()
-
-        def fertig(self, evt):
-            self.btnfork.Enable()
-            print evt.result
-
-    app = wx.PySimpleApp(0)
-    frame = TestFrame()
-    app.MainLoop()
-
-def test5():
-    import time
-    t = tester()
-    start = time.time()
-    t.run()
-    print '%.2f seconds'%(time.time()-start)
-
-def test6():
-    a = Model('a*x+b*x**2+c')
-    a.parse()
-    print a
-    a = Model('CB')
-    a.parse()
-    print a
-    for i in a:
-        print i
-        
-def prof_fit():
-    import profile
-    import pstats
-    t = tester()
-    profile.runctx('t.run()',globals(),{'t':t},'modelprof')
-    p = pstats.Stats('modelprof')
-    p.strip_dirs()
-    p.sort_stats('cumulative')
-    p.print_stats()
-
-def mod():
-    a = Model('CB GA1 LO1 FAN LO VO GA')
-    a.parse()
-    for c in a:
-        print c.name,len(c),c.code
-
-    #a = Model('sin(x-pos)**2')
-    #a.parse()
-    #print a
-    #for c in a:
-    #    print c.name,len(c),c.code
-    
-def prof_mod():
-    import profile
-    import pstats
-    profile.run('mod()','modelprof')
-    p = pstats.Stats('modelprof')
-    p.strip_dirs()
-    p.sort_stats('cumulative')
-    #p.sort_stats('name')
-    p.print_stats()
-    
-def sym():
-    mod = []
-    a = SymParser(mod, ['amp*exp(x-a)','+GA'])
-    a.parse()
-    print mod
-
-def prof_sym():
-    import profile
-    import pstats
-    profile.run('sym()','modelprof')
-    p = pstats.Stats('modelprof')
-    p.strip_dirs()
-    p.sort_stats('cumulative')
-    #p.sort_stats('name')
-    p.print_stats()
-
-def comp():
-    for i in range(100):
-        a = Component('GA','+',0)
-    
-def prof_comp():
-    import profile
-    import pstats
-    profile.run('comp()','comp')
-    p = pstats.Stats('comp')
-    p.strip_dirs()
-    p.sort_stats('cumulative')
-    p.print_stats()
+    m = Model('np.func(x,pos,width,amp)')
+    m.parse()
+    print(m.get_parameter_names())
+    m = Model('func(x,pos,width,amp)')
+    m.parse()
+    print(m.get_parameter_names())
+    m = Model('xan*x+23')
+    m.parse()
+    print(m.get_parameter_names())
 
 if __name__ == '__main__':
-    testfit()
+    test1()
+    pass
     

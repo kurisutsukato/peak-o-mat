@@ -11,27 +11,34 @@
               <orient>wxHORIZONTAL</orient>
               <object class="sizeritem">
                 <object class="wxStaticText" name="xrc_lab_name">
-                  <label>name: ruby.dat</label>
+                  <label>name: NN</label>
                 </object>
                 <option>1</option>
                 <flag>wxALIGN_CENTRE_VERTICAL</flag>
               </object>
               <object class="sizeritem">
                 <object class="wxStaticText" name="xrc_lab_points">
-                  <label>1043 pts, 320 masked</label>
+                  <label>xx pts, xx masked</label>
                 </object>
                 <option>1</option>
                 <flag>wxALIGN_CENTRE_VERTICAL</flag>
               </object>
               <object class="sizeritem">
                 <object class="wxButton" name="xrc_btn_mask_remove">
-                  <label>remove mask</label>
+                  <label>Remove mask</label>
                   <style>wxBU_EXACTFIT</style>
                 </object>
                 <flag>wxLEFT|wxALIGN_CENTRE_VERTICAL</flag>
                 <border>10</border>
               </object>
-            
+              <object class="sizeritem">
+                <object class="wxButton" name="xrc_btn_mask_permanent">
+                  <label>Make permanent</label>
+                  <tooltip>permanently remove masked points</tooltip>
+                </object>
+                <flag>wxLEFT|wxALIGN_CENTRE_VERTICAL</flag>
+                <border>10</border>
+              </object>
             </object>
             <flag>wxALL|wxEXPAND</flag>
             <border>5</border>
@@ -58,9 +65,32 @@
                 <border>5</border>
               </object>
               <object class="sizeritem">
-                <object class="wxButton" name="xrc_btn_trafo_remove">
-                  <label>remove</label>
-                  <style>wxBU_EXACTFIT</style>
+                <object class="wxBoxSizer">
+                  <orient>wxVERTICAL</orient>
+                  <object class="sizeritem">
+                    <object class="wxButton" name="xrc_btn_trafo_remove">
+                      <label>Remove</label>
+                      <tooltip>remove the selected trafo from the set</tooltip>
+                      <style>wxBU_EXACTFIT</style>
+                    </object>
+                    <flag>wxBOTTOM|wxEXPAND</flag>
+                    <border>2</border>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxButton" name="xrc_btn_trafo_remove_all">
+                      <label>Remove all</label>
+                      <tooltip>remove all trafos from the set</tooltip>
+                    </object>
+                    <flag>wxBOTTOM|wxEXPAND</flag>
+                    <border>2</border>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxButton" name="xrc_btn_trafo_permanent">
+                      <label>Make permanent</label>
+                      <tooltip>evaluate all trafos and replace the set data permanently </tooltip>
+                    </object>
+                    <flag>wxEXPAND</flag>
+                  </object>
                 </object>
               </object>
             </object>

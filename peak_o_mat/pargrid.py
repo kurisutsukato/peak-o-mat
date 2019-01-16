@@ -18,14 +18,13 @@ import  wx
 import  wx.grid
 import os
 
-import misc
-import model
+from . import misc_ui
 
-import gridlib
+from . import gridlib
 
-class ParDataTable(wx.grid.PyGridTableBase):
+class ParDataTable(wx.grid.GridTableBase):
     def __init__(self):
-        wx.grid.PyGridTableBase.__init__(self)
+        wx.grid.GridTableBase.__init__(self)
 
         self.colLabels = ['par', 'value', 'error', 'constr.', 'lower', 'upper']
 
@@ -91,7 +90,7 @@ class ParGrid(wx.grid.Grid):
     """
           
     def __init__(self, parent):
-        wx.grid.Grid.__init__(self, parent, -1)
+        wx.grid.Grid.__init__(self, parent, -1, style=wx.SIMPLE_BORDER)
         self.parent = parent
         self.selecting = False
         self.selection = None
@@ -107,14 +106,7 @@ class ParGrid(wx.grid.Grid):
         attr.SetRenderer(gridlib.ChoiceTextRenderer(varlist))
         self.SetColAttr(3, attr)
         
-        # attr = wx.grid.GridCellAttr()
-        # attr.SetRenderer(gridlib.FloatRenderer())
-        # self.SetColAttr(1, attr)
-        # self.SetColAttr(4, attr)
-        # self.SetColAttr(5, attr)
-
         attr = wx.grid.GridCellAttr()
-        # attr.SetRenderer(gridlib.FloatRenderer())
         attr.SetReadOnly()
         self.SetColAttr(2, attr)
         
@@ -124,9 +116,9 @@ class ParGrid(wx.grid.Grid):
         
         self.SetRowLabelSize(0)
         self.SetMargins(0,0)
-        
+
         self.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelect)
-        self.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.OnEdited)
+        self.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.OnEdited)
         self.Bind(wx.grid.EVT_GRID_RANGE_SELECT, self.OnSelectedRange)
 
         self.init_menus()
@@ -141,7 +133,7 @@ class ParGrid(wx.grid.Grid):
         self.menu = wx.Menu()
         for id,text,act in self.menumap:
             item = wx.MenuItem(self.menu, id=id, text=text)
-            item = self.menu.AppendItem(item)
+            item = self.menu.Append(item)
             self.Bind(wx.EVT_MENU, act, item)
         
         self.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self.OnMenu)
@@ -204,7 +196,7 @@ class ParGrid(wx.grid.Grid):
     def OnEdited(self, evt):
         row, col = evt.GetRow(), evt.GetCol()
         if col in [3,4,5]:
-            if self.GetCellValue(row, 3) == 2:
+            if int(self.GetCellValue(row, 3)) == 2:
                 for col in [4,5]:
                     try:
                         float(self.GetCellValue(row, col))
@@ -216,7 +208,7 @@ class ParGrid(wx.grid.Grid):
                 for col in [4,5]:
                     self.SetCellBackgroundColour(row, col, self.GetDefaultCellBackgroundColour())
         wx.CallAfter(self.ForceRefresh)
-        event = misc.ParEvent(self.GetId(), cmd=misc.GOTPARS_EDIT)
+        event = misc_ui.ParEvent(self.GetId(), cmd=misc_ui.GOTPARS_EDIT)
         wx.PostEvent(self, event)
 
     def GetCellValue(self, row, col):

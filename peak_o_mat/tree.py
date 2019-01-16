@@ -17,16 +17,14 @@
 ##     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import wx
-import string
 import re
-import types
-import cPickle
+import pickle
 import os
 
-from wx.lib.pubsub import pub as Publisher
-from wx.lib.customtreectrl import CustomTreeCtrl
+from wx.lib.pubsub import pub
+from wx.lib.agw.customtreectrl import CustomTreeCtrl
 
-import spec, project
+from . import spec, project, images
 
 if os.name == 'posix':
     CustomTreeCtrl = wx.TreeCtrl
@@ -34,7 +32,11 @@ if os.name == 'posix':
 class TreeCtrl(CustomTreeCtrl):
     def __init__(self, parent):
         style = wx.TR_EDIT_LABELS|wx.TR_HAS_BUTTONS|wx.TR_MULTIPLE|wx.TR_HIDE_ROOT
-        CustomTreeCtrl.__init__(self, parent, style=style)
+        if os.name == 'posix':
+            CustomTreeCtrl.__init__(self, parent, style=style)
+        else:
+            CustomTreeCtrl.__init__(self, parent, style=wx.SIMPLE_BORDER, agwStyle=style)
+            self.SetBackgroundColour(wx.WHITE)
         self.item = None
         self.root = None
 
@@ -44,10 +46,15 @@ class TreeCtrl(CustomTreeCtrl):
         self.root = self.AddRoot('project tree')
         
         isz = (16,16)
-        il = wx.ImageList(isz[0], isz[1])
-        self.icon_plot = il.Add(wx.ArtProvider_GetBitmap(wx.ART_FOLDER, wx.ART_OTHER, isz))
-        self.icon_set = il.Add(wx.ArtProvider_GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, isz))
-        self.icon_hide = il.Add(wx.ArtProvider_GetBitmap(wx.ART_CROSS_MARK, wx.ART_OTHER, isz))
+        il = wx.ImageList(*isz)
+        self.icon_set = il.Add(images.get_bmp('dataset.png'))
+        self.icon_hide = il.Add(images.get_bmp('dataset_hide.png'))
+        self.icon_set_model = il.Add(images.get_bmp('dataset_model.png'))
+        self.icon_hide_model = il.Add(images.get_bmp('dataset_model_hide.png'))
+
+        self.icon_plot = il.Add(wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_OTHER, isz))
+        #self.icon_set = il.Add(wx.ArtProvider_GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, isz))
+        #self.icon_hide = il.Add(wx.ArtProvider_GetBitmap(wx.ART_DELETE, wx.ART_OTHER, isz))
 
         self.SetImageList(il)
         self.il = il
@@ -66,6 +73,16 @@ class TreeCtrl(CustomTreeCtrl):
         self.Bind(wx.EVT_CHAR, self.OnChar)
         
         self.initMenus()
+
+        self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
+
+    def OnMouseEnter(self, evt):
+        if wx.GetTopLevelParent(self).IsActive():
+            self.SetFocus() #IgnoringChildren()
+
+    @property
+    def view_id(self):
+        return 'ID'+str(id(wx.GetTopLevelParent(self)))
 
     def __getitem__(self, item):
         """\
@@ -107,6 +124,9 @@ class TreeCtrl(CustomTreeCtrl):
             evt.Veto()
             return
         if wx.GetKeyState(wx.WXK_CONTROL) or wx.GetKeyState(wx.WXK_SHIFT):
+            if len(self.GetSelections()) == 0:
+                evt.Veto()
+                return
             if self.GetItemParent(self.GetSelections()[0]) != self.GetItemParent(item):
                 evt.Veto()
             if self.isPlot(self.GetSelections()[0]):
@@ -121,47 +141,50 @@ class TreeCtrl(CustomTreeCtrl):
         if self.item == self.root:
             evt.Veto()
             return
-        name = self.GetItemText(evt.GetItem())
+        self.edit_item = evt.GetItem()
+        name = self.GetItemText(self.edit_item)
+
         self.item_old_name = name
-        name = re.match(r'[sp]\d+\s(.+)',name).groups()[0]
-        self.SetItemText(evt.GetItem(), name)
+        try:
+            name = re.match(r'[sp]\d+\s*(.+)',name).groups()[0]
+        except AttributeError:
+            pass
+        self.SetItemText(self.edit_item, name)
         
     def OnEndEdit(self, evt):
-        name = evt.GetLabel()
-        item = evt.GetItem()
+        name = evt.GetLabel().strip()
+
         set = None
-        
-        if name != '':
-            parent = self.GetItemParent(self.item)
+
+        if not evt.IsEditCancelled():
+            parent = self.GetItemParent(self.edit_item)
             if parent == self.root:
-                plot = self.GetPyData(self.item)
+                plot = self.GetPyData(self.edit_item)
             else:
                 plot = self.GetPyData(parent)
-                set = self.GetPyData(self.item)
-            Publisher.sendMessage(('tree','rename'),(plot,set,name))
+                set = self.GetPyData(self.edit_item)
+            pub.sendMessage((self.view_id, 'tree', 'rename'),msg=(plot,set,name))
         else:
-            self.SetItemText(item, self.item_old_name)
-        
-    def PASS(self):
-        pass
+            evt.Veto()
+            self.SetItemText(self.edit_item, self.item_old_name)
 
     def initMenus(self):
-        self.menumap = [(-1,'edit label',self.OnEdit),
-                           (-1,'delete',self.OnRemItem),
-                           (-1,'duplicate',self.OnDuplicate),
-                           (-1,'new sets from visible area',self.OnNewSetsFromVisArea),
-                           (-1,'copy to data grid',self.OnSpreadsheet),
-                           (wx.ID_SEPARATOR, '', self.PASS),
-                           (-1,'toggle visibility',self.OnHide),
-                           (wx.ID_SEPARATOR, '', self.PASS),
-                           (-1,'remove mask',self.OnUnmask),
-                           (-1,'remove trafos',self.OnRemTrafo),
-                           (-1,'remove fit',self.OnRemFit),
-                           (-1,'remove weights',self.OnRemError),
-                           (wx.ID_SEPARATOR, '', self.PASS),
-                           (-1,'insert plot',self.OnInsertPlot),
-                           (-1,'copy',self.OnCopy),
-                           (-1,'paste',self.OnPaste)]
+        self.menumap = [(-1,'Edit label',self.OnEdit),
+                           (-1,'Delete',self.OnRemItem),
+                           (-1,'Duplicate',self.OnDuplicate),
+                           (-1,'New sets from visible area',self.OnNewSetsFromVisArea),
+                           (-1,'Copy to data grid',self.OnSpreadsheet),
+                           (wx.ID_SEPARATOR, '', None),
+                           (-1,'Toggle visibility',self.OnHide),
+                           (wx.ID_SEPARATOR, '', None),
+                           (-1,'Remove mask',self.OnUnmask),
+                           (-1,'Remove trafos',self.OnRemTrafo),
+                           (-1,'Remove model',self.OnRemFit),
+                           (-1,'Remove weights',self.OnRemError),
+                           (wx.ID_SEPARATOR, '', None),
+                           (-1,'Insert plot',self.OnInsertPlot),
+                           (-1,'Copy',self.OnCopy),
+                           (-1,'Paste',self.OnPaste)]
 
         self.menu = wx.Menu()
         self.minimal_menu = wx.Menu()
@@ -169,9 +192,10 @@ class TreeCtrl(CustomTreeCtrl):
         for id,text,act in self.menumap:
             item = wx.MenuItem(self.menu, id=id, text=text)
             item = self.menu.AppendItem(item)
-            self.Bind(wx.EVT_MENU, act, item)
-            if text.find('plot') != -1:
-                self.Bind(wx.EVT_UPDATE_UI, self.OnUIMenu, item)
+            if act is not None:
+                self.Bind(wx.EVT_MENU, act, item)
+                if text.find('Plot') != -1:
+                    self.Bind(wx.EVT_UPDATE_UI, self.OnUIMenu, item)
                 
         item = wx.MenuItem(self.minimal_menu, id=-1, text='paste')
         item = self.minimal_menu.AppendItem(item)
@@ -190,54 +214,53 @@ class TreeCtrl(CustomTreeCtrl):
             paste.Enable(self.check_clipboard())
             self.PopupMenu(self.minimal_menu, evt.GetPosition())
         elif self.item is not None or item.IsOk():
-            paste = self.menu.FindItemById(self.menu.FindItem('paste'))
+            paste = self.menu.FindItemById(self.menu.FindItem('Paste'))
             paste.Enable(self.check_clipboard())
             self.PopupMenu(self.menu, evt.GetPosition())
 
     def OnAddPlot(self, evt):
-        Publisher.sendMessage(('tree','addplot'))
+        pub.sendMessage((self.view_id, 'tree', 'addplot'), msg=None)
 
     def OnCopy(self, evt):
-        Publisher.sendMessage(('tree','copy'))
+        pub.sendMessage((self.view_id, 'tree', 'copy'), msg=None)
 
     def OnPaste(self, evt):
-        Publisher.sendMessage(('tree','paste'))
+        pub.sendMessage((self.view_id, 'tree', 'paste'), msg=None)
 
     def OnHide(self, evt):
-        Publisher.sendMessage(('tree','hide'))
+        pub.sendMessage((self.view_id, 'tree', 'hide'), msg=None)
 
     def OnDuplicate(self, evt):
-        Publisher.sendMessage(('tree','duplicate'),self.isPlot(self.item))
+        pub.sendMessage((self.view_id, 'tree', 'duplicate'),msg=self.isPlot(self.item))
 
     def OnNewSetsFromVisArea(self, evt):
-        Publisher.sendMessage(('tree','newfromvisarea'),self.isPlot(self.item))
+        pub.sendMessage((self.view_id, 'tree', 'newfromvisarea'),msg=self.isPlot(self.item))
 
     def OnSpreadsheet(self, evt):
-        Publisher.sendMessage(('tree','togrid'))
+        pub.sendMessage((self.view_id, 'tree', 'togrid'), msg=None)
 
     def OnNewFrame(self, evt):
+        print('tree: on new frame - obsolete')
         return
-        num = self.GetPyData(self.item)
-        Publisher.sendMessage(('tree','insert'), count)
 
     def OnInsertPlot(self, evt):
         loc = self.GetPyData(self.item)
-        Publisher.sendMessage(('tree','insert'), loc)
+        pub.sendMessage((self.view_id, 'tree', 'insert'), msg=loc)
     
     def OnRemFit(self, evt=None):
-        Publisher.sendMessage(('tree','remfit'))
+        pub.sendMessage((self.view_id, 'tree', 'remfit'), msg=None)
 
     def OnRemError(self, evt=None):
-        Publisher.sendMessage(('tree','remerror'))
+        pub.sendMessage((self.view_id, 'tree', 'remerror'), msg=None)
 
     def OnRemTrafo(self, evt=None):
-        Publisher.sendMessage(('tree','remtrafo'))
+        pub.sendMessage((self.view_id, 'tree', 'remtrafo'), msg=None)
             
     def OnUnmask(self, evt=None):
-        Publisher.sendMessage(('tree','unmask'))
+        pub.sendMessage((self.view_id, 'tree', 'unmask'), msg=None)
             
     def OnRemItem(self, evt):
-        Publisher.sendMessage(('tree','delete'),self.isPlot(self.item))
+        pub.sendMessage((self.view_id, 'tree', 'delete'),msg=self.isPlot(self.item))
 
     def OnChar(self, evt):
         if evt.KeyCode == 3:
@@ -303,7 +326,7 @@ class TreeCtrl(CustomTreeCtrl):
 
         self._drag = False
         
-        Publisher.sendMessage(('tree','move'),(s_plot, s_sets, t_plot, t_set))
+        pub.sendMessage((self.view_id, 'tree', 'move'),msg=(s_plot, s_sets, t_plot, t_set))
 
     def OnSelChanged(self, evt):
         item = evt.GetItem()
@@ -329,7 +352,7 @@ class TreeCtrl(CustomTreeCtrl):
             else:
                 setnum = [self.GetPyData(evt.GetItem())]
         evt.Skip()
-        Publisher.sendMessage(('tree','select'),(plotnum,setnum))
+        pub.sendMessage((self.view_id, 'tree', 'select'),selection=(plotnum,setnum))
 
     def GetFirstChild(self, *args):
         return CustomTreeCtrl.GetFirstChild(self, args[0])
@@ -351,22 +374,28 @@ class TreeCtrl(CustomTreeCtrl):
             wx.TheClipboard.Close()
             if success:
                 data = do.GetData()
-                data = cPickle.loads(data)
+                data = pickle.loads(data)
                 return type(data) == spec.Spec or type(data) == project.Plot or type(data) == list
         return False
     
     def isPlot(self, item):
         return self.GetItemParent(item) == self.root
 
-    def set_item(self, parent, child, name, hide=False):
+    def set_item(self, parent, child, name, hide=False, model=False):
         item = self[[child,(parent,child)][int(parent != -1)]]
         
         self.SetPyData(item, child)
         if parent == -1:
             self.SetItemImage(item, self.icon_plot, wx.TreeItemIcon_Normal)
             self.SetItemText(item, 'p%d %s'%(child,name))
-        elif hide:
+        elif hide and not model:
             self.SetItemImage(item, self.icon_hide, wx.TreeItemIcon_Normal)
+            self.SetItemText(item, 's%d %s'%(child,name))
+        elif model and not hide:
+            self.SetItemImage(item, self.icon_set_model, wx.TreeItemIcon_Normal)
+            self.SetItemText(item, 's%d %s'%(child,name))
+        elif model and hide:
+            self.SetItemImage(item, self.icon_hide_model, wx.TreeItemIcon_Normal)
             self.SetItemText(item, 's%d %s'%(child,name))
         else:
             self.SetItemImage(item, self.icon_set, wx.TreeItemIcon_Normal)
@@ -403,7 +432,15 @@ class TreeCtrl(CustomTreeCtrl):
         self.DeleteAllItems()
         self.root = None
 
-    def update_node(self, node, names, hides=False):
+    def get_collapse(self):
+        if self.root is None:
+            return None
+        tmp = []
+        for item in self.walk():
+            tmp.append(item.IsExpanded())
+        return tmp, self.item
+
+    def update_node(self, node, names, hides=None, models=None):
         """\
         Updates the content of a plot node. Adds/removes child nodes automatically.
         nodes: tuple of (plot, names)
@@ -414,6 +451,7 @@ class TreeCtrl(CustomTreeCtrl):
         deleted = 0 
         for n in range(max(len(names),self.child_count(node))):
             hide = False
+            model = False
             try:
                 name = names[n]
             except IndexError:
@@ -425,20 +463,21 @@ class TreeCtrl(CustomTreeCtrl):
                     #print 'deleting node',node,n-deleted
                 deleted += 1
             else:
-                try:
+                if hides is not None:
                     hide = hides[n]
-                except TypeError:
-                    pass
-                self.set_item(node, n, name, hide)
+                if models is not None:
+                    model = models[n]
+                self.set_item(node, n, name, hide, model)
     
     def build(self, project):
         """\
-        Builds the tree accordings to the structure stored in plots.
+        Builds the tree according to the structure stored in plots.
         """
+
         self.remove_all()
 
         if self.root is None:
-            self.root = self.AddRoot('project')
+            self.root = self.AddRoot(project.name)
 
         if len(project) == 0:
             self.item = None
@@ -446,16 +485,20 @@ class TreeCtrl(CustomTreeCtrl):
         
         pcount = 0
         self._update = True
+        select = None
         for psig,plot in enumerate(project):
             lastplot = self.set_item(-1, psig, plot.name)
+            if psig == 0:
+                select = lastplot
             for ssig,set in enumerate(plot):
-                lastset = self.set_item(psig, ssig, set.name)
+                lastset = self.set_item(psig, ssig, set.name, set.hide, set.model is not None)
             pcount += 1
         self._update = False
-        self.SelectItem(lastset)
-        self.EnsureVisible(lastset)
 
-    ### next part is the 'scrolling while dragging' code
+        self.SelectItem(select)
+        self.EnsureVisible(select)
+
+    ### scrolling while dragging
         
     def OnMouseLeftUp(self, evt):
         self.Unbind(wx.EVT_MOTION)
@@ -491,11 +534,9 @@ class TreeCtrl(CustomTreeCtrl):
             first = self.GetFirstVisibleItem()
             prev = self.GetPrevSibling(first)
             if prev:
-                # drill down to find last expanded child
                 while self.IsExpanded(prev):
                     prev = self.GetLastChild(prev)
             else:
-                # if no previous sub then try the parent
                 prev = self.GetItemParent(first)
 
             if prev:

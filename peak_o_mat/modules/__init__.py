@@ -1,1 +1,7 @@
-__all__ = ['mod_op','mod_eval','mod_setinfo','mod_calib','mod_shell','mod_ruby','mod_plot','mod_fuji']
+__all__ = ['mod_setinfo','mod_op','mod_eval','mod_calib','mod_ruby','mod_background']
+
+import sys
+
+if not hasattr(sys, 'frozen') and False:
+    __all__.append('mod_map')
+

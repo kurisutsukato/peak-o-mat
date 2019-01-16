@@ -22,19 +22,17 @@
                 <object class="wxFlexGridSizer">
                   <object class="sizeritem">
                     <object class="wxStaticText">
-                      <label>element</label>
+                      <label>Element</label>
                     </object>
                     <flag>wxALIGN_CENTRE_VERTICAL</flag>
                   </object>
                   <object class="sizeritem">
-                    <object class="wxChoice" name="xrc_ch_elem">
-                      <selection>0</selection>
-                    </object>
+                    <object class="wxButton" name="xrc_btn_elem"/>
                     <flag>wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
                   </object>
                   <object class="sizeritem">
                     <object class="wxStaticText">
-                      <label>data is in</label>
+                      <label>Unit</label>
                     </object>
                     <flag>wxALIGN_CENTRE_VERTICAL</flag>
                   </object>
@@ -46,7 +44,15 @@
                   </object>
                   <object class="sizeritem">
                     <object class="wxStaticText">
-                      <label>tolerance </label>
+                      <label>Show</label>
+                    </object>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxCheckBox" name="xrc_chk_speclines"/>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxStaticText">
+                      <label>Tolerance </label>
                     </object>
                     <flag>wxALIGN_CENTRE_VERTICAL</flag>
                   </object>
@@ -57,74 +63,125 @@
                     </object>
                     <flag>wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
                   </object>
+                  <object class="sizeritem">
+                    <object class="wxStaticText">
+                      <label>Offset</label>
+                    </object>
+                    <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxTextCtrl" name="xrc_txt_offset">
+                      <value>0.0</value>
+                      <style>wxTE_RIGHT</style>
+                    </object>
+                    <flag>wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+                  </object>
                   <cols>2</cols>
-                  <vgap>10</vgap>
+                  <vgap>5</vgap>
                   <hgap>15</hgap>
                 </object>
                 <option>1</option>
-                <flag>wxALL|wxEXPAND</flag>
+                <flag>wxTOP|wxBOTTOM|wxLEFT|wxEXPAND</flag>
                 <border>5</border>
               </object>
-              <object class="sizeritem">
-                <object class="wxStaticLine"/>
-                <flag>wxEXPAND</flag>
+              <object class="spacer">
+                <size>-1,20</size>
               </object>
               <object class="sizeritem">
                 <object class="wxBoxSizer">
-                  <orient>wxHORIZONTAL</orient>
                   <object class="sizeritem">
-                    <object class="wxBoxSizer">
-                      <orient>wxVERTICAL</orient>
-                      <object class="sizeritem">
-                        <object class="wxButton" name="xrc_btn_store">
-                          <label>store calibration</label>
-                          <enabled>0</enabled>
-                        </object>
-                        <flag>wxEXPAND|wxALL</flag>
-                        <border>5</border>
-                      </object>
-                      <object class="sizeritem">
-                        <object class="wxButton" name="xrc_btn_dispersion">
-                          <label>plot dispersion</label>
-                          <enabled>0</enabled>
-                        </object>
-                        <flag>wxALL|wxEXPAND</flag>
-                        <border>5</border>
-                      </object>
+                    <object class="wxStaticText">
+                      <label>Order of regression</label>
                     </object>
-                    <flag>wxALL|wxEXPAND</flag>
+                    <flag>wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
                     <border>5</border>
                   </object>
                   <object class="spacer">
-                    <option>0</option>
+                    <option>1</option>
                   </object>
                   <object class="sizeritem">
-                    <object class="wxBoxSizer">
-                      <object class="sizeritem">
-                        <object class="wxButton" name="xrc_btn_applystored">
-                          <label>apply stored</label>
-                          <enabled>0</enabled>
-                        </object>
-                        <flag>wxALL|wxEXPAND</flag>
-                        <border>5</border>
-                      </object>
-                      <object class="sizeritem">
-                        <object class="wxButton" name="xrc_btn_apply">
-                          <label>apply</label>
-                        </object>
-                        <flag>wxALL|wxEXPAND</flag>
-                        <border>5</border>
-                      </object>
-                      <orient>wxVERTICAL</orient>
+                    <object class="wxSpinCtrl" name="xrc_spin_order">
+                      <size>60,-1</size>
+                      <value>0</value>
+                      <min>0</min>
+                      <max>2</max>
+                    </object>
+                    <option>1</option>
+                    <flag>wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+                    <border>5</border>
+                  </object>
+                  <orient>wxHORIZONTAL</orient>
+                </object>
+                <option>0</option>
+                <flag>wxLEFT|wxRIGHT|wxEXPAND</flag>
+                <border>5</border>
+              </object>
+              <object class="sizeritem">
+                <object class="wxBoxSizer">
+                  <object class="sizeritem">
+                    <object class="wxButton" name="xrc_btn_dispersion">
+                      <label>Plot dispersion</label>
+                      <enabled>0</enabled>
                     </object>
                     <flag>wxALL|wxEXPAND</flag>
                     <border>5</border>
                   </object>
+                  <orient>wxHORIZONTAL</orient>
                 </object>
+                <flag>wxLEFT|wxRIGHT|wxEXPAND</flag>
+                <border>5</border>
+              </object>
+              <object class="sizeritem">
+                <object class="wxBoxSizer">
+                  <object class="sizeritem">
+                    <object class="wxStaticText">
+                      <label>Search pattern</label>
+                    </object>
+                    <flag>wxALL</flag>
+                    <border>5</border>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxButton" name="xrc_btn_store">
+                      <label>Save</label>
+                      <enabled>0</enabled>
+                    </object>
+                    <option>0</option>
+                    <flag>wxEXPAND|wxALL</flag>
+                    <border>5</border>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxButton" name="xrc_btn_applystored">
+                      <label>Restore</label>
+                      <enabled>0</enabled>
+                    </object>
+                    <option>0</option>
+                    <flag>wxALL|wxEXPAND</flag>
+                    <border>5</border>
+                  </object>
+                  <orient>wxHORIZONTAL</orient>
+                </object>
+                <flag>wxLEFT|wxRIGHT|wxEXPAND</flag>
+                <border>5</border>
               </object>
               <orient>wxVERTICAL</orient>
+              <object class="sizeritem">
+                <object class="wxBoxSizer">
+                  <object class="spacer">
+                    <option>1</option>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxButton" name="xrc_btn_apply">
+                      <label>Apply</label>
+                    </object>
+                    <flag>wxALL|wxEXPAND|wxALIGN_RIGHT</flag>
+                    <border>5</border>
+                  </object>
+                  <orient>wxHORIZONTAL</orient>
+                </object>
+                <flag>wxLEFT|wxRIGHT|wxEXPAND</flag>
+                <border>5</border>
+              </object>
             </object>
-            <option>1</option>
           </object>
         </object>
         <option>1</option>

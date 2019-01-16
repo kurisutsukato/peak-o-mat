@@ -1,43 +1,45 @@
-import wx
-from wx import xrc
-import sys
-import traceback
+﻿##     Copyright (C) 2003 Christian Kristukat (ckkart@hoc.net)
 
+##     This program is free software; you can redistribute it and/or modify
+##     it under the terms of the GNU General Public License as published by
+##     the Free Software Foundation; either version 2 of the License, or
+##     (at your option) any later version.
+
+##     This program is distributed in the hope that it will be useful,
+##     but WITHOUT ANY WARRANTY; without even the implied warranty of
+##     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##     GNU General Public License for more details.
+
+##     You should have received a copy of the GNU General Public License
+##     along with this program; if not, write to the Free Software
+##     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+import sys
 import os
+
+import numpy as np
+from numpy import inf, nan
+
 import re
 
-import numpy as N
+from . import settings as config
 
-
-xres_loaded = False
-frozen_base = os.path.dirname(unicode(sys.executable, sys.getfilesystemencoding()))  
+frozen_base = os.path.dirname(sys.executable)
 source_base = os.path.split(os.path.dirname(__file__))[0]
+darwin_base = os.path.join(frozen_base,'..','Resources')
 
-def xrc_resource():
-    global xres_loaded
-    if not xres_loaded:
-        if hasattr(sys,"frozen") and sys.frozen == "windows_exe":
-            xrcpath = os.path.join(frozen_base, 'xrc', 'peak-o-mat.xrc')
-        else:
-            xrcpath = os.path.join(source_base, 'peak-o-mat.xrc')
-        res = xrc.XmlResource(xrcpath)
-        assert res is not None
-        xrc.XmlResource.Set(res)
-        xres_loaded = True
-    return res
-
-class xrcctrl(object):
-    def __getitem__(self, item):
-        return self.FindWindowByName(item)
-
-def get_bmp(image):
-    if hasattr(sys, 'frozen'):
-        imgpath = os.path.join(frozen_base, 'images', image)
+def basepath(*joinwith):
+    if hasattr(sys,"frozen") and sys.frozen in ['windows_exe','console_exe']:
+        p = os.path.join(frozen_base, *joinwith)
+    elif hasattr(sys,"frozen") and sys.platform == "darwin":
+        p = os.path.join(darwin_base, *joinwith)
     else:
-        imgpath = os.path.join(source_base,'images',image)
-    bmp = wx.Bitmap(imgpath)
-    assert bmp is not None
-    return bmp
+        p = os.path.join(source_base, *joinwith)
+    return p
+
+def wildcards():
+    from .fio import loaders
+    return loaders.wildcards
 
 _cwd = None
 def cwd():
@@ -55,83 +57,38 @@ def cwd():
 
 def set_cwd(cwd):
     global _cwd
-    _cwd = os.path.split(os.path.abspath(cwd))[0]
+    if cwd is not None:
+        _cwd = os.path.split(os.path.abspath(cwd))[0]
+
+_special_numbers=dict([('-1.#INF',-inf),('1.#INF',inf),
+                      ('-1.#IND',nan),('-1.#IND00',nan),
+                      ('1.#QNAN',nan),('1.#QNAN0',-nan)])
+
+def _atof(x):
+    if config.floating_point_is_comma:
+        x = x.replace(',','.')
+    if x in list(_special_numbers.keys()):
+        return _special_numbers[x]
+    return np.float32(x)
+
+def atof(x):
+    try:
+        tmp = np.float32(x)
+    except ValueError:
+        tmp = np.nan
+    return tmp
+
     
-def parse_operation(op):
-    yreg = re.compile(r'(^|.*[^a-z]+)y([^a-z]+.*|$)',re.I)
-    xreg = re.compile(r'(^|.*[^a-z]+)x([^a-z]+.*|$)',re.I)
-
-    if re.search(r'.*col(\d+).*', op) is not None:
-        op = re.sub(r'col(\d+)',r"(data[:,\1])[:,newaxis]",op)
-    if re.search(r'row(\d+)', op) is not None:
-        op = re.sub(r'row(\d+)',r"(data[\1])[newaxis,:]",op)
-
-    if yreg.search(op) is not None:
-        tmp = ''
-        while tmp != op:
-            tmp = op
-            op = yreg.sub(r'\1arange(rows)[:,newaxis]\2',op)
-    if xreg.search(op) is not None:
-        tmp = ''
-        while tmp != op:
-            tmp = op
-            op = xreg.sub(r'\1arange(cols)[newaxis,:]\2',op)
-    return op
-
 def str2array(arg):
-    for sep in ['\t',' ',None]:
-        try:
-            data = [[locale.atof((lambda x: ['0',x][x.strip()!=''])(x)) for x in line.split(sep)] for line in arg.strip().split('\n')]
-        except:
-            #tp, msg, tb = sys.exc_info()
-            #print tp,msg
-            #traceback.print_tb(tb)
-            continue
-        try:
-            data = N.atleast_2d(N.array(data))
-            return data
-        except ValueError:
-            maxlen = max([len(q) for q in data])
-            for r in data:
-                r.extend([0]*(maxlen-len(r)))
-            print data
-            data = N.atleast_2d(N.array(data))
-            return data
-    return None
-
-def format(arg):
-    return re.sub(r'(?<!\n)\n(?!\n)',' ',arg)
-
-from wx.lib import newevent
-
-ResultEvent, EVT_RESULT = newevent.NewCommandEvent()
-HandlesChangedEvent, EVT_HANDLES_CHANGED = newevent.NewCommandEvent()
-ShoutEvent, EVT_SHOUT = newevent.NewCommandEvent()
-ParEvent, EVT_GOTPARS = newevent.NewCommandEvent()
-RangeEvent, EVT_RANGE = newevent.NewCommandEvent()
-
-ShoutEvent.forever = False
-
-GOTPARS_MOVE = 1
-GOTPARS_DOWN = 2
-GOTPARS_EDIT = 3
-GOTPARS_END = 4
-
-from threading import Thread
-
-class WorkerThread(Thread):
-    threadnum = 0
-    def __init__(self, notify, fitter):
-        Thread.__init__(self)
-        self._notify = notify
-        self._fitter = fitter
-        WorkerThread.threadnum += 1
-        
-    def run(self):
-        msg = self._fitter.run()
-        event = ResultEvent(self._notify.GetId(), result=msg)
-        wx.PostEvent(self._notify, event)
-
+    data = [re.split(r'\s+|;|,', line.strip()) for line in arg.strip().split('\n')]
+    try:
+        data = np.array(data, dtype=float)
+    except ValueError:
+        arg = arg.replace(',','.')
+        data = [re.split(r'\s+|;|,', line.strip()) for line in arg.strip().split('\n')]
+        data = np.array(data, dtype=float)
+    return None, data
+    
 class PomError(Exception):
     def __init__(self, value):
         self.value = value
@@ -139,3 +96,5 @@ class PomError(Exception):
     def __str__(self):
         return repr(self.value)
     
+if __name__ == '__main__':
+    print(basepath('a','b'))

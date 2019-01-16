@@ -57,7 +57,7 @@ class Module(module.Module):
 
     def selection_changed(self):
         """\
-        Override this method to recieve notification whenever the set selection has
+        Override this method to receive notification whenever the set selection has
         changed.
         """
 
@@ -65,7 +65,7 @@ class Module(module.Module):
 
     def page_changed(self, me):
         """\
-        Override this method to recieve notification whenever the notebook page has
+        Override this method to receive notification whenever the notebook page has
         changed.
         
         me: boolean, True if this page has been selected, false otherwise

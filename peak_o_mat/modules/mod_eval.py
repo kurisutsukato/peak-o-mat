@@ -23,11 +23,16 @@ import sys
 import wx
 from wx.lib.pubsub import pub as Publisher
 
-from peak_o_mat import module,spec,misc,controls
+import numpy as np
+from scipy.misc import comb as nOk
 
-from scipy.interpolate import splrep,splev
-from scipy.optimize import fmin_cobyla,leastsq,fmin
-import numpy as N
+from peak_o_mat import module,spec,controls,misc_ui
+
+from peak_o_mat.symbols import pom_globals
+
+Mtk = lambda n, t, k: t**(k)*(1-t)**(n-k)*nOk(n,k)
+bezierM = lambda ts,l: np.matrix([[Mtk(l-1,t,k) for k in range(l)] for t in ts])
+
 
 class DummyEvent:
     def __init__(self, obj):
@@ -43,59 +48,54 @@ class Module(module.Module):
         module.Module.__init__(self, __file__, *args)
     
     def init(self):
-        self.xrc_btn_anchor.Disable()
-        self.xrc_btn_anchor.Bind(wx.EVT_BUTTON, self.OnAnchor)
+        self.xrc_btn_bez_load.Disable()
+        self.xrc_btn_bez_load.Bind(wx.EVT_BUTTON, self.OnAnchor)
         self.xrc_btn_place_handles.Bind(wx.EVT_TOGGLEBUTTON, self.OnPlaceHandles)
         Publisher.subscribe(self.OnCanvasMode, ('canvas','newmode'))
 
-        self.xrc_btn_load.Bind(wx.EVT_BUTTON, self.OnLoad)
-        self.xrc_cb_range.Bind(wx.EVT_CHECKBOX, self.OnCheck)
-        self.xrc_cb_fromset.Bind(wx.EVT_CHECKBOX, self.OnCheck)
+        self.xrc_btn_eq_load.Bind(wx.EVT_BUTTON, self.OnLoad)
 
-        self.xrc_txt_range_from.SetValidator(controls.InputValidator(controls.FLOAT_ONLY))
-        self.xrc_txt_range_to.SetValidator(controls.InputValidator(controls.FLOAT_ONLY))
-        self.xrc_txt_range_pts.SetValidator(controls.InputValidator(controls.DIGIT_ONLY))
-        self.xrc_txt_eq.SetValidator(controls.InputValidator())
+        self.xrc_txt_eq_range_from.SetValidator(controls.InputValidator(controls.FLOAT_ONLY))
+        self.xrc_txt_eq_range_to.SetValidator(controls.InputValidator(controls.FLOAT_ONLY))
+        #self.xrc_txt_eq.SetValidator(controls.InputValidator())
 
-        self.xrc_txt_spline_pts.SetValidator(controls.InputValidator(controls.DIGIT_ONLY))
-
-        self.OnCheck(DummyEvent(self.xrc_cb_range))
-        
-        self.handles = N.zeros((0,2))
+        self.handles = np.zeros((0,2))
 
     def sync_controls(self, plot):
-        self.xrc_cmb_fromset.Clear()
+        self.xrc_cmb_eq_fromset.Clear()
+        self.xrc_cmb_bez_fromset.Clear()
         if plot is not None:
             l = len(self.project[plot])
             if l > 0:
-                self.xrc_cb_fromset.Enable()
-                self.xrc_cmb_fromset.AppendItems(['s%d'%x for x in range(len(self.project[plot]))])
-                self.xrc_cmb_fromset.SetSelection(0)
-        else:
-            self.xrc_cb_range.SetValue(True)
-            print self.xrc_cb_range.GetValue()
-            if not self.xrc_cb_range.GetValue():
-                self.OnCheck(DummyEvent(self.xrc_cb_range))
-            self.xrc_cb_fromset.Disable()
-        
-    def OnCheck(self, evt):
-        source = evt.GetEventObject()
-        
-        panels = [self.xrc_pan_range, self.xrc_pan_fromset]
-        cbs = [self.xrc_cb_range, self.xrc_cb_fromset]
-        enable = source.GetValue()
-        idx = cbs.index(source)
+                self.xrc_cmb_eq_fromset.AppendItems(['s%d'%x for x in range(len(self.project[plot]))])
+                self.xrc_cmb_eq_fromset.SetSelection(0)
+                self.xrc_cmb_eq_fromset.Enable(True)
+                self.xrc_cb_eq_fromset.Enable(True)
 
-        if enable:
-            panels[idx].Enable()
-            panels[1-idx].Disable()
-            cbs[1-idx].SetValue(False)
-            self.xrc_btn_load.Enable()
+                self.xrc_cmb_bez_fromset.AppendItems(['s%d'%x for x in range(len(self.project[plot]))])
+                self.xrc_cmb_bez_fromset.SetSelection(0)
+                self.xrc_cmb_bez_fromset.Enable(True)
+                self.xrc_cb_bez_fromset.Enable(True)
+            else:
+                self.xrc_cmb_eq_fromset.Enable(False)
+                self.xrc_cb_eq_fromset.Value = False
+                self.xrc_cb_eq_range.Value = True
+                self.xrc_cb_eq_fromset.Enable(False)
+
+                self.xrc_cmb_bez_fromset.Enable(False)
+                self.xrc_cb_bez_fromset.Value = False
+                self.xrc_cb_bez_pts.Value = True
+                self.xrc_cb_bez_fromset.Enable(False)
         else:
-            panels[idx].Disable()
-            self.xrc_btn_load.Disable()
-        self.panel.Refresh()
-        
+            self.xrc_cmb_eq_fromset.Enable(False)
+            self.xrc_cb_eq_fromset.Value = False
+            self.xrc_cb_eq_range.Value = True
+            self.xrc_cb_eq_fromset.Enable(False)
+            self.xrc_cmb_bez_fromset.Enable(False)
+            self.xrc_cb_bez_fromset.Value = False
+            self.xrc_cb_bez_pts.Value = True
+            self.xrc_cb_bez_fromset.Enable(False)
+
     def page_changed(self, state):
         if not state:
             self.leave()
@@ -121,84 +121,110 @@ class Module(module.Module):
 
     def leave(self):
         try:
-            self.controller.view.canvas.Unbind(misc.EVT_HANDLES_CHANGED)
+            self.controller.view.canvas.Unbind(misc_ui.EVT_HANDLES_CHANGED)
         except KeyError:
             pass
-        self.handles = N.zeros((0,2))
+        self.handles = np.zeros((0,2))
         self.controller.view.canvas.set_handles(self.handles)
-        self.xrc_btn_anchor.Disable()
+        self.xrc_btn_bez_load.Disable()
         self.xrc_btn_place_handles.SetValue(False)
-        self.controller.view.canvas.RestoreLastMode()
+        self.controller.view.canvas.state.restore_last()
         self.controller.update_plot()
 
-    def OnCanvasMode(self, msg):
-        mode = msg.data
+    def OnCanvasMode(self, mode):
         if mode != 'handle':
             self.xrc_btn_place_handles.SetValue(False)
 
     def OnPlaceHandles(self, evt):
         if self.xrc_btn_place_handles.GetValue():
             self.controller.view.canvas.set_handles(self.handles)
-            self.controller.view.canvas.SetMode('handle')
-            self.controller.view.canvas.Bind(misc.EVT_HANDLES_CHANGED, self.OnHandles)
+            self.controller.view.canvas.state.set('handle','xy')
+            self.controller.view.canvas.Bind(misc_ui.EVT_HANDLES_CHANGED, self.OnHandles)
         else:
-            self.controller.view.canvas.SetMode(None)
+            self.handles = np.zeros((0,2))
+            self.controller.view.canvas.set_handles(self.handles)
+            self.controller.view.canvas.state.set(None)
+            self.controller.update_plot()
             
     def OnHandles(self, evt):
-        handles = N.asarray(evt.handles)
-        if handles.shape[0] < 2:
+        handles = evt.handles
+        if handles.ndim < 2:
             return
-        if handles.shape[0] > 1:
-            self.xrc_btn_anchor.Enable()
-            handles = handles.take(N.argsort(handles[:,0]),0)
-            x,y = N.transpose(handles)
-            sp = splrep(x, y, k=min(handles.shape[0]-1,3), s=10)
-            evx = N.linspace(x[0],x[-1],100)
-            evy = splev(evx,sp)
-            self.spline = sp
-            self.controller.plot(floating=spec.Spec(evx,evy,'spline'))
+        if handles.ndim == 2 and len(handles) > 1:
+            v = np.linspace(0,1,20)
+            M = bezierM(v, len(handles))
+            points = M*handles
+            evx, evy = [np.ravel(q) for q in points.T]
+            self.controller.plot(floating=spec.Spec(evx,evy,'{:d} pt. bezier'.format(len(handles))))
+            self.xrc_btn_bez_load.Enable()
+
+            #handles = handles.take(np.argsort(handles[:,0]),0)
+            #x,y = np.transpose(handles)
+            #m = len(x)
+            #sp = splrep(x, y, k=min(handles.shape[0]-1,3), s=m+np.sqrt(2*m))
+            #evx = np.linspace(x[0],x[-1],100)
+            #evy = splev(evx,sp)
+            #self.spline = sp
+            #self.controller.plot(floating=spec.Spec(evx,evy,'spline'))
         self.handles = handles
 
     def OnAnchor(self, evt):
-        if self.xrc_pan_spline.Validate():
-            pts = int(self.xrc_txt_spline_pts.GetValue())
-            x = N.linspace(self.handles[0,0],self.handles[-1,0],pts)
-            y = splev(x,self.spline)
-            self.controller.add_set(spec.Spec(x,y,'%dpts_spline'%pts))
-            self.xrc_btn_anchor.Disable()
-            self.handles = N.zeros((0,2))
-            self.xrc_btn_place_handles.SetValue(False)
-            self.controller.view.canvas.SetMode(None)
-            self.controller.update_plot()
+        pts = int(self.xrc_spn_bez_pts.GetValue())
+
+        if self.xrc_cb_bez_pts.Value:
+            v = np.linspace(0,1,pts)
+        elif self.xrc_cb_bez_fromset.Value:
+            s = self.controller.active_plot[self.xrc_cmb_bez_fromset.GetSelection()]
+            #v = self.controller.active_plot[s].x
+            v = np.linspace(0,1,len(s))
+
+        M = bezierM(v, len(self.handles))
+        points = M*self.handles
+        x, y = [np.ravel(q) for q in points.T]
+
+        if self.xrc_cb_bez_pts.Value:
+            set_bez = spec.Spec(x,y,'{:d} pt. Bezi\u00E9r'.format(len(self.handles)))
+
+        elif self.xrc_cb_bez_fromset.Value:
+            tmp = spec.Spec(x,y,'tmp')
+            tmp = s*0+tmp
+            set_bez = tmp
+            set_bez.name = '{:d} pt. Bezi\u00E9r'.format(len(self.handles))
+
+        self.controller.add_set(set_bez)
+        self.xrc_btn_bez_load.Disable()
+        self.handles = np.zeros((0,2))
+        self.xrc_btn_place_handles.SetValue(False)
+        self.controller.view.canvas.state.set(None)
+        self.controller.update_plot()
         
     def OnLoad(self, evt):
-        mode = int(self.xrc_cb_fromset.GetValue())
-        pan = [self.xrc_pan_range, self.xrc_pan_fromset][mode]
+        mode = int(self.xrc_cb_eq_fromset.GetValue())
 
-        if not pan.Validate():
+        if mode == 0 and not self.xrc_pan_eq.Validate():
             return
 
         eq = self.xrc_txt_eq.GetValue()
-        glb = globals()
-        glb.update({'N':N})
-        glb.update(N.__dict__)
-        
+         
         if mode == 0:
-            xmin = float(self.xrc_txt_range_from.GetValue())
-            xmax = float(self.xrc_txt_range_to.GetValue())
-            pts = int(self.xrc_txt_range_pts.GetValue())
-            x = N.linspace(xmin,xmax,pts)
+            xmin = float(self.xrc_txt_eq_range_from.GetValue())
+            xmax = float(self.xrc_txt_eq_range_to.GetValue())
+            pts = int(self.xrc_spn_eq_range_pts.GetValue())
+            x = np.linspace(xmin,xmax,pts)
         elif mode == 1:
-            set = self.xrc_cmb_fromset.GetSelection()
-            x = self.controller.active_plot[set].x
+            s = self.xrc_cmb_eq_fromset.GetSelection()
+            x = self.controller.active_plot[s].x
         try:
-            y = eval(eq,glb,locals())
+            y = eval(eq,pom_globals,{'x':x})
         except:
             tp,val,tb = sys.exc_info()
             self.message(str(val))
             return
-        self.controller.add_set(spec.Spec(x,y,eq))
-        self.controller.update_plot()
+        if np.asarray(y).shape != x.shape:
+            self.message('The expression\'s result must have shape %s. Probably \'x\' is missing in the expression.'%str(x.shape), blink=False)
+        else:
+            self.controller.add_set(spec.Spec(x,y,eq))
+            self.controller.update_plot()
             
         
         

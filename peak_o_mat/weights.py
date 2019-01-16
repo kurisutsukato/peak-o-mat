@@ -1,6 +1,6 @@
 import numpy as N
     
-from spec import Spec
+from .spec import Spec
 import copy
 
 class WeightsRegion(object):
@@ -25,7 +25,7 @@ class WeightsRegion(object):
         self.xmax = xmax
         
         if mode not in [0,1,2]:
-            raise TypeError, '\'mode\' has to be one of 0,1,2'
+            raise TypeError('\'mode\' has to be one of 0,1,2')
         else:
             self.mode = mode
 
@@ -65,7 +65,7 @@ class WeightsRegion(object):
     def getBounds(self, data):
         """\
         returns the upper and lower bounds of the y-data calculated from the
-        weightss self.w_rel and self.w_abs as a (2,len(x)) array. The bounds
+        weightss self.w_rel and self.w_abs as a (len(x)) array. The bounds
         outside self.range are set to 0.
 
         data: set xy data
@@ -82,10 +82,6 @@ class WeightsRegion(object):
         return tmp
 
 class Weights(list):
-    """\
-    This class defines 
-    """
-
     def isNone(self):
         return len(self) <= 1
 

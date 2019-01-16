@@ -9,7 +9,7 @@ from peak_o_mat import module, spec, calib, grace_np, misc
 WORLD_VIEW = 0.15, 0.9, 0.5, 1.3
 
 if os.name != 'posix':
-    raise Exception, 'plotting via xmgrace is only available on linux'
+    raise Exception('plotting via xmgrace is only available on linux')
 
 class Module(module.Module):
     title = 'Plot'
@@ -64,7 +64,7 @@ class Module(module.Module):
             try:
                 self.agr.path = name
                 self.agr.count()
-            except IOError, msg:
+            except IOError as msg:
                 self.xrc_lab_fileinfo.SetLabel(str(msg))
                 self.agr.path = None
             else:
@@ -75,7 +75,7 @@ class Module(module.Module):
                 self._valid_file = True
         
     def OnSelectFile(self, evt):
-        dlg = wx.FileDialog(self.panel, misc.pwd(), wildcard="XMGrace Project files (*.agr)|*.agr",style=wx.CHANGE_DIR)
+        dlg = wx.FileDialog(self.panel, misc.cwd(), wildcard="XMGrace Project files (*.agr)|*.agr",style=wx.CHANGE_DIR)
         if dlg.ShowModal() == wx.ID_OK:
             name = dlg.GetPath()
             dlg.Destroy()
@@ -225,13 +225,13 @@ class GraceComm(object):
 
     def count(self):
         if self.file.readline().strip() != "# Grace project file":
-            raise IOError, 'not a grace project file'
+            raise IOError('not a grace project file')
         plots = {}
         for line in self.file:
             mat = re.match('\@target G(\d+)\.S(\d+)', line)
             if mat is not None:
                 plot,set = [int(x) for x in mat.groups()]
-                if plot not in plots.keys():
+                if plot not in list(plots.keys()):
                     plots[plot] = 1
                 else:
                     plots[plot] += 1

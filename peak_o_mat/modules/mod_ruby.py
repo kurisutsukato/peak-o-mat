@@ -1,8 +1,8 @@
 import wx
-from wx.lib.pubsub import pub as Publisher
+from wx.lib.pubsub import pub
 from math import log10,exp,pow
 
-from peak_o_mat import module, peaks, controls
+from peak_o_mat import module, lineshapebase, controls
 from peak_o_mat import settings as config
 
 import numpy as N
@@ -17,7 +17,7 @@ class Module(module.Module):
         self.Bind(wx.EVT_TEXT, self.OnTemp, self.xrc_txt_temp)
         self.Bind(wx.EVT_CHOICE, self.OnChoice)
         
-        Publisher.subscribe(self.selection_changed, ('fitfinished'))
+        pub.subscribe(self.selection_changed, (self.view_id, 'fitfinished'))
         self.panel.Layout()
 
         self.xrc_txt_temp.SetValidator(controls.InputValidator(controls.FLOAT_ONLY))
@@ -66,7 +66,8 @@ class Module(module.Module):
 
     def update_model(self):
         aset = self.controller.active_set
-        if aset is not None and aset.mod is not None:
+        if aset is not None and aset.mod is not None and \
+           len([x for x in list(aset.mod.keys()) if x in lineshapebase.lineshapes.peak]) >= 2:
             self.model = aset.mod
             self.panel.Enable()
             self.update_choices()
@@ -75,7 +76,7 @@ class Module(module.Module):
 
     def update_choices(self):
         components = self.model.tokens.split(' ')
-        pks = filter(lambda q: q in peaks.functions.peak, components)
+        pks = [q for q in components if q in lineshapebase.lineshapes.peak]
 
         r1 = self.xrc_ch_r1.GetStringSelection()
         self.xrc_ch_r1.Clear()
@@ -113,7 +114,7 @@ class Module(module.Module):
             melt = 1.6067e-3*N.power(self.temp,1.565)
             self.xrc_lab_melt.SetLabel('%1.2f GPa'%melt)
             
-    def selection_changed(self, arg=None):
+    def selection_changed(self):
         self.update_model()
         
     def page_changed(self, me):

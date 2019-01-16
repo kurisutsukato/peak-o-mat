@@ -3,11 +3,11 @@ import wx.grid
 
 import copy
 
-import gridlib
+from . import gridlib
 
-class WeightsTableBase(wx.grid.PyGridTableBase):
+class WeightsTableBase(wx.grid.GridTableBase):
     def __init__(self):
-        wx.grid.PyGridTableBase.__init__(self)
+        wx.grid.GridTableBase.__init__(self)
 
         self.colLabels = ['xmin','xmax','rel.', 'abs.', 'type']
         self.types = ['rel.','abs.', 'rel.+abs.']
@@ -85,7 +85,7 @@ class WeightsTableBase(wx.grid.PyGridTableBase):
 
 class WeightsGrid(wx.grid.Grid):
     def __init__(self, parent):
-        wx.grid.Grid.__init__(self, parent)
+        wx.grid.Grid.__init__(self, parent, style=wx.SIMPLE_BORDER)
         self.table = WeightsTableBase()
         self.SetTable(self.table, True)
         self.SetRowLabelSize(0)

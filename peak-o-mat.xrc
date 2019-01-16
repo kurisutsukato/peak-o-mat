@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resource>
+<resource class="wxDialog">
   <object class="wxFrame" name="frame_annotations">
     <object class="wxPanel" name="pan_annotations">
       <object class="wxBoxSizer">
@@ -16,7 +16,7 @@
             </object>
             <object class="sizeritem">
               <object class="wxTextCtrl" name="txt_annotations">
-                <style>wxTE_MULTILINE</style>
+                <style>wxTE_MULTILINE|wxTE_RICH|wxTE_RICH2</style>
               </object>
               <option>1</option>
               <flag>wxEXPAND</flag>
@@ -28,752 +28,53 @@
         </object>
       </object>
     </object>
-    <size>500,400</size>
+    <size>700,400</size>
     <title>Notes</title>
     <style>wxDEFAULT_FRAME_STYLE|wxFRAME_FLOAT_ON_PARENT</style>
   </object>
-  <object class="wxFrame" name="mainframe">
-    <title/>
-    <object class="wxMenuBar" name="menu">
-      <object class="wxMenu">
-        <label>File</label>
-        <object class="wxMenuItem" name="men_new">
-          <label>New...</label>
-          <bitmap stock_id="wxART_NORMAL_FILE"/>
-          <accel>CTRL-N</accel>
-        </object>
-        <object class="wxMenuItem" name="men_open">
-          <label>Open...</label>
-          <bitmap stock_id="wxART_FILE_OPEN"/>
-          <accel>CTRL-O</accel>
-        </object>
-        <object class="wxMenuItem" name="men_saveas">
-          <label>Save as...</label>
-          <bitmap stock_id="wxART_FILE_SAVE_AS"/>
-        </object>
-        <object class="wxMenuItem" name="men_save">
-          <label>Save</label>
-          <bitmap stock_id="wxART_FILE_SAVE"/>
-          <accel>CTRL-S</accel>
-        </object>
-        <object class="separator"/>
-        <object class="wxMenuItem" name="men_pgsetup">
-          <label>Page setup...</label>
-        </object>
-        <object class="wxMenuItem" name="men_print">
-          <label>Print...</label>
-          <accel>CTRL-p</accel>
-        </object>
-        <object class="wxMenuItem" name="men_exportbmp">
-          <label>Export as Bitmap...</label>
-        </object>
-        <object class="separator"/>
-        <object class="wxMenuItem" name="men_quit">
-          <label>Quit</label>
-          <bitmap stock_id="wxART_QUIT"/>
-          <accel>CTRL-W</accel>
-        </object>
-      </object>
-      <object class="wxMenu">
-        <label>Data</label>
-        <object class="wxMenuItem" name="men_import">
-          <label>Import ASCII...</label>
-        </object>
-        <object class="wxMenuItem" name="men_export">
-          <label>Export selection as ASCII...</label>
-        </object>
-      </object>
-      <object class="wxMenu">
-        <object class="wxMenuItem" name="men_datagrid">
-          <label>datagrid</label>
-          <checkable>1</checkable>
-        </object>
-        <object class="wxMenuItem" name="men_notes">
-          <label>notes</label>
-          <checkable>1</checkable>
-        </object>
-        <label>Windows</label>
-      </object>
-      <object class="wxMenu">
-        <label>About</label>
-        <object class="wxMenuItem" name="men_about">
-          <label>About</label>
-        </object>
-      </object>
-    </object>
-    <style>wxDEFAULT_FRAME_STYLE</style>
-    <object class="wxPanel" name="">
-      <object class="wxBoxSizer">
-        <orient>wxVERTICAL</orient>
-        <object class="sizeritem">
-          <object class="wxPanel" name="pan_main">
-            <object class="wxBoxSizer">
-              <orient>wxVERTICAL</orient>
-              <object class="sizeritem">
-                <object class="wxSplitterWindow" name="splitwin">
-                  <object class="wxPanel" name="pan_plot">
-                    <object class="wxBoxSizer">
-                      <orient>wxVERTICAL</orient>
-                      <object class="sizeritem">
-                        <object class="wxBoxSizer">
-                          <orient>wxHORIZONTAL</orient>
-                          <object class="sizeritem">
-                            <object class="unknown" name="canvas"/>
-                            <option>1</option>
-                            <flag>wxEXPAND</flag>
-                          </object>
-                          <object class="sizeritem">
-                            <object class="unknown" name="buttonbar"/>
-                            <flag>wxEXPAND</flag>
-                            <minsize>30,-1</minsize>
-                          </object>
-                        </object>
-                        <option>1</option>
-                        <flag>wxBOTTOM|wxEXPAND</flag>
-                        <border>4</border>
-                      </object>
-                      <object class="sizeritem">
-                        <object class="wxNotebook" name="nb_modules">
-                          <style>wxNB_BOTTOM</style>
-                        </object>
-                        <flag>wxALL|wxEXPAND</flag>
-                        <border>10</border>
-                      </object>
-                    </object>
-                  </object>
-                  <object class="wxPanel" name="pan_tree">
-                    <object class="wxBoxSizer">
-                      <orient>wxVERTICAL</orient>
-                      <object class="sizeritem">
-                        <object class="unknown" name="tree"/>
-                        <option>1</option>
-                        <flag>wxEXPAND</flag>
-                      </object>
-                    </object>
-                    <style>wxNO_BORDER</style>
-                  </object>
-                  <orientation>vertical</orientation>
-                  <style>wxNO_BORDER</style>
-                </object>
-                <option>1</option>
-                <flag>wxEXPAND</flag>
-              </object>
-            </object>
-            <style>wxNO_BORDER</style>
-          </object>
-          <option>1</option>
-          <flag>wxEXPAND</flag>
-        </object>
-      </object>
-    </object>
-  </object>
-  <object class="wxPanel" name="fitpanel">
+  
+  
+  <object class="wxDialog" name="xrc_dlg_import">
     <object class="wxBoxSizer">
       <orient>wxVERTICAL</orient>
       <object class="sizeritem">
-        <object class="wxNotebook" name="nb_fit">
-          <object class="notebookpage">
-            <label>Model</label>
-            <object class="wxPanel" name="tab_model">
-              <object class="wxBoxSizer">
-                <orient>wxVERTICAL</orient>
-                <object class="sizeritem">
-                  <object class="wxBoxSizer">
-                    <orient>wxHORIZONTAL</orient>
-                    <object class="sizeritem">
-                      <object class="wxStaticText">
-                        <label>select fit function</label>
-                      </object>
-                      <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                      <border>5</border>
-                    </object>
-                    <object class="sizeritem">
-                      <object class="wxTextCtrl" name="txt_model"/>
-                      <option>1</option>
-                      <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                      <border>5</border>
-                    </object>
-                    <object class="sizeritem">
-                      <object class="wxButton" name="btn_modelclear">
-                        <label>clear</label>
-                        <style>wxBU_EXACTFIT</style>
-                      </object>
-                      <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                      <border>5</border>
-                    </object>
-                  </object>
-                  <flag>wxEXPAND</flag>
-                </object>
-                <object class="sizeritem">
-                  <object class="wxBoxSizer">
-                    <object class="sizeritem">
-                      <object class="wxPanel" name="pan_peakbuttons">
-                        <font>
-                          <size>8</size>
-                          <style>normal</style>
-                          <weight>normal</weight>
-                          <underlined>0</underlined>
-                          <family>swiss</family>
-                          <face>Sans</face>
-                        </font>
-                      </object>
-                      <option>2</option>
-                      <flag>wxEXPAND</flag>
-                    </object>
-                    <object class="sizeritem">
-                      <object class="wxTextCtrl" name="lab_peakinfo">
-                        <style>wxTE_AUTO_SCROLL|wxTE_MULTILINE|wxTE_READONLY</style>
-                      </object>
-                      <option>1</option>
-                      <flag>wxEXPAND</flag>
-                    </object>
-                    <orient>wxHORIZONTAL</orient>
-                  </object>
-                  <option>1</option>
-                  <flag>wxEXPAND</flag>
-                </object>
-              
-              </object>
-            </object>
-          </object>
-          <object class="notebookpage">
-            <label>Parameters</label>
-            <object class="wxPanel" name="tab_parameters">
-              <object class="wxBoxSizer">
-                <orient>wxHORIZONTAL</orient>
-                <object class="sizeritem">
-                  <object class="wxPanel">
-                    <style>wxRAISED_BORDER</style>
-                    <object class="wxBoxSizer">
-                      <orient>wxVERTICAL</orient>
-                      <object class="sizeritem">
-                        <object class="unknown" name="pargrid"/>
-                        <option>1</option>
-                        <flag>wxEXPAND</flag>
-                      </object>
-                    </object>
-                  </object>
-                  <option>1</option>
-                  <flag>wxEXPAND</flag>
-                </object>
-                <object class="sizeritem">
-                  <object class="wxPanel">
-                    <object class="wxBoxSizer">
-                      <orient>wxVERTICAL</orient>
-                      <object class="sizeritem">
-                        <object class="wxBoxSizer">
-                          <orient>wxHORIZONTAL</orient>
-                          <object class="sizeritem">
-                            <object class="wxButton" name="btn_getpars">
-                              <label>Pick</label>
-                              <style>wxBU_EXACTFIT</style>
-                            </object>
-                            <flag>wxALL</flag>
-                            <border>2</border>
-                          </object>
-                          <object class="sizeritem">
-                            <object class="wxChoice" name="ch_getpars">
-                              <content>
-                                <item>all</item>
-                                <item>1</item>
-                                <item>2</item>
-                                <item>3</item>
-                                <item>4</item>
-                                <item>5</item>
-                              </content>
-                              <size>70,-1</size>
-                            </object>
-                            <flag>wxALL</flag>
-                            <border>2</border>
-                          </object>
-                          <object class="spacer">
-                            <size>0,0</size>
-                            <option>1</option>
-                          </object>
-                          <object class="sizeritem">
-                            <object class="wxButton" name="btn_fit_quick">
-                              <label>Fit (short link)</label>
-                              <style>wxBU_EXACTFIT</style>
-                            </object>
-                            <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                            <border>2</border>
-                          </object>
-                        </object>
-                        <flag>wxALL|wxEXPAND</flag>
-                        <border>3</border>
-                      </object>
-                      <object class="sizeritem">
-                        <object class="wxStaticLine"/>
-                        <flag>wxEXPAND</flag>
-                      </object>
-                      <object class="sizeritem">
-                        <object class="wxPanel" name="pan_parexport">
-                          <object class="wxBoxSizer">
-                            <orient>wxVERTICAL</orient>
-                            <object class="sizeritem">
-                              <object class="wxBoxSizer">
-                                <orient>wxHORIZONTAL</orient>
-                                <object class="sizeritem">
-                                  <object class="wxButton" name="btn_parexport">
-                                    <label>Export</label>
-                                    <style>wxBU_EXACTFIT</style>
-                                  </object>
-                                  <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                                  <border>2</border>
-                                </object>
-                                <object class="sizeritem">
-                                  <object class="wxChoice" name="ch_parexport">
-                                    <content>
-                                      <item>all</item>
-                                    </content>
-                                    <size>70,-1</size>
-                                  </object>
-                                  <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                                  <border>2</border>
-                                </object>
-                                <object class="sizeritem">
-                                  <object class="wxCheckBox" name="cb_errors">
-                                    <label>include errors</label>
-                                  </object>
-                                  <flag>wxALL|wxEXPAND</flag>
-                                  <border>2</border>
-                                </object>
-                              </object>
-                              <flag>wxALL|wxEXPAND</flag>
-                              <border>3</border>
-                            </object>
-                          </object>
-                        </object>
-                        <flag>wxEXPAND</flag>
-                      </object>
-                      <object class="sizeritem">
-                        <object class="wxStaticLine"/>
-                        <flag>wxEXPAND</flag>
-                      </object>
-                      <object class="sizeritem">
-                        <object class="wxPanel" name="pan_loadpeaks">
-                          <object class="wxBoxSizer">
-                            <orient>wxVERTICAL</orient>
-                            <object class="sizeritem">
-                              <object class="wxBoxSizer">
-                                <object class="sizeritem">
-                                  <object class="wxButton" name="btn_loadpeaks">
-                                    <label>Load</label>
-                                    <style>wxBU_EXACTFIT</style>
-                                  </object>
-                                  <flag>wxALL</flag>
-                                  <border>2</border>
-                                </object>
-                                <object class="sizeritem">
-                                  <object class="wxChoice" name="ch_loadpeaks">
-                                    <content>
-                                      <item>all</item>
-                                    </content>
-                                    <size>70,-1</size>
-                                  </object>
-                                  <flag>wxALL</flag>
-                                  <border>2</border>
-                                </object>
-                                <orient>wxHORIZONTAL</orient>
-                              </object>
-                              <flag>wxALL|wxEXPAND</flag>
-                              <border>3</border>
-                            </object>
-                            <object class="sizeritem">
-                              <object class="wxBoxSizer">
-                                <orient>wxHORIZONTAL</orient>
-                                <object class="sizeritem">
-                                  <object class="wxStaticText">
-                                    <label>from</label>
-                                  </object>
-                                  <option>0</option>
-                                  <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                                  <border>2</border>
-                                </object>
-                                <object class="sizeritem">
-                                  <object class="wxTextCtrl" name="txt_from">
-                                    <size>60,-1</size>
-                                    <style>wxTE_RIGHT</style>
-                                  </object>
-                                  <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                                  <border>2</border>
-                                </object>
-                                <object class="sizeritem">
-                                  <object class="wxStaticText">
-                                    <label>to</label>
-                                  </object>
-                                  <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                                  <border>2</border>
-                                </object>
-                                <object class="sizeritem">
-                                  <object class="wxTextCtrl" name="txt_to">
-                                    <size>60,-1</size>
-                                    <style>wxTE_RIGHT</style>
-                                  </object>
-                                  <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                                  <border>2</border>
-                                </object>
-                                <object class="sizeritem">
-                                  <object class="wxTextCtrl" name="txt_points">
-                                    <value>1000</value>
-                                    <size>60,-1</size>
-                                    <style>wxTE_RIGHT</style>
-                                  </object>
-                                  <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                                  <border>2</border>
-                                </object>
-                                <object class="sizeritem">
-                                  <object class="wxStaticText" name="">
-                                    <label>pts</label>
-                                  </object>
-                                  <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                                  <border>2</border>
-                                </object>
-                              </object>
-                              <flag>wxALL|wxEXPAND</flag>
-                              <border>3</border>
-                            </object>
-                          </object>
-                        </object>
-                        <flag>wxEXPAND</flag>
-                      </object>
-                    </object>
-                  </object>
-                  <flag>wxLEFT|wxEXPAND</flag>
-                  <border>10</border>
-                </object>
-              </object>
-            </object>
-          </object>
-          <object class="notebookpage">
-            <label>Weights</label>
-            <object class="wxPanel" name="tab_weights">
-              <object class="wxBoxSizer">
-                <orient>wxHORIZONTAL</orient>
-                <object class="sizeritem">
-                  <object class="wxPanel">
-                    <object class="wxBoxSizer">
-                      <orient>wxVERTICAL</orient>
-                      <object class="sizeritem">
-                        <object class="unknown" name="weights_grid"/>
-                        <option>1</option>
-                        <flag>wxALL|wxEXPAND</flag>
-                        <border>2</border>
-                        <minsize>200,-1</minsize>
-                      </object>
-                    </object>
-                    <style>wxRAISED_BORDER</style>
-                  </object>
-                  <flag>wxALL|wxEXPAND</flag>
-                </object>
-                <object class="sizeritem">
-                  <object class="wxPanel">
-                    <object class="wxBoxSizer">
-                      <orient>wxVERTICAL</orient>
-                      <object class="sizeritem">
-                        <object class="wxToggleButton" name="btn_placehandles">
-                          <label>place handles</label>
-                        </object>
-                        <flag>wxALL|wxEXPAND</flag>
-                        <border>2</border>
-                      </object>
-                      <object class="sizeritem">
-                        <object class="wxButton" name="btn_storeweights">
-                          <label>attach to current set</label>
-                        </object>
-                        <flag>wxALL|wxEXPAND</flag>
-                        <border>2</border>
-                      </object>
-                      <object class="sizeritem">
-                        <object class="wxButton" name="btn_clearweights">
-                          <label>clear</label>
-                        </object>
-                        <flag>wxALL|wxEXPAND</flag>
-                        <border>2</border>
-                      </object>
-                    </object>
-                  </object>
-                  <flag>wxALL|wxEXPAND</flag>
-                  <border>10</border>
-                </object>
-              </object>
-            </object>
-          </object>
-          <object class="notebookpage">
-            <label>Fit</label>
-            <object class="wxPanel" name="tab_fit">
-              <object class="wxBoxSizer">
-                <orient>wxHORIZONTAL</orient>
-                <object class="sizeritem">
-                  <object class="wxBoxSizer">
-                    <orient>wxVERTICAL</orient>
-                    <object class="sizeritem">
-                      <object class="wxRadioBox" name="rd_fittype">
-                        <label>Fit Type</label>
-                        <content>
-                          <item>full odr</item>
-                          <item>leastsq</item>
-                        </content>
-                        <selection>1</selection>
-                        <dimension>1</dimension>
-                        <style>wxRA_SPECIFY_ROWS</style>
-                      </object>
-                      <flag>wxALL|wxEXPAND|wxALIGN_BOTTOM</flag>
-                      <border>5</border>
-                    </object>
-                    <object class="sizeritem">
-                      <object class="wxCheckBox" name="cb_limitfitrange">
-                        <label>limit fit to visible range</label>
-                        <checked>1</checked>
-                      </object>
-                      <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                      <border>5</border>
-                    </object>
-                    <object class="sizeritem">
-                      <object class="wxFlexGridSizer">
-                        <cols>2</cols>
-                        <rows>2</rows>
-                        <vgap>5</vgap>
-                        <hgap>5</hgap>
-                        <growablecols>0</growablecols>
-                        <growablecols>1</growablecols>
-                        <object class="sizeritem">
-                          <object class="wxStaticText">
-                            <label>max iterations</label>
-                          </object>
-                          <flag>wxALIGN_CENTRE_VERTICAL</flag>
-                        </object>
-                        <object class="sizeritem">
-                          <object class="wxSpinCtrl" name="txt_maxit">
-                            <value>50</value>
-                            <max>200</max>
-                            <size>60,-1</size>
-                            <style>wxSP_ARROW_KEYS</style>
-                          </object>
-                          <flag>wxALIGN_CENTRE_VERTICAL</flag>
-                        </object>
-                        <object class="sizeritem">
-                          <object class="wxStaticText">
-                            <label>step size</label>
-                          </object>
-                          <flag>wxALIGN_CENTRE_VERTICAL</flag>
-                        </object>
-                        <object class="sizeritem">
-                          <object class="wxTextCtrl" name="txt_stepsize">
-                            <value>1e-10</value>
-                            <size>60,-1</size>
-                            <style>wxTE_RIGHT</style>
-                          </object>
-                          <flag>wxALIGN_CENTRE_VERTICAL</flag>
-                        </object>
-                      </object>
-                      <flag>wxALL|wxEXPAND</flag>
-                      <border>5</border>
-                    </object>
-                    <object class="spacer">
-                      <option>1</option>
-                      <flag>wxEXPAND</flag>
-                    </object>
-                  </object>
-                  <flag>wxALL|wxEXPAND</flag>
-                  <border>3</border>
-                </object>
-                <object class="sizeritem">
-                  <object class="wxBoxSizer">
-                    <orient>wxVERTICAL</orient>
-                    <object class="sizeritem">
-                      <object class="wxStaticText">
-                        <label>Fit messages</label>
-                      </object>
-                      <flag>wxALL</flag>
-                      <border>3</border>
-                    </object>
-                    <object class="sizeritem">
-                      <object class="wxTextCtrl" name="txt_fitlog">
-                        <style>wxTE_AUTO_SCROLL|wxTE_MULTILINE|wxTE_READONLY</style>
-                      </object>
-                      <option>1</option>
-                      <flag>wxALL|wxEXPAND</flag>
-                      <border>3</border>
-                    </object>
-                    <object class="sizeritem">
-                      <object class="wxBoxSizer">
-                        <orient>wxHORIZONTAL</orient>
-                        <object class="spacer">
-                          <size>0,0</size>
-                          <option>1</option>
-                        </object>
-                        <object class="sizeritem">
-                          <object class="wxButton" name="btn_odrhelp">
-                            <label>Help</label>
-                            <hidden>1</hidden>
-                          </object>
-                        </object>
-                        <object class="sizeritem">
-                          <object class="wxButton" name="btn_fit">
-                            <label>Fit</label>
-                          </object>
-                        </object>
-                      </object>
-                      <flag>wxALL|wxEXPAND</flag>
-                      <border>3</border>
-                    </object>
-                  </object>
-                  <option>1</option>
-                  <flag>wxALL|wxEXPAND</flag>
-                  <border>3</border>
-                </object>
-              </object>
-            </object>
-          </object>
+        <object class="wxStaticText">
+          <label>You have selected multiple data sets. Choose whether to load in a single plot or one plot each.</label>
+          <wrap>400</wrap>
         </object>
         <option>1</option>
-        <flag>wxBOTTOM|wxLEFT|wxRIGHT|wxEXPAND</flag>
-        <border>5</border>
-      </object>
-    </object>
-  </object>
-  <object class="wxPanel" name="pan_thegrid">
-    <object class="wxBoxSizer">
-      <orient>wxVERTICAL</orient>
-      <object class="sizeritem">
-        <object class="wxBoxSizer">
-          <orient>wxHORIZONTAL</orient>
-          <object class="sizeritem">
-            <object class="wxButton" name="btn_transpose">
-              <label>Transpose</label>
-              <style>wxBU_EXACTFIT</style>
-            </object>
-            <flag>wxALL|wxEXPAND</flag>
-            <border>2</border>
-          </object>
-          <object class="sizeritem">
-            <object class="wxButton" name="btn_clear">
-              <label>Clear</label>
-              <style>wxBU_EXACTFIT</style>
-            </object>
-            <flag>wxALL|wxEXPAND</flag>
-            <border>2</border>
-          </object>
-          <object class="sizeritem">
-            <object class="wxButton" name="btn_create">
-              <label>Create set</label>
-              <enabled>0</enabled>
-              <style>wxBU_EXACTFIT</style>
-              <enabled>1</enabled>
-            </object>
-            <flag>wxALL|wxEXPAND</flag>
-            <border>2</border>
-          </object>
-          <object class="sizeritem">
-            <object class="wxButton" name="btn_save">
-              <label>Save</label>
-              <style>wxBU_EXACTFIT</style>
-            </object>
-            <flag>wxALL|wxEXPAND</flag>
-            <border>2</border>
-          </object>
-          <object class="sizeritem">
-            <object class="wxButton" name="btn_load">
-              <label>Load</label>
-              <style>wxBU_EXACTFIT</style>
-            </object>
-            <flag>wxALL|wxEXPAND</flag>
-            <border>2</border>
-          </object>
-          <object class="spacer">
-            <size>10,0</size>
-          </object>
-          <object class="sizeritem">
-            <object class="wxButton" name="btn_resize">
-              <label>Resize</label>
-              <style>wxBU_EXACTFIT</style>
-            </object>
-            <flag>wxALL|wxEXPAND</flag>
-            <border>2</border>
-          </object>
-          <object class="sizeritem">
-            <object class="wxTextCtrl" name="txt_resize">
-              <value>30,5</value>
-            </object>
-            <flag>wxALL|wxEXPAND</flag>
-            <border>2</border>
-          </object>
-          <object class="spacer">
-            <size>0,0</size>
-            <option>1</option>
-            <flag>wxEXPAND</flag>
-          </object>
-          <object class="sizeritem">
-            <object class="wxBitmapButton" name="btn_close">
-              <bitmap>images/close.png</bitmap>
-              <style>wxBU_EXACTFIT|wxNO_BORDER</style>
-            </object>
-            <flag>wxALIGN_CENTRE_VERTICAL</flag>
-          </object>
-        </object>
-        <flag>wxEXPAND</flag>
+        <flag>wxTOP|wxLEFT|wxRIGHT|wxEXPAND</flag>
+        <border>20</border>
       </object>
       <object class="sizeritem">
         <object class="wxBoxSizer">
-          <orient>wxHORIZONTAL</orient>
-          <object class="sizeritem">
-            <object class="wxStaticText">
-              <label>col/row operation</label>
-            </object>
-            <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-            <border>2</border>
-          </object>
-          <object class="sizeritem">
-            <object class="unknown" name="txt_operation"/>
+          <object class="spacer">
             <option>1</option>
-            <flag>wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
-            <border>2</border>
           </object>
           <object class="sizeritem">
-            <object class="wxButton" name="btn_help">
-              <label>Help</label>
-              <style>wxBU_EXACTFIT</style>
+            <object class="wxButton" name="xrc_btn_oneeach">
+              <label>one plot each</label>
             </object>
+            <flag>wxALL|wxEXPAND</flag>
+            <border>5</border>
           </object>
-        </object>
-        <flag>wxEXPAND</flag>
-      </object>
-      <object class="sizeritem">
-        <object class="unknown" name="datagrid">
-          <style/>
-        </object>
-        <option>1</option>
-        <flag>wxEXPAND</flag>
-      </object>
-      <object class="sizeritem">
-        <object class="unknown" name="gridshell"/>
-        <flag>wxEXPAND</flag>
-      </object>
-    </object>
-  </object>
-  <object class="wxDialog" name="xrc_dlg_import" subclass="peak_o_mat.dialog.ImportDialog">
-    <title>Import to...</title>
-    <object class="wxBoxSizer">
-      <orient>wxHORIZONTAL</orient>
-      <object class="sizeritem">
-        <object class="wxButton" name="xrc_btn_single">
-          <label>single plot</label>
+          <object class="sizeritem">
+            <object class="wxButton" name="xrc_btn_single">
+              <label>single plot</label>
+            </object>
+            <flag>wxALL|wxEXPAND</flag>
+            <border>5</border>
+          </object>
+          <orient>wxHORIZONTAL</orient>
         </object>
         <flag>wxALL|wxEXPAND</flag>
-        <border>5</border>
-      </object>
-      <object class="sizeritem">
-        <object class="wxButton" name="xrc_btn_oneeach">
-          <label>one plot each</label>
-        </object>
-        <flag>wxALL|wxEXPAND</flag>
-        <border>5</border>
+        <border>10</border>
       </object>
     </object>
+    <title>peak-o-mat - Import Data</title>
+    <style>wxCAPTION</style>
   </object>
-  <object class="wxDialog" name="xrc_dlg_export" subclass="peak_o_mat.dialog.ExportDialog">
-    <title>Export options</title>
+  <object class="wxDialog" name="xrc_dlg_export">
     <object class="wxBoxSizer">
       <orient>wxVERTICAL</orient>
       <object class="sizeritem">
@@ -823,7 +124,7 @@
           </object>
           <object class="sizeritem">
             <object class="wxTextCtrl" name="xrc_txt_dir">
-              <size>150,-1</size>
+              <size>300,-1</size>
             </object>
             <option>1</option>
             <flag>wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
@@ -875,5 +176,8 @@
         <border>10</border>
       </object>
     </object>
+    <title>peak-o-mat - Export Data</title>
+    <style>wxCAPTION</style>
   </object>
+
 </resource>

@@ -129,7 +129,7 @@ class GraceProcess:
         if self.fixedsize is None:
             cmd = cmd + ('-free',)
         else:
-            cmd = cmd + ('-fixed', `self.fixedsize[0]`, `self.fixedsize[1]`)
+            cmd = cmd + ('-fixed', repr(self.fixedsize[0]), repr(self.fixedsize[1]))
 
         self.ask = True
         if self.ask is None:
@@ -144,7 +144,7 @@ class GraceProcess:
 
         # Make the pipe that will be used for communication:
         (fd_r, fd_w) = os.pipe()
-        cmd = cmd + ('-dpipe', `fd_r`)
+        cmd = cmd + ('-dpipe', repr(fd_r))
         
         # Fork the subprocess that will start grace:
         self.pid = os.fork()
@@ -193,7 +193,7 @@ class GraceProcess:
 
         try:
             self.pipe.write(cmd + '\n')
-        except IOError, err:
+        except IOError as err:
             if err.errno == errno.EPIPE:
                 self.pipe.close()
                 raise Disconnected()
@@ -205,7 +205,7 @@ class GraceProcess:
 
         try:
             self.pipe.flush()
-        except IOError, err:
+        except IOError as err:
             if err.errno == errno.EPIPE:
                 # grace is no longer reading from the pipe:
                 self.pipe.close()
@@ -273,7 +273,7 @@ class GraceProcess:
         if self.pid is not None:
             try:
                 os.kill(self.pid, signal.SIGTERM)
-            except OSError, err:
+            except OSError as err:
                 if err.errno == errno.ESRCH:
                     # No such process; it must already be dead
                     self.pid = None

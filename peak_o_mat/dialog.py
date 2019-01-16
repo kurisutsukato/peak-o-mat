@@ -1,27 +1,40 @@
+##     Copyright (C) 2003 Christian Kristukat (ckkart@hoc.net)
+
+##     This program is free software; you can redistribute it and/or modify
+##     it under the terms of the GNU General Public License as published by
+##     the Free Software Foundation; either version 2 of the License, or
+##     (at your option) any later version.
+
+##     This program is distributed in the hope that it will be useful,
+##     but WITHOUT ANY WARRANTY; without even the implied warranty of
+##     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##     GNU General Public License for more details.
+
+##     You should have received a copy of the GNU General Public License
+##     along with this program; if not, write to the Free Software
+##     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
 import wx
-import misc
-import os
+from . import misc
+from . import misc_ui
 
-class ImportDialog(wx.Dialog, misc.xrcctrl):
-    def __init__(self):
+class xrcctrl(object):
+    def __getitem__(self, item):
+        return self.FindWindowByName(item)
+
+class ImportDialog(wx.Dialog, xrcctrl):
+    def __init__(self, parent):
+        wx.Dialog.__init__(self)
         self.one_plot_each = False
-        pre = wx.PreDialog()
-        self.PostCreate(pre)
-        if os.name == 'posix':
-            self.Bind(wx.EVT_WINDOW_CREATE, self.OnCreate)
-        else:
-            wx.CallAfter(self._PostInit)
+        self.res = misc_ui.xrc_resource()
+        self.res.LoadDialog(self, parent, 'xrc_dlg_import')
+        #self.Create(parent)
 
-    def OnCreate(self, event):
-        self.Unbind(wx.EVT_WINDOW_CREATE)
-        wx.CallAfter(self._PostInit)
-        event.Skip()
-        return True
-
-    def _PostInit(self):
         self['xrc_btn_single'].Bind(wx.EVT_BUTTON, self.OnSingle)
         self['xrc_btn_oneeach'].Bind(wx.EVT_BUTTON, self.OnEach)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
+
+        self.CenterOnParent()
 
     def OnClose(self, evt):
         self.EndModal(wx.ID_CANCEL)
@@ -34,22 +47,13 @@ class ImportDialog(wx.Dialog, misc.xrcctrl):
         self.one_plot_each = True
         self.EndModal(wx.ID_OK)
 
-class ExportDialog(wx.Dialog, misc.xrcctrl):
-    def __init__(self):
-        pre = wx.PreDialog()
-        self.PostCreate(pre)
-        if os.name == 'posix':
-            self.Bind(wx.EVT_WINDOW_CREATE, self.OnCreate)
-        else:
-            wx.CallAfter(self._PostInit)
+class ExportDialog(wx.Dialog, xrcctrl):
+    def __init__(self, parent):
+        wx.Dialog.__init__(self)
+        self.res = misc_ui.xrc_resource()
+        self.res.LoadDialog(self, parent, 'xrc_dlg_export')
+        #self.Create(parent)
 
-    def OnCreate(self, event):
-        self.Unbind(wx.EVT_WINDOW_CREATE)
-        wx.CallAfter(self._PostInit)
-        event.Skip()
-        return True
-
-    def _PostInit(self):
         self['xrc_txt_ext'].Bind(wx.EVT_UPDATE_UI, self.OnEnterExt)
         self['xrc_lab_ext'].Bind(wx.EVT_UPDATE_UI, self.OnEnterExt)
         self['xrc_btn_export'].Bind(wx.EVT_UPDATE_UI, self.OnReadyToExport)

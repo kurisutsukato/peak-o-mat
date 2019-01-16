@@ -1,30 +1,36 @@
 import  wx
 import wx.grid
 
-class DumbRenderer(wx.grid.PyGridCellRenderer):
+class DumbRenderer(wx.grid.GridCellRenderer):
     def __init__(self):
-        wx.grid.PyGridCellRenderer.__init__(self)
+        wx.grid.GridCellRenderer.__init__(self)
         
     def Draw(self, grid, attr, dc, rect, row, col, isSelected):
         dc.SetBackgroundMode(wx.SOLID)
 
         dc.SetBrush(wx.Brush(wx.Colour(230,230,230), wx.SOLID))
         dc.SetPen(wx.TRANSPARENT_PEN)
-        dc.DrawRectangleRect(rect)
+        dc.DrawRectangle(*rect)
 
     def Clone(self):
         return DumbRenderer()
 
-class CellRenderer(wx.grid.PyGridCellRenderer):
+    def GetBestSize(self, grid, attr, dc, row, col):
+        text = str(grid.GetCellValue(row, col))
+        dc.SetFont(attr.GetFont())
+        w, h = dc.GetTextExtent(text)
+        return wx.Size(w, h)
+
+class CellRenderer(wx.grid.GridCellRenderer):
     def __init__(self):
-        wx.grid.PyGridCellRenderer.__init__(self)
+        wx.grid.GridCellRenderer.__init__(self)
         
     def Draw(self, grid, attr, dc, rect, row, col, isSelected):
         dc.SetBackgroundMode(wx.SOLID)
 
         if isSelected:
-            dc.SetBrush(wx.Brush(wx.SystemSettings_GetColour(wx.SYS_COLOUR_HIGHLIGHT), wx.SOLID))
-            dc.SetTextForeground(wx.SystemSettings_GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
+            dc.SetBrush(wx.Brush(wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT), wx.SOLID))
+            dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
         else:
             bg = grid.GetDefaultCellBackgroundColour()
             if attr.HasBackgroundColour():
@@ -33,7 +39,7 @@ class CellRenderer(wx.grid.PyGridCellRenderer):
             dc.SetTextForeground(wx.BLACK)
             
         dc.SetPen(wx.TRANSPARENT_PEN)
-        dc.DrawRectangleRect(rect)
+        dc.DrawRectangle(rect)
 
         dc.SetBackgroundMode(wx.TRANSPARENT)
         #dc.SetFont(attr.GetFont())
@@ -49,7 +55,7 @@ class CellRenderer(wx.grid.PyGridCellRenderer):
                 break
 
     def GetBestSize(self, grid, attr, dc, row, col):
-        text = unicode(grid.GetCellValue(row, col))
+        text = str(grid.GetCellValue(row, col))
         dc.SetFont(attr.GetFont())
         w, h = dc.GetTextExtent(text)
         return wx.Size(w, h)
@@ -69,7 +75,7 @@ class ChoiceTextRenderer(CellRenderer):
     def Clone(self):
         return ChoiceTextRenderer(self.choice)
 
-class FloatRenderer(CellRenderer):
+class _FloatRenderer(CellRenderer):
     def __init__(self):
         CellRenderer.__init__(self)
 
@@ -86,17 +92,17 @@ class FloatRenderer(CellRenderer):
         self.drawText(str(self.val), rect, dc)
 
     def Clone(self):
-        return FloatRenderer()
+        return _FloatRenderer()
         
     def GetBestSize(self, grid, attr, dc, row, col):
         dc.SetFont(attr.GetFont())
-        text = '0'*min(12,len(unicode(grid.GetCellValue(row, col))))
+        text = '0'*min(12, len(str(grid.GetCellValue(row, col))))
         w, h = dc.GetTextExtent(text)
         return wx.Size(w+5, h)
 
-class ChoiceCellEditor(wx.grid.PyGridCellEditor):
+class ChoiceCellEditor(wx.grid.GridCellEditor):
     def __init__(self, varList):
-        wx.grid.PyGridCellEditor.__init__(self)
+        wx.grid.GridCellEditor.__init__(self)
         self._varList = varList
 
     def Create(self, parent, id, evtHandler):
@@ -118,7 +124,7 @@ class ChoiceCellEditor(wx.grid.PyGridCellEditor):
         If you don't fill the cell (the rect) then be sure to override
         PaintBackground and do something meaningful there.
         """
-        self._choiceCtrl.SetDimensions(rect.x, rect.y, rect.width, rect.height,
+        self._choiceCtrl.SetSize(rect.x, rect.y, rect.width, rect.height,
                                wx.SIZE_ALLOW_MINUS_ONE)
 
     def BeginEdit(self, row, col, grid):
@@ -127,27 +133,33 @@ class ChoiceCellEditor(wx.grid.PyGridCellEditor):
         to begin editing.  Set the focus to the edit control.
         """
         self.grid = grid
-        self.startValue = grid.GetTable().data[row][col]
-        self._choiceCtrl.SetSelection(self.startValue)
+        #self.start_value = grid.GetTable().data[row][col]
+        #self.end_value = None
+        self._choiceCtrl.SetSelection(grid.GetTable().data[row][col])
         self._choiceCtrl.SetFocus()
 
     def OnChoice(self, evt):
         self.grid.EnableCellEditControl(False)
         evt.Skip()
-        
-    def EndEdit(self, row, col, grid):
+
+    def ApplyEdit(self, row, col, grid):
+        grid.GetTable().SetValue(row, col, self.end_value)
+
+    def EndEdit(self, row, col, grid, oldval):
         """
         Complete the editing of the current cell. Returns true if the value
         has changed.  If necessary, the control may be destroyed.
         """
         changed = False
+        self.end_value = None
 
         sel = self._choiceCtrl.GetSelection()
-        if sel != self.startValue:
+        if sel != oldval:
             changed = True
-            grid.GetTable().SetValue(row, col, sel) # update the table
+            self.end_value = sel
+            #grid.GetTable().SetValue(row, col, sel) # update the table
 
-        self.startValue = None
+        #self.start_value = None
         return changed
 
 
@@ -155,7 +167,7 @@ class ChoiceCellEditor(wx.grid.PyGridCellEditor):
         """
         Reset the value in the control back to its starting value.
         """
-        self._choiceCtrl.SetSelection(self.startValue)
+        self._choiceCtrl.SetSelection(self.start_value)
 
     def Clone(self):
         """

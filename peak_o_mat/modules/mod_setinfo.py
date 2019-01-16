@@ -3,7 +3,7 @@
 ##     This program is free software; you can redistribute it and/or modify
 ##     it under the terms of the GNU General Public License as published by
 ##     the Free Software Foundation; either version 2 of the License, or
-##     (at your option) any later version.
+##     (at your option) any later versionp.
 
 ##     This program is distributed in the hope that it will be useful,
 ##     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,11 +21,11 @@ Setinfo module
 import sys
 import wx
 import  wx.lib.mixins.listctrl  as  listmix
-from wx.lib.pubsub import pub as Publisher
+from wx.lib.pubsub import pub
 
-import numpy as N
+import numpy as np
 
-from peak_o_mat import module
+from .. import module
 
 class EditMixin(listmix.TextEditMixin):
     def __init__(self, *args, **kwargs):
@@ -60,9 +60,12 @@ class TrafoListCtrl(wx.ListCtrl,
         self.SetColumnWidth(2, wx.LIST_AUTOSIZE)
 
     def Insert(self, data):
-        index = self.InsertStringItem(sys.maxint, data[0])
+        print(data)
+
+        #TODO: sys.maxsize is zu gross, daher 20000
+        index = self.InsertItem(20000, data[0])
         for col in range(3):
-            self.SetStringItem(index, col, data[col])
+            self.SetItem(index, col, data[col])
         self.SetItemData(index, index)
         if not data[3]:
             self.CheckItem(index)
@@ -80,14 +83,19 @@ class Module(module.Module):
         self.xmlres.AttachUnknownControl('xrc_lc_trafo', TrafoListCtrl(self.panel, -1,
                                                                        style=wx.LC_REPORT))
         self.Bind(wx.EVT_BUTTON, self.OnRemoveTrafo, self.xrc_btn_trafo_remove)
+        self.Bind(wx.EVT_BUTTON, self.OnRemoveAllTrafos, self.xrc_btn_trafo_remove_all)
+        self.Bind(wx.EVT_BUTTON, self.OnTrafosMakePermanent, self.xrc_btn_trafo_permanent)
         self.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEndEdit)
-        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, lambda evt: self.OnItemSelected(evt, True))
+        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, lambda evt: self.OnItemSelected(evt, False))
         self.Bind(wx.EVT_BUTTON, self.OnRemoveMask, self.xrc_btn_mask_remove)
-        self.xrc_lc_trafo.OnCheckItem = self.OnCheckItem
+        self.Bind(wx.EVT_BUTTON, self.OnMaskMakePermanent, self.xrc_btn_mask_permanent)
         
-        Publisher.subscribe(self.OnSetinfoUpdate, ('setinfo','update'))
+        self.xrc_lc_trafo.OnCheckItem = self.OnCheckItem
+        self.xrc_btn_trafo_remove.Enable(False)
+        pub.subscribe(self.OnSetinfoUpdate, (self.view_id, 'setinfo','update'))
 
-    def OnSetinfoUpdate(self, msg):
+    def OnSetinfoUpdate(self):
         if self._selected and not self._updating:
             self.update()
 
@@ -98,16 +106,20 @@ class Module(module.Module):
             trafo[3] = not state
             set.trafo[idx] = tuple(trafo)
             wx.CallAfter(self.controller.plot)
-    
+
+    def OnMaskMakePermanent(self, evt):
+        aset = self.controller.active_set.make_mask_permanent()
+        self.controller.update_plot()
+            
     def OnRemoveMask(self, evt):
         self.controller.active_set.mask = None
         self.controller.update_plot()
         
-    def OnItemSelected(self, evt):
+    def OnItemSelected(self, evt, selected):
+        evt.Skip()
         self._current_selection = evt.GetIndex()
         set = self.controller.active_set
-        if set is not None:
-            self.xrc_btn_trafo_remove.Enable(len(set.trafo) > 0)
+        self.xrc_btn_trafo_remove.Enable(set is not None and selected)
 
     def OnEndEdit(self, evt):
         col,idx = evt.GetColumn(),evt.GetIndex()
@@ -116,14 +128,25 @@ class Module(module.Module):
         trafo = list(set.trafo[idx])
         trafo[col] = label
         set.trafo[idx] = tuple(trafo)
-        wx.CallAfter(self.controller.plot)
+        self.controller.update_plot()
+
+    def OnTrafosMakePermanent(self, evt):
+        self.controller.active_set.make_trafo_permanent()
+        self.controller.update_plot()
+
+    def OnRemoveAllTrafos(self, evt):
+        set = self.controller.active_set
+        if set is not None:
+            set.trafo[:] = []
+            self.update()
+            self.controller.update_plot()
         
     def OnRemoveTrafo(self, evt):
         set = self.controller.active_set
         if set is not None:
             set.trafo.pop(self._current_selection)
             self.update()
-            wx.CallAfter(self.controller.plot)
+            self.controller.update_plot()
 
     def page_changed(self, state):
         self._selected = state
@@ -145,10 +168,42 @@ class Module(module.Module):
         if set is not None:
             self._current_selection = 0
             self.xrc_lc_trafo.DeleteAllItems()
-            self.xrc_btn_trafo_remove.Enable(len(set.trafo) > 0)
+
+            self.xrc_btn_trafo_remove.Enable(False)
+            self.xrc_btn_trafo_remove_all.Enable(len(set.trafo) > 0)
+            self.xrc_btn_trafo_permanent.Enable(len(set.trafo) > 0)
+            
+            self.xrc_btn_mask_remove.Enable(np.sometrue(set.mask))
+            self.xrc_btn_mask_permanent.Enable(np.sometrue(set.mask))
+            
             for data in set.trafo:
                 self.xrc_lc_trafo.Insert(data)
-            self.xrc_lab_name.SetLabel('set name: %s'%(set.name))
-            self.xrc_lab_points.SetLabel('%d points, %d masked'%(len(set.data[0]), len(N.compress(set.mask == 1, set.mask))))
+            name = set.name
+            if len(name) > 12:
+                name = name[:12]+'...'
+            self.xrc_lab_name.SetLabel('set name: %s'%name)
+            self.xrc_lab_points.SetLabel('%d points, %d masked'%(len(set.data[0]), len(np.compress(set.mask == 1, set.mask))))
         self._updating = False
 
+class MayBeCalled(object):
+    def __call__(self, *args, **kwargs):
+        return None
+
+class Dummy(object):
+    def __init__(self, view):
+        super(Dummy, self).__init__()
+        self.view = view
+
+    def __getattr__(self, attr):
+        return MayBeCalled()
+
+    def __setattr__(self, attr, val):
+        pass
+
+if __name__ == '__main__':
+    app = wx.App()
+    f = wx.Frame(None)
+    p = wx.Panel(f)
+    c = Dummy(f)
+    Module(c, '')
+    app.MainLoop()

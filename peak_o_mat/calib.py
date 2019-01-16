@@ -3,9 +3,8 @@
 # mehr Spektrallinien gibs bei
 # http://cdsweb.u-strasbg.fr/viz-bin/VizieR?-source=VI/16
 
-from numpy import array, vstack, hstack, argsort, take
 
-neon = array([
+neon = [
 [ 352.956 , 90 ],
 [ 354.962 , 60 ],
 [ 587.213 , 35 ],
@@ -297,9 +296,9 @@ neon = array([
 [ 34131.309 , 600 ],
 [ 34471.441 , 100 ],
 [ 35834.781 , 120 ]
-])
+]
 
-argon = array([
+argon = [
 [ 802.859 , 20 ],
 [ 806.471 , 100 ],
 [ 806.869 , 60 ],
@@ -513,9 +512,9 @@ argon = array([
 [ 20986.109 , 30 ],
 [ 23133.199 , 20 ],
 [ 23966.520 , 20 ]
-])
+]
 
-mercury = array([
+mercury = [
 [ 2247.550,     5],
 [ 2302.060,    20],
 [ 2302.065,    20],
@@ -692,9 +691,9 @@ mercury = array([
 [17436.180,    30],
 [18130.381,    50],
 [19700.170,    40]
-])
+]
 
-cadmium = array([
+cadmium = [
 [ 2288.022, 1500],
 [ 2491.000,    3],
 [ 2508.910,   10],
@@ -762,9 +761,8 @@ cadmium = array([
 [19125.000,   55],
 [24378.000,   25],
 [25455.000,   35]
-])
+]
 
-merccad = take(array(vstack((mercury,cadmium))), argsort(array(vstack((mercury, cadmium)))[:,0], 0), 0)
+from collections import OrderedDict
 
-near = take(array(vstack((neon,argon))), argsort(array(vstack((neon,argon)))[:,0], 0), 0)
-
+elements = OrderedDict([('Ne',neon),('Ar',argon),('Hg',mercury),('Cd',cadmium)])

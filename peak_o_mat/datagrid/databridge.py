@@ -1,4 +1,5 @@
 import numpy as N
+np = N
 import re
 
 rowre = re.compile(r'^_row(\d+)$')
@@ -13,6 +14,8 @@ class DataBridge(dict):
     def __getitem__(self, name):
         if name == '_data':
             return getattr(self._table, 'data')
+        elif name == '_name':
+            return getattr(self.controller, 'name')
         elif name == '_selection':
             try:
                 t,l,b,r = self.controller.selection
@@ -20,34 +23,35 @@ class DataBridge(dict):
                 return [],[]
             else:
                 return N.atleast_2d(N.arange(t,b+1,1)).transpose(), N.atleast_2d(N.arange(l,r+1,1))
-        elif colre.match(name) is not None: #name.find('col') == 0:
-            col = int(name[3:])
+        elif colre.match(name) is not None:
+            col = int(colre.match(name).groups()[0])
             return N.atleast_2d(self._table.data[:,col]).T
-        elif rowre.match(name) is not None: #name.find('row') == 0:
-            row = int(name[3:])
-            return self._table.data[row]
+        elif rowre.match(name) is not None:
+            row = int(rowre.match(name).groups()[0])
+            return self._table.data[row,:]
         elif name == '_x':
             return N.atleast_2d(N.arange(self._table.data.shape[1],dtype=float))
         elif name == '_y':
             return N.atleast_2d(N.arange(self._table.data.shape[0],dtype=float)).transpose()
-        #elif name == 'help':
-        #    print __doc__
-        #    return lambda x=None: None
         else:
             return dict.__getitem__(self, name)
 
     def __setitem__(self, name, val):
         if name == '_data':
-            setattr(self._table, 'data', val)
-        elif rowre.match(name) is not None: #name.find('row') == 0:
-            row = int(name[3:])
-            # if not N.isscalar(val) and len(val.shape) > 1 and val.shape[0] == 1:
-                # val = val[0]
-            self._table.data[row] = val
-        elif colre.match(name) is not None: #name.find('col') == 0:
-            col = int(name[3:])
-            # if not N.isscalar(val) and len(val.shape) > 1 and val.shape[1] == 1:
-                # val = val[:,0]
-            self._table.data[:,col] = val
+            val = N.array(val).astype(N.float32)
+            if val.ndim != 2:
+                raise TypeError('array must have rank 2')
+            else:
+                setattr(self._table, 'data', val)
+        elif name == '_name':
+            self.controller.name = val
+        elif rowre.match(name) is not None:
+            row = int(rowre.match(name).groups()[0])
+            self._table.data[row,:] = np.asarray(val).flat
+        elif colre.match(name) is not None:
+            col = int(colre.match(name).groups()[0])
+            self._table.data[:,col] = np.asarray(val).flat
+        elif name in ['_x','_y','_selection']:
+            raise AttributeError('%s not writable'%name)
         else:
             dict.__setitem__(self,name,val)

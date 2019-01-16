@@ -1,31 +1,36 @@
-from peak_o_mat import peaks
+import numpy as np
+from peak_o_mat import lineshapebase as lb
+from peak_o_mat.pickers import Cmd
+from peak_o_mat import symbols
 
-class DGAPicker(list):
+def common_peak(x,amp,pos,fwhm):
+    """common_peak loaded from userfunc.py"""
+    return amp*np.exp(-(np.power(x-pos,2)/(fwhm*fwhm/4.0/np.log(2.0))))
+
+lb.add('CPEAK',
+        info=common_peak.__doc__,
+        func='common_peak(x, amp, pos, sigma)',
+        ptype='PEAK')
+
+symbols.add_constant('G',6.673e-11)
+
+class GFDPicker(list):
     def __init__(self, component, background_cb):
-        list.__init__(self, [(peaks.Cmd('xy'),self.amp_pos),(peaks.Cmd('mx'),self.fwhm),
-                             (peaks.Cmd('mxy'),self.amp_pos2)])
+        list.__init__(self,[(Cmd('mx'),self.pos),(Cmd('mxy'),self.amp_sigma)])
         self.f = component
         self.background_cb = background_cb
-        
-    def amp_pos(self, xy):
+
+    def pos(self, x):
+        self.f['pos'].value = x
+
+    def amp_sigma(self, xy):
         x, y = xy
-        if not hasattr(self, 'bg'):
-            self.bg = self.background_cb(x)
-            self.f['pos2'].value = self.f['amp2'].value = 0
-            self.f['pos'].value = x
-        self.f['amp'].value = y-self.bg
+        self.f['sigma'].value = np.abs(x - self.f['pos'].value)
+        self.f['amp'].value = -(y - self.background_cb(x, ignore_last=True)) * self.f['sigma'].value * np.sqrt(np.e) * np.sign(x - self.f['pos'].value)
 
-    def amp_pos2(self, xy):
-        x, y = xy
-        self.f['pos2'].value = x
-        self.f['amp2'].value = y-self.bg
-        
-    def fwhm(self, x):
-        self.f['fwhm'].value = x-self.f['pos'].value
+lb.add('GFD',
+       func='-amp*(x-pos)/(sigma*sigma)*np.exp(-0.5*(pow((x-pos)/sigma,2)))',
+       info='First derivative of a Gaussian',
+       ptype='PEAK',
+       picker=GFDPicker)
 
-
-peaks.add('DGA',
-          func='amp*exp(-(power(x-pos,2)/(fwhm*fwhm/2.0)))+amp2*exp(-(power(x-pos2,2)/(fwhm*fwhm/2.0)))',
-          info='a double gaussian',
-          ptype=peaks.ptype.PEAK,
-          picker=DGAPicker)
