@@ -18,6 +18,7 @@ np.seterr(over='ignore')
 
 import wx
 from wx.lib.pubsub import pub
+import wx.aui as aui
 
 import os
 import glob
@@ -115,7 +116,13 @@ class Controller(object):
 
         if view is not None:
             interactor.Install(self, self.view)
-            fitview = fitpanel.FitPanel(self.view.nb_modules)
+            fitview = fitpanel.FitPanel(self.view)
+
+            self.view._mgr.AddPane(fitview, aui.AuiPaneInfo().Name('fit').
+                              Caption('Fit').
+                              Bottom().FloatingSize(wx.Size(500, 250)).
+                              CloseButton(True).MaximizeButton(False))
+            self.view._mgr.Update()
 
             self.fit_controller = fitcontroller.FitController(self.selection_callback, fitview, fitinteractor.FitInteractor())
             self.codeeditor = codeeditor.new(self, view)
@@ -353,8 +360,8 @@ class Controller(object):
                     if inspect.isclass(obj):
                         if hasattr(obj, '__base__') and obj.__base__ == module.Module:
                             self._modules.append(obj(self, mod.__doc__))
-                        if hasattr(obj, '__base__') and obj.__base__ == module.BaseModule:
-                            self._modules.append(obj(self, self.view.nb_modules))
+                        #if hasattr(obj, '__base__') and obj.__base__ == module.BaseModule:
+                        #    self._modules.append(obj(self, self.view.nb_modules))
         else:
             for mod in modules.__all__:
                 try:
@@ -372,7 +379,7 @@ class Controller(object):
                             if hasattr(obj, '__base__') and obj.__base__ == module.Module:
                                 self._modules.append(obj(self, mod.__doc__))
                             if hasattr(obj, '__base__') and obj.__base__ == module.BaseModule:
-                                self._modules.append(obj(self, self.view.nb_modules))
+                                self._modules.append(obj(self, self.view))
 
         #user modules 
         moddir = os.path.join(configdir(),'modules')

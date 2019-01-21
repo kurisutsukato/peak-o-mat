@@ -1,4 +1,5 @@
 import wx
+import wx.aui as aui
 import wx.html as html
 import wx.adv as adv
 
@@ -62,8 +63,35 @@ class MainFrame(wx.Frame):
         if not silent:
             self.splash = Splash(self)
 
+        self._mgr = aui.AuiManager()
+        self._mgr.SetManagedWindow(self)
+
         self.setup_controls()
-        self.layout()
+        self.layout_controls()
+
+    def layout_controls(self):
+        #box = wx.BoxSizer(wx.VERTICAL)
+        #box.Add(self.nb_modules, 1, wx.EXPAND)
+        #self.pn_modules.SetSizer(box)
+
+        self._mgr.AddPane(self.panplot, aui.AuiPaneInfo().
+                        Name("canvas").CenterPane().
+                        CloseButton(False).MaximizeButton(True))
+
+        #self._mgr.AddPane(self.nb_fit, aui.AuiPaneInfo().Name('Modules').
+        #                Caption('Modules').
+        #                Bottom().FloatingSize(wx.Size(500, 250)).
+        #                CloseButton(False).MaximizeButton(False))
+        self._mgr.AddPane(self.tree, aui.AuiPaneInfo().
+                        Name("tree").Caption("Project").Right().
+                        TopDockable(False).BottomDockable(False).
+                        Position(0).CloseButton(False).MinSize((150,100)).
+                        FloatingSize(wx.Size(250, 300)).Layer(1))
+        #self._mgr.AddPane(self.pn_fitcentre, aui.AuiPaneInfo().Caption('Fit Commander').
+        #                Name('Fit Commander').
+        #                Right().Position(1).FloatingSize(wx.Size(300, 200)).MinSize((400,200)).
+        #                CloseButton(True).Show().Layer(2))
+        self._mgr.Update()
 
     def layout(self):
         box = wx.BoxSizer(wx.VERTICAL)
@@ -95,18 +123,28 @@ class MainFrame(wx.Frame):
         self.filehistory = wx.FileHistory()
         self.filehistory.UseMenu(self.menubar.GetMenu(0))
 
-        self.splitwin = wx.SplitterWindow(self, style=wx.SP_LIVE_UPDATE|wx.SP_THIN_SASH)
+        #self.splitwin = wx.SplitterWindow(self, style=wx.SP_LIVE_UPDATE|wx.SP_3DSASH)
+        #self.splitwin.SetSashGravity(1.0)
 
-        self.pan_plot = wx.Panel(self.splitwin)
-        self.pan_tree = wx.Panel(self.splitwin)
+        #self.pan_plot = wx.Panel(self.splitwin)
+        #self.pan_tree = wx.Panel(self.splitwin)
+        #self.pan_plot = wx.Panel(self)
+        #self.pan_tree = wx.Panel(self)
 
-        self.tb_canvas = controls.Toolbar(self.pan_plot)
-        self.canvas = plotcanvas.Canvas(self.pan_plot, name='canvas')
-        self.nb_modules = wx.Notebook(self.pan_plot)
-        self.tree = tree.TreeCtrl(self.pan_tree)
+        self.panplot = wx.Panel(self)
+        self.tb_canvas = controls.Toolbar(self.panplot)
+        self.canvas = plotcanvas.Canvas(self.panplot, name='canvas')
+        box = wx.BoxSizer(wx.HORIZONTAL)
+        box.Add(self.canvas,1,wx.EXPAND)
+        box.Add(self.tb_canvas, 0, wx.EXPAND)
+        self.panplot.SetSizer(box)
 
-        self.splitwin.SetMinimumPaneSize(20)
-        self.splitwin.SplitVertically(self.pan_plot, self.pan_tree, -100)
+        #self.nb_modules = wx.Notebook(self)
+
+        self.tree = tree.TreeCtrl(self)
+
+        #self.splitwin.SetMinimumPaneSize(20)
+        #self.splitwin.SplitVertically(self.pan_plot, self.pan_tree, -100)
 
         self.res = xrc_resource()
         self.frame_annotations = self.res.LoadFrame(self, 'frame_annotations')
@@ -200,7 +238,7 @@ class MainFrame(wx.Frame):
         if hasattr(self, 'splash'):
             self.splash.Raise()
             wx.CallLater(1000, self.splash.Close)
-        self.splitwin.SetSashPosition(760, True)
+        #self.splitwin.SetSashPosition(760, True)
 
         if startapp:
             if sys.platform == 'darwin':

@@ -1,6 +1,7 @@
 import wx
 from wx.lib.pubsub import pub as Publisher
 import wx.dataview as dv
+import wx.aui as aui
 
 import numpy as np
 from wx.lib.pubsub import pub
@@ -92,7 +93,7 @@ class Module(module.BaseModule):
         module.BaseModule.__init__(self, *args)
         self.init()
 
-        self.parent_view.AddPage(self.view, 'Calibration', select=False)
+        self.parent_view._mgr.AddPane(self.view, aui.AuiPaneInfo().Float().Dockable(False))
         pub.subscribe(self.OnPageChanged, (self.view.id, 'notebook','pagechanged'))
         pub.subscribe(self.OnSelectionChanged, (self.view.id, 'selection','changed'))
 

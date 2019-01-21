@@ -17,6 +17,8 @@
 ##     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import wx
+import wx.aui as aui
+
 from wx import xrc
 from wx.lib.pubsub import pub
 import os, sys
@@ -33,8 +35,18 @@ class BaseModule(object):
         self.parent_controller = controller
 
     def init(self):
-        pub.subscribe(self.OnPageChanged, (self.view.id, 'notebook','pagechanged'))
+        #pub.subscribe(self.OnPageChanged, (self.view.id, 'notebook','pagechanged'))
+        self.view.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
+        self.view.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
         pub.subscribe(self.OnSelectionChanged, (self.view.id, 'selection','changed'))
+
+    def OnSetFocus(self, evt):
+        self.page_changed(True)
+        self.visible = True
+
+    def OnKillFocus(self, evt):
+        self.page_changed(False)
+        self.visible = False
 
     def OnPageChanged(self, msg):
         if self.view == msg:
@@ -46,8 +58,8 @@ class BaseModule(object):
         self._last_page = msg
 
     def OnSelectionChanged(self, plot, dataset):
-        if self.visible:
-            self.selection_changed()
+        #if self.visible:
+        self.selection_changed()
 
 
 class Module(object):
@@ -74,7 +86,7 @@ class MyModule(module.Module):
         self._last_page = None
         self.visible = False
         
-        self.notebook = controller.view.nb_modules
+        #self.notebook = controller.view.nb_modules
         module_dir = os.path.dirname(module)
         module = os.path.splitext(os.path.basename(module))[0]
 
@@ -87,13 +99,20 @@ class MyModule(module.Module):
 
         self.name = module
         self.xmlres = xrc.XmlResource(xrcfile)
+
         if self.xmlres is not None:
-            self.panel = self.xmlres.LoadPanel(self.notebook, self.name)
+            #self.panel = self.xmlres.LoadPanel(self.notebook, self.name)
+            self.panel = self.xmlres.LoadPanel(controller.view, self.name)
+            controller.view._mgr.AddPane(self.panel, aui.AuiPaneInfo().Float().Dockable(False))
+            controller.view._mgr.Update()
             if self.panel is None:
                 raise IOError('unable to load wx.Panel \'%s\' from %s'%(self.name,xrcfile))
             print('registering module \'%s\''%(self.name))
-            self.notebook.AddPage(self.panel, self.title, select=False)
-            pub.subscribe(self.OnPageChanged, (self.view_id, 'notebook','pagechanged'))
+            #self.notebook.AddPage(self.panel, self.title, select=False)
+            #pub.subscribe(self.OnPageChanged, (self.view_id, 'notebook','pagechanged'))
+
+            self.panel.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
+            self.panel.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
             pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
             wx.CallAfter(self.init)
             wx.CallAfter(self.panel.Layout)
@@ -124,7 +143,15 @@ class MyModule(module.Module):
             dlg.ShowModal()
         else:
             evt.Skip()
-        
+
+    def OnSetFocus(self, evt):
+        self.page_changed(True)
+        self.visible = True
+
+    def OnKillFocus(self, evt):
+        self.page_changed(False)
+        self.visible = False
+
     def OnPageChanged(self, msg):
         if self.panel == msg:
             self.page_changed(True)
@@ -133,16 +160,10 @@ class MyModule(module.Module):
             self.page_changed(False)
             self.visible = False
         self._last_page = msg
-        
-    def Bind(self, *args, **kwargs):
-        self.panel.Bind(*args, **kwargs)
-
-    def Unbind(self, *args, **kwargs):
-        self.panel.Unbind(*args, **kwargs)
 
     def OnSelectionChanged(self, plot, dataset):
-        if self.visible:
-            self.selection_changed()
+        #if self.visible:
+        self.selection_changed()
         
     def selection_changed(self):
         pass
