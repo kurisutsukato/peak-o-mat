@@ -7,7 +7,7 @@ import numpy as np
 from wx.lib.pubsub import pub
 
 
-from peak_o_mat import module, spec, calib, controls, misc_ui
+from peak_o_mat import module, spec, calib, controls, misc_ui, menu
 
 class Panel(wx.Panel):
     def __init__(self, parent, model):
@@ -93,7 +93,11 @@ class Module(module.BaseModule):
         module.BaseModule.__init__(self, *args)
         self.init()
 
-        self.parent_view._mgr.AddPane(self.view, aui.AuiPaneInfo().Float().Dockable(False))
+        self.parent_view._mgr.AddPane(self.view, aui.AuiPaneInfo().
+                                      Float().Dockable(False).Hide().
+                                      Caption(self.title).Name(self.title))
+        menu.add_module(self.parent_controller.view.menubar, self.title)
+
         pub.subscribe(self.OnPageChanged, (self.view.id, 'notebook','pagechanged'))
         pub.subscribe(self.OnSelectionChanged, (self.view.id, 'selection','changed'))
 

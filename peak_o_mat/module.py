@@ -26,6 +26,7 @@ import os, sys
 from . import misc
 from . import misc_ui
 from . import controls
+from . import menu
 
 class BaseModule(object):
     def __init__(self, controller, view):
@@ -103,13 +104,16 @@ class MyModule(module.Module):
         if self.xmlres is not None:
             #self.panel = self.xmlres.LoadPanel(self.notebook, self.name)
             self.panel = self.xmlres.LoadPanel(controller.view, self.name)
-            controller.view._mgr.AddPane(self.panel, aui.AuiPaneInfo().Float().Dockable(False))
+            controller.view._mgr.AddPane(self.panel, aui.AuiPaneInfo().Float().
+                                         Dockable(False).Caption(self.name).
+                                         Name(self.title).Hide())
             controller.view._mgr.Update()
             if self.panel is None:
                 raise IOError('unable to load wx.Panel \'%s\' from %s'%(self.name,xrcfile))
             print('registering module \'%s\''%(self.name))
             #self.notebook.AddPage(self.panel, self.title, select=False)
             #pub.subscribe(self.OnPageChanged, (self.view_id, 'notebook','pagechanged'))
+            menu.add_module(controller.view.menubar, self.title)
 
             self.panel.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
             self.panel.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
