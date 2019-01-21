@@ -1,5 +1,6 @@
 
 import wx
+import wx.aui as aui
 
 #import wx.lib.platebtn as platebtn
 
@@ -662,9 +663,15 @@ class FigureListController:
         self.model.Reset(len(self.model.data))
 
     def create_ui(self):
-        self.view = FigureListCtrl(self.parent_view.pan_tree, self.model, self)
-        self.parent_view.pan_tree.GetSizer().Add(self.view,0,wx.EXPAND)
-        self.parent_view.pan_tree.Layout()
+        self.view = FigureListCtrl(self.parent_view, self.model, self)
+        self.parent_view._mgr.AddPane(self.view, aui.AuiPaneInfo().
+                        TopDockable(False).BottomDockable(False).
+                        Name("flc").Caption("Figures").Right().
+                        Position(1).CloseButton(False).MinSize((150,100)).
+                        FloatingSize(wx.Size(250, 300)).Layer(1))
+        self.parent_view._mgr.Update()
+        #self.parent_view.pan_tree.GetSizer().Add(self.view,0,wx.EXPAND)
+        #self.parent_view.pan_tree.Layout()
 
 
 class FigureListCtrl(wx.Panel):

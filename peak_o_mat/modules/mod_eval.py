@@ -46,7 +46,8 @@ class Module(module.Module):
 
     def __init__(self, *args):
         module.Module.__init__(self, __file__, *args)
-    
+        self.plot = None
+
     def init(self):
         self.xrc_btn_bez_load.Disable()
         self.xrc_btn_bez_load.Bind(wx.EVT_BUTTON, self.OnAnchor)

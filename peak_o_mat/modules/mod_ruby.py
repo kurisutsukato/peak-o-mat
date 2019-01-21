@@ -14,8 +14,8 @@ class Module(module.Module):
         module.Module.__init__(self, __file__, *args)
         
     def init(self):
-        self.Bind(wx.EVT_TEXT, self.OnTemp, self.xrc_txt_temp)
-        self.Bind(wx.EVT_CHOICE, self.OnChoice)
+        self.panel.Bind(wx.EVT_TEXT, self.OnTemp, self.xrc_txt_temp)
+        self.panel.Bind(wx.EVT_CHOICE, self.OnChoice)
         
         pub.subscribe(self.selection_changed, (self.view_id, 'fitfinished'))
         self.panel.Layout()

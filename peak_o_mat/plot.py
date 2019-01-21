@@ -435,6 +435,7 @@ class Interactor:
             self.view.SetFocusIgnoringChildren()
 
     def OnMouseLeave(self, evt):
+        return
         if wx.GetTopLevelParent(self.view).IsActive():
             self.view.GetParent().SetFocusIgnoringChildren()
 

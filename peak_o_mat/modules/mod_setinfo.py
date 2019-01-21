@@ -82,14 +82,14 @@ class Module(module.Module):
         self._selected = False
         self.xmlres.AttachUnknownControl('xrc_lc_trafo', TrafoListCtrl(self.panel, -1,
                                                                        style=wx.LC_REPORT))
-        self.Bind(wx.EVT_BUTTON, self.OnRemoveTrafo, self.xrc_btn_trafo_remove)
-        self.Bind(wx.EVT_BUTTON, self.OnRemoveAllTrafos, self.xrc_btn_trafo_remove_all)
-        self.Bind(wx.EVT_BUTTON, self.OnTrafosMakePermanent, self.xrc_btn_trafo_permanent)
-        self.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEndEdit)
-        self.Bind(wx.EVT_LIST_ITEM_SELECTED, lambda evt: self.OnItemSelected(evt, True))
-        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, lambda evt: self.OnItemSelected(evt, False))
-        self.Bind(wx.EVT_BUTTON, self.OnRemoveMask, self.xrc_btn_mask_remove)
-        self.Bind(wx.EVT_BUTTON, self.OnMaskMakePermanent, self.xrc_btn_mask_permanent)
+        self.panel.Bind(wx.EVT_BUTTON, self.OnRemoveTrafo, self.xrc_btn_trafo_remove)
+        self.panel.Bind(wx.EVT_BUTTON, self.OnRemoveAllTrafos, self.xrc_btn_trafo_remove_all)
+        self.panel.Bind(wx.EVT_BUTTON, self.OnTrafosMakePermanent, self.xrc_btn_trafo_permanent)
+        self.panel.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEndEdit)
+        self.panel.Bind(wx.EVT_LIST_ITEM_SELECTED, lambda evt: self.OnItemSelected(evt, True))
+        self.panel.Bind(wx.EVT_LIST_ITEM_DESELECTED, lambda evt: self.OnItemSelected(evt, False))
+        self.panel.Bind(wx.EVT_BUTTON, self.OnRemoveMask, self.xrc_btn_mask_remove)
+        self.panel.Bind(wx.EVT_BUTTON, self.OnMaskMakePermanent, self.xrc_btn_mask_permanent)
         
         self.xrc_lc_trafo.OnCheckItem = self.OnCheckItem
         self.xrc_btn_trafo_remove.Enable(False)
@@ -155,12 +155,12 @@ class Module(module.Module):
 
     def selection_changed(self):
         set = self.controller.active_set
-        if self._selected:
-            if set is not None:
-                self.panel.Enable()
-                self.update()
-            else:
-                self.panel.Disable()
+        if set is not None:
+            self.panel.Enable()
+            self.update()
+        else:
+            self.panel.Disable()
+            self.update()
 
     def update(self):
         self._updating = True
@@ -170,6 +170,7 @@ class Module(module.Module):
             self.xrc_lc_trafo.DeleteAllItems()
 
             self.xrc_btn_trafo_remove.Enable(False)
+
             self.xrc_btn_trafo_remove_all.Enable(len(set.trafo) > 0)
             self.xrc_btn_trafo_permanent.Enable(len(set.trafo) > 0)
             
@@ -183,6 +184,20 @@ class Module(module.Module):
                 name = name[:12]+'...'
             self.xrc_lab_name.SetLabel('set name: %s'%name)
             self.xrc_lab_points.SetLabel('%d points, %d masked'%(len(set.data[0]), len(np.compress(set.mask == 1, set.mask))))
+        else:
+            self.xrc_lc_trafo.DeleteAllItems()
+
+            self.xrc_btn_trafo_remove.Enable(False)
+
+            self.xrc_btn_trafo_remove_all.Enable(False)
+            self.xrc_btn_trafo_permanent.Enable(False)
+
+            self.xrc_btn_mask_remove.Enable(False)
+            self.xrc_btn_mask_permanent.Enable(False)
+
+            self.xrc_lab_name.SetLabel('no set selected')
+            self.xrc_lab_points.SetLabel('')
+
         self._updating = False
 
 class MayBeCalled(object):
