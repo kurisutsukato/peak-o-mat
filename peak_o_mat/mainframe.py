@@ -65,15 +65,13 @@ class MainFrame(wx.Frame):
 
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
-        self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClose)
+        self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClosePane)
 
         self.create_menus(plotserver)
         self.setup_controls()
         self.layout_controls()
 
-
-    def OnClose(self, evt):
-        print(evt.GetPane().caption)
+    def OnClosePane(self, evt):
         evt.Veto()
         evt.GetPane().Hide()
         self._mgr.Update()
