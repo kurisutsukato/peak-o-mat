@@ -120,7 +120,7 @@ class Controller(object):
 
             self.view._mgr.AddPane(fitview, aui.AuiPaneInfo().Name('fit').
                               Caption('Fit').
-                              Bottom().MinSize(wx.Size(500, 250)).
+                              Bottom().MinSize(wx.Size(900, 250)).
                               CloseButton(True).MaximizeButton(False))
             self.view._mgr.Update()
 

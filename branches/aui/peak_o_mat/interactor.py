@@ -111,6 +111,7 @@ class Interactor(object):
         pub.subscribe(self.pubOnStopAll, (self.view_id, 'stop_all'))
 
     def pubOnStopAll(self):
+        return
         self.view.Destroy()
         # TODO: muss hier noch mehr hin?
 
@@ -375,6 +376,7 @@ class Interactor(object):
 
     def OnClose(self, evt):
         if self.controller.close():
+            self.view.PopEventHandler(True)
             evt.Skip()
         else:
             evt.Veto()
