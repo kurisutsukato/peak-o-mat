@@ -7,15 +7,16 @@
         <object class="wxBoxSizer">
           <orient>wxVERTICAL</orient>
           <object class="sizeritem">
+            <object class="wxStaticText" name="xrc_lab_name">
+              <label>name: NN</label>
+            </object>
+            <flag>wxTOP|wxLEFT|wxEXPAND</flag>
+            <border>5</border>
+          </object>
+          <object class="sizeritem">
             <object class="wxBoxSizer">
               <orient>wxHORIZONTAL</orient>
-              <object class="sizeritem">
-                <object class="wxStaticText" name="xrc_lab_name">
-                  <label>name: NN</label>
-                </object>
-                <option>1</option>
-                <flag>wxALIGN_CENTRE_VERTICAL</flag>
-              </object>
+              
               <object class="sizeritem">
                 <object class="wxStaticText" name="xrc_lab_points">
                   <label>xx pts, xx masked</label>
