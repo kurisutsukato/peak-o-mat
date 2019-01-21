@@ -6,7 +6,7 @@ from wx import xrc
 import os
 
 from . import misc_ui
-from .menu import menu_ids
+from .menu import menu_ids, module_menu_ids
 
 from . import misc
 
@@ -37,6 +37,9 @@ class Interactor(object):
         self.view.Bind(wx.EVT_MENU, self.OnStartServer, id=menu_ids['Start plot server'])
 
         self.view.Bind(wx.EVT_MENU, self.OnAbout, id=menu_ids['About'])
+
+        for mid in module_menu_ids.values():
+            self.view.Bind(wx.EVT_MENU, lambda evt, mid=mid: self.OnShowHideModule(evt, mid), id=mid)
 
         self.view.frame_annotations.Bind(wx.EVT_CLOSE, self.OnNotesClose)
 
@@ -136,6 +139,10 @@ class Interactor(object):
 
     def pubOnAddSet(self, spec):
         self.controller.add_set(spec)
+
+    def OnShowHideModule(self, evt, mid):
+        self.view._mgr.GetPane(module_menu_ids[mid]).Show()
+        self.view._mgr.Update()
 
     def OnStartServer(self, evt):
         menu = self.view.GetMenuBar().GetMenu(3)

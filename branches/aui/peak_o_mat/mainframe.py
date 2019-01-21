@@ -9,7 +9,7 @@ from . import misc
 from . import plotcanvas
 from . import controls
 from . import tree
-from .menu import menu_ids
+from . import menu
 from . import images
 from .misc_ui import xrc_resource
 from .dialog import ImportDialog, ExportDialog
@@ -65,9 +65,18 @@ class MainFrame(wx.Frame):
 
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
+        self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClose)
 
+        self.create_menus(plotserver)
         self.setup_controls()
         self.layout_controls()
+
+
+    def OnClose(self, evt):
+        print(evt.GetPane().caption)
+        evt.Veto()
+        evt.GetPane().Hide()
+        self._mgr.Update()
 
     def layout_controls(self):
         #box = wx.BoxSizer(wx.VERTICAL)
@@ -118,8 +127,6 @@ class MainFrame(wx.Frame):
         self.statusbar = controls.Status(self)
         self.SetStatusBar(self.statusbar)
 
-        self.create_menus(plotserver=False)
-
         self.filehistory = wx.FileHistory()
         self.filehistory.UseMenu(self.menubar.GetMenu(0))
 
@@ -160,46 +167,12 @@ class MainFrame(wx.Frame):
         self.frame_annotations.SetIcon(ico)
 
     def create_menus(self, plotserver=False):
-        mb = wx.MenuBar()
+        mb = menu.create(plotserver=plotserver)
         self.menubar = mb
-
-        def _q(arg):
-            mid = arg.split('\t')[0]
-            return menu_ids[mid], arg
-
-        file_menu = wx.Menu()
-        file_menu.Append(*_q('New'))
-        file_menu.Append(*_q('Open project...'))
-        file_menu.Append(*_q('Save as...'))
-        file_menu.Append(*_q('Save\tCTRL-s'))
-        file_menu.AppendSeparator()
-        file_menu.Append(*_q('Quit\tCTRL-q'))
-
-        data_menu = wx.Menu()
-        data_menu.Append(*_q('Import...'))
-        data_menu.Append(*_q('Export...'))
-
-        extras_menu = wx.Menu()
-        extras_menu.AppendCheckItem(*_q('Code Editor\tCTRL-e'))
-        extras_menu.AppendCheckItem(*_q('Data Grid\tCTRL-d'))
-        extras_menu.AppendCheckItem(*_q('Notepad\tCTRL-i'))
-
-        help_menu = wx.Menu()
-        help_menu.Append(wx.ID_ABOUT, "&About peak-o-mat")
-
-        mb.Append(file_menu, 'File')
-        mb.Append(data_menu, 'Data')
-        mb.Append(extras_menu, 'View')
-        if plotserver:
-            tools_menu = wx.Menu()
-            tools_menu.Append(*_q('Start plot server'))
-            mb.Append(tools_menu, 'Tools')
-        mb.Append(help_menu, "&Help")
-
         self.SetMenuBar(mb)
 
     def check_menu(self, item, state):
-        self.menubar.Check(menu_ids[item], state)
+        self.menubar.Check(menu.menu_ids[item], state)
         
     def get_filehistory(self):
         return [self.filehistory.GetHistoryFile(n) for n in reversed(list(range(self.filehistory.GetCount())))]

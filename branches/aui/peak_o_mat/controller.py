@@ -120,7 +120,7 @@ class Controller(object):
 
             self.view._mgr.AddPane(fitview, aui.AuiPaneInfo().Name('fit').
                               Caption('Fit').
-                              Bottom().FloatingSize(wx.Size(500, 250)).
+                              Bottom().MinSize(wx.Size(500, 250)).
                               CloseButton(True).MaximizeButton(False))
             self.view._mgr.Update()
 
@@ -360,8 +360,9 @@ class Controller(object):
                     if inspect.isclass(obj):
                         if hasattr(obj, '__base__') and obj.__base__ == module.Module:
                             self._modules.append(obj(self, mod.__doc__))
-                        #if hasattr(obj, '__base__') and obj.__base__ == module.BaseModule:
-                        #    self._modules.append(obj(self, self.view.nb_modules))
+                        if hasattr(obj, '__base__') and obj.__base__ == module.BaseModule:
+                            self._modules.append(obj(self, self.view.nb_modules))
+
         else:
             for mod in modules.__all__:
                 try:
