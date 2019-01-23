@@ -95,12 +95,14 @@ class Module(module.Module):
             self.update_background()
 
     def selection_changed(self):
+        print('mod_background.selection_changed')
         self.update_background()
 
     def page_changed(self, me):
+        print('mod_background.page_changed: {}'.format(me))
         if me:
             self.update_background()
         else:
             self.plotme = None
-        
+            self.controller.update_plot()
 

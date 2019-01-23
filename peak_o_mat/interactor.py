@@ -2,6 +2,8 @@
 from wx.lib.pubsub import pub
 
 import wx
+import wx.aui as aui
+
 from wx import xrc
 import os
 
@@ -39,7 +41,7 @@ class Interactor(object):
         self.view.Bind(wx.EVT_MENU, self.OnAbout, id=menu_ids['About'])
 
         for mid in module_menu_ids.values():
-            self.view.Bind(wx.EVT_MENU, lambda evt, mid=mid: self.OnShowHideModule(evt, mid), id=mid)
+            self.view.Bind(wx.EVT_MENU, lambda evt, mid=mid: self.OnMenuShowHideModule(evt, mid), id=mid)
 
         self.view.frame_annotations.Bind(wx.EVT_CLOSE, self.OnNotesClose)
 
@@ -51,6 +53,8 @@ class Interactor(object):
         self.view.tb_canvas.Bind(wx.EVT_TOGGLEBUTTON, self.OnCanvasButton)
 
         self.view.Bind(wx.EVT_TEXT, self.OnEditAnnotations, self.view.txt_annotations)
+
+        self.view._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnModuleCloseButton)
 
         pub.subscribe(self.pubOnMessage, (self.view_id, 'message'))
         pub.subscribe(self.OnTreeSelect, (self.view_id, 'tree', 'select'))
@@ -141,7 +145,11 @@ class Interactor(object):
     def pubOnAddSet(self, spec):
         self.controller.add_set(spec)
 
-    def OnShowHideModule(self, evt, mid):
+    def OnModuleCloseButton(self, evt):
+        m = evt.GetPane().name
+        #self.controller._modules[m].page_changed(False)
+
+    def OnMenuShowHideModule(self, evt, mid):
         self.view._mgr.GetPane(module_menu_ids[mid]).Show()
         self.view._mgr.Update()
 
