@@ -124,7 +124,7 @@ class Controller(object):
             self.view._mgr.AddPane(fitview, aui.AuiPaneInfo().Name('fit').
                               Caption('Fit').
                               Bottom().MinSize(wx.Size(900, 250)).
-                              CloseButton(True).MaximizeButton(False))
+                              CloseButton(False).MaximizeButton(False))
             self.view._mgr.Update()
 
             self.fit_controller = fitcontroller.FitController(self.selection_callback, fitview, fitinteractor.FitInteractor())
