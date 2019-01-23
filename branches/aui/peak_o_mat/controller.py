@@ -81,9 +81,12 @@ class State:
     working = False
     show_peaks = False
 
-class ModulesContainer(list):
+class ModulesContainer(dict):
+    def append(self, item):
+        self[item.title] = item
+
     def get_plot_objects(self):
-        for m in self:
+        for m in self.values():
             try:
                 if m.plotme is not None:
                     yield(m.plotme)
@@ -306,7 +309,7 @@ class Controller(object):
             res = self.view.export_dialog_multi(misc.cwd())
             if res is not None:
                 path, ext, only_vis, overwrite = res
-                self.export_data(path, options=(ext, only_vis,overwrite))
+                self.export_data(path, options=(ext, only_vis, overwrite))
         else:
             path = self.view.export_dialog_single(misc.cwd(), self.active_set.name)
             if path is not None:
@@ -405,6 +408,8 @@ class Controller(object):
         #print self._modules
 
     def page_changed(self, name):
+        #TODO: wofuer ist das?
+        print('controller.page_changed: {}'.format(name))
         pass
             
     def annotations_changed(self, txt):

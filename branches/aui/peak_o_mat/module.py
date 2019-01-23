@@ -32,10 +32,13 @@ class BaseModule(object):
     def __init__(self, controller, view):
         self.visible = False
         self._last_page = None
+        self.plotme = None
         self.parent_view = view
         self.parent_controller = controller
+        self.name = os.path.splitext(os.path.basename(__file__))[0]
 
     def init(self):
+        assert hasattr(self, 'title')
         #pub.subscribe(self.OnPageChanged, (self.view.id, 'notebook','pagechanged'))
         self.view.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
         self.view.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
@@ -78,11 +81,11 @@ class MyModule(module.Module):
         self.controller = controller
         self.project = controller.project
         self.doc = doc
+        self.plotme = None
 
         self.view_id = 'ID'+str(id(wx.GetTopLevelParent(self.controller.view)))
 
-        if not hasattr(self, 'title'):
-            self.title = 'no title'
+        assert hasattr(self, 'title')
 
         self._last_page = None
         self.visible = False
@@ -105,7 +108,7 @@ class MyModule(module.Module):
             #self.panel = self.xmlres.LoadPanel(self.notebook, self.name)
             self.panel = self.xmlres.LoadPanel(controller.view, self.name)
             controller.view._mgr.AddPane(self.panel, aui.AuiPaneInfo().Float().
-                                         Dockable(False).Caption(self.name).
+                                         Dockable(False).Caption(self.title).
                                          Name(self.title).Hide())
             controller.view._mgr.Update()
             if self.panel is None:
@@ -117,6 +120,7 @@ class MyModule(module.Module):
 
             self.panel.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
             self.panel.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
+            #controller.view._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClose)
             pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
             wx.CallAfter(self.init)
             wx.CallAfter(self.panel.Layout)
@@ -153,10 +157,12 @@ class MyModule(module.Module):
         self.visible = True
 
     def OnKillFocus(self, evt):
+        #TODO: manche module zeigen nur informationen an, das duerfen sie immer, aber nicht plotten, wenn ohne Fokus
         self.page_changed(False)
-        self.visible = False
+        #self.visible = False
 
     def OnPageChanged(self, msg):
+        print('page changed: {}, {}'.format(self.title, msg))
         if self.panel == msg:
             self.page_changed(True)
             self.visible = True
@@ -166,8 +172,8 @@ class MyModule(module.Module):
         self._last_page = msg
 
     def OnSelectionChanged(self, plot, dataset):
-        #if self.visible:
-        self.selection_changed()
+        if self.visible:
+            self.selection_changed()
         
     def selection_changed(self):
         pass
