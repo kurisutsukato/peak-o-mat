@@ -9,16 +9,17 @@ import numpy as N
 
 class Module(module.Module):
     title = 'Ruby Calibration'
-    
+    update_in_background = True
+
     def __init__(self, *args):
         module.Module.__init__(self, __file__, *args)
         
     def init(self):
-        self.panel.Bind(wx.EVT_TEXT, self.OnTemp, self.xrc_txt_temp)
-        self.panel.Bind(wx.EVT_CHOICE, self.OnChoice)
+        self.view.Bind(wx.EVT_TEXT, self.OnTemp, self.xrc_txt_temp)
+        self.view.Bind(wx.EVT_CHOICE, self.OnChoice)
         
         pub.subscribe(self.selection_changed, (self.view_id, 'fitfinished'))
-        self.panel.Layout()
+        self.view.Layout()
 
         self.xrc_txt_temp.SetValidator(controls.InputValidator(controls.FLOAT_ONLY))
         
@@ -69,10 +70,10 @@ class Module(module.Module):
         if aset is not None and aset.mod is not None and \
            len([x for x in list(aset.mod.keys()) if x in lineshapebase.lineshapes.peak]) >= 2:
             self.model = aset.mod
-            self.panel.Enable()
+            self.view.Enable()
             self.update_choices()
         else:
-            self.panel.Disable()
+            self.view.Disable()
 
     def update_choices(self):
         components = self.model.tokens.split(' ')

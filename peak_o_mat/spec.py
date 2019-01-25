@@ -580,7 +580,9 @@ TypeError: ufunc 'isfinite' not supported for the input types, and the inputs co
         else:
             ret =  Spec(self.x, np.divide(self.y,other.y), '%s/%s'%(self.name,other.name))
         return ret
-    
+
+    __truediv__ = __div__
+
     def __mul__(self, other):
         if not isinstance(other, Spec):
             if np.isscalar(other):

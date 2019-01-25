@@ -141,6 +141,16 @@ class Controller(object):
             self.open_project(lpj_path)
             self.datagrid.new()
             self.update_plot()
+
+            pfile = os.path.join(configdir(), 'perspective')
+            try:
+                with open(pfile) as f:
+                    perspective = f.read()
+            except IOError:
+                print('unable to read perspective')
+            else:
+                wx.CallAfter(self.view._mgr.LoadPerspective, perspective, True)
+
             wx.CallAfter(pub.sendMessage, (self.view.id, 'figurelist','needsupdate'))
 
     def message(self, msg, blink=False, forever=False):
@@ -266,6 +276,13 @@ class Controller(object):
         
     def close(self):
         if not self.project_modified or self.view.close_project_dialog(self.project.name):
+            perspective = self.view._mgr.SavePerspective()
+            pfile = os.path.join(configdir(), 'perspective')
+            try:
+                with open(pfile,'w') as f:
+                    f.write(perspective)
+            except IOError:
+                print('unable to save perspective')
             pub.sendMessage((self.view.id, 'stop_all'))
             return True
         return False
@@ -407,11 +424,6 @@ class Controller(object):
                     print('user module %s import error: %s'%(name, msg))
         #print self._modules
 
-    def page_changed(self, name):
-        #TODO: wofuer ist das?
-        print('controller.page_changed: {}'.format(name))
-        pass
-            
     def annotations_changed(self, txt):
         self.project.annotations = txt
         pub.sendMessage((self.view.id, 'changed'))

@@ -29,6 +29,8 @@ from . import controls
 from . import menu
 
 class BaseModule(object):
+    update_in_background = True
+
     def __init__(self, controller, view):
         self.visible = False
         self._last_page = None
@@ -40,8 +42,8 @@ class BaseModule(object):
     def init(self):
         assert hasattr(self, 'title')
         #pub.subscribe(self.OnPageChanged, (self.view.id, 'notebook','pagechanged'))
-        self.view.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
-        self.view.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
+        self.view.Bind(wx.EVT_ENTER_WINDOW, self.OnSetFocus)
+        self.view.Bind(wx.EVT_LEAVE_WINDOW, self.OnKillFocus)
         pub.subscribe(self.OnSelectionChanged, (self.view.id, 'selection','changed'))
 
     def OnSetFocus(self, evt):
@@ -62,11 +64,13 @@ class BaseModule(object):
         self._last_page = msg
 
     def OnSelectionChanged(self, plot, dataset):
-        #if self.visible:
-        self.selection_changed()
+        if self.update_in_background or self.view.HasFocus():
+            self.selection_changed()
 
 
 class Module(object):
+    update_in_background = False
+
     def __init__(self, module, controller, doc):
         if module is None:
             raise Exception("""
@@ -106,38 +110,36 @@ class MyModule(module.Module):
 
         if self.xmlres is not None:
             #self.panel = self.xmlres.LoadPanel(self.notebook, self.name)
-            self.panel = self.xmlres.LoadPanel(controller.view, self.name)
-            controller.view._mgr.AddPane(self.panel, aui.AuiPaneInfo().Float().
-                                         Dockable(False).Caption(self.title).
+            self.view = self.xmlres.LoadPanel(controller.view, self.name)
+            controller.view._mgr.AddPane(self.view, aui.AuiPaneInfo().Float().
+                                         Dockable(True).Caption(self.title).
                                          Name(self.title).Hide())
+
             controller.view._mgr.Update()
-            if self.panel is None:
+            if self.view is None:
                 raise IOError('unable to load wx.Panel \'%s\' from %s'%(self.name,xrcfile))
             print('registering module \'%s\''%(self.name))
             #self.notebook.AddPage(self.panel, self.title, select=False)
             #pub.subscribe(self.OnPageChanged, (self.view_id, 'notebook','pagechanged'))
             menu.add_module(controller.view.menubar, self.title)
 
-            self.panel.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
-            self.panel.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
-            #controller.view._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClose)
             pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
             wx.CallAfter(self.init)
-            wx.CallAfter(self.panel.Layout)
+            wx.CallAfter(self.view.Layout)
         else:
             raise IOError(xrcfile+' not found')
 
-        self.panel.Bind(wx.EVT_BUTTON, self.OnHelp)
+        self.view.Bind(wx.EVT_BUTTON, self.OnHelp)
 
     def __getattr__(self, name):
         if name.find('xrc_') == 0:
-            return xrc.XRCCTRL(self.panel, name)
+            return xrc.XRCCTRL(self.view, name)
         else:
             raise AttributeError(name)
 
     def message(self, msg, target=1, blink=False):
         event = misc_ui.ShoutEvent(-1, msg=msg, target=target, blink=blink)
-        wx.PostEvent(self.panel, event)
+        wx.PostEvent(self.view, event)
 
     def OnHelp(self, evt):
         # hack in order to be called with evt=None arg
@@ -146,33 +148,28 @@ class MyModule(module.Module):
         except:
             btnname = 'xrc_btn_help'
         if btnname == 'xrc_btn_help':
-            dlg = controls.ScrolledMessageDialog(self.panel, self.doc, self.title)
+            dlg = controls.ScrolledMessageDialog(self.view, self.doc, self.title)
             
             dlg.ShowModal()
         else:
             evt.Skip()
 
-    def OnSetFocus(self, evt):
-        self.page_changed(True)
-        self.visible = True
-
-    def OnKillFocus(self, evt):
-        #TODO: manche module zeigen nur informationen an, das duerfen sie immer, aber nicht plotten, wenn ohne Fokus
-        self.page_changed(False)
-        #self.visible = False
+    def OnActivated(self, evt):
+        print(evt)
+        evt.Skip()
 
     def OnPageChanged(self, msg):
         print('page changed: {}, {}'.format(self.title, msg))
-        if self.panel == msg:
+        if self.view == msg:
             self.page_changed(True)
             self.visible = True
-        elif self._last_page == self.panel:
+        elif self._last_page == self.view:
             self.page_changed(False)
             self.visible = False
         self._last_page = msg
 
     def OnSelectionChanged(self, plot, dataset):
-        if self.visible:
+        if self.update_in_background or self.view.HasFocus():
             self.selection_changed()
         
     def selection_changed(self):

@@ -58,8 +58,8 @@ class Module(module.Module):
         thread = Getter(self)
         thread.start()
 
-        self.panel.Bind(wx.EVT_PAINT, self.OnPaint)
-        self.panel.Bind(wx.EVT_SIZE, self.OnSize)
+        self.view.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.view.Bind(wx.EVT_SIZE, self.OnSize)
 
         self.timer = wx.Timer()
         self.timer.Start(10*60*1000) # wake up every 10 minutes
@@ -69,12 +69,12 @@ class Module(module.Module):
         self.OnSize(None)
         
     def OnSize(self, event):
-        self.width, self.height = self.panel.GetClientSize()
+        self.width, self.height = self.view.GetClientSize()
         self._buffer = wx.Bitmap(self.width, self.height)
         self.update()
         
     def OnPaint(self, event):
-        dc = wx.BufferedPaintDC(self.panel, self._buffer, wx.BUFFER_CLIENT_AREA)
+        dc = wx.BufferedPaintDC(self.view, self._buffer, wx.BUFFER_CLIENT_AREA)
 
     def OnTimer(self, evt):
         self.message('fetching image...',target=1)
@@ -82,7 +82,7 @@ class Module(module.Module):
         thread.start()
 
     def update(self, evt=None):
-        dc = wx.BufferedDC(wx.ClientDC(self.panel), self._buffer)
+        dc = wx.BufferedDC(wx.ClientDC(self.view), self._buffer)
         #dc.BeginDrawing()
         dc.SetBackground( wx.Brush("White") )
         dc.Clear() # make sure you clear the bitmap!

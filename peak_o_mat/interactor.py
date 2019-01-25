@@ -12,6 +12,8 @@ from .menu import menu_ids, module_menu_ids
 
 from . import misc
 
+#TODO: implement a 'set attribute changed' event
+
 class Interactor(object):
     def __init__(self, id):
         self.view_id = id
@@ -29,7 +31,7 @@ class Interactor(object):
         self.view.Bind(wx.EVT_MENU, self.OnOpen, id=menu_ids['Open project...'])
         self.view.Bind(wx.EVT_MENU, self.OnSaveAs, id=menu_ids['Save as...'])
         self.view.Bind(wx.EVT_MENU, self.OnSave, id=menu_ids['Save'])
-        self.view.Bind(wx.EVT_MENU, self.OnClose, id=menu_ids['Quit'])
+        self.view.Bind(wx.EVT_MENU, self.OnMenuClose, id=menu_ids['Quit'])
         self.view.Bind(wx.EVT_MENU, self.OnImport, id=menu_ids['Import...'])
         self.view.Bind(wx.EVT_MENU, self.OnExport, id=menu_ids['Export...'])
         
@@ -89,8 +91,6 @@ class Interactor(object):
         pub.subscribe(self.OnLimitFitRange, (self.view_id, 'fitctrl', 'limitfitrange'))
         pub.subscribe(self.OnPlot, (self.view_id, 'fitctrl', 'plot'))
 
-        pub.subscribe(self.OnPageChanged, (self.view_id, 'notebook', 'pagechanged'))
-
         pub.subscribe(self.OnProjectModified, (self.view_id, 'changed'))
 
         self.view.Bind(wx.EVT_CLOSE, self.OnClose)
@@ -113,6 +113,15 @@ class Interactor(object):
         pub.subscribe(self.pubOnGenerateGrid, (self.view_id, 'generate_grid'))
 
         pub.subscribe(self.pubOnStopAll, (self.view_id, 'stop_all'))
+        self.view._mgr.Bind(aui.EVT_AUI_PANE_ACTIVATED, lambda evt,msg='activate': self.YES(evt, msg))
+        self.view._mgr.Bind(aui.EVT_AUI_PANE_RESTORE, lambda evt,msg='restore': self.YES(evt, msg))
+        self.view._mgr.Bind(aui.EVT_AUI_PANE_BUTTON, lambda evt,msg='button': self.YES(evt, msg))
+        self.view._mgr.Bind(aui.EVT_AUI_PANE_MAXIMIZE, lambda evt,msg='maximize': self.YES(evt, msg))
+        self.view._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, lambda evt,msg='close': self.YES(evt, msg))
+
+    def YES(self, evt, msg):
+        print('yes',msg)
+        evt.Skip()
 
     def pubOnStopAll(self):
         return
@@ -147,7 +156,7 @@ class Interactor(object):
 
     def OnModuleCloseButton(self, evt):
         m = evt.GetPane().name
-        #self.controller._modules[m].page_changed(False)
+        self.controller._modules[m].page_changed(False)
 
     def OnMenuShowHideModule(self, evt, mid):
         self.view._mgr.GetPane(module_menu_ids[mid]).Show()
@@ -201,9 +210,6 @@ class Interactor(object):
 
     def OnNotebookPageChanged(self, evt):
         pub.sendMessage((self.view_id, 'notebook', 'pagechanged'), msg=evt.GetEventObject().GetCurrentPage())
-
-    def OnPageChanged(self, msg):
-        self.controller.page_changed(msg.GetName())
 
     def OnEditAnnotations(self, evt):
         self.controller.annotations_changed(self.view.annotations)
@@ -382,9 +388,12 @@ class Interactor(object):
     def OnEditCode(self, msg):
         self.controller.code_changed()
 
+    def OnMenuClose(self, evt):
+        self.view.Close()
+
     def OnClose(self, evt):
         if self.controller.close():
-            self.view.PopEventHandler(True)
+            self.view._mgr.UnInit()
             evt.Skip()
         else:
             evt.Veto()

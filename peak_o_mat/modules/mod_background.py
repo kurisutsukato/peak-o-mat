@@ -35,6 +35,7 @@ def roll(a,d):
 
 class Module(module.Module):
     title = 'Background'
+    update_in_background = False
 
     def __init__(self, *args):
         module.Module.__init__(self, __file__, *args)
@@ -99,7 +100,7 @@ class Module(module.Module):
         self.update_background()
 
     def page_changed(self, me):
-        print('mod_background.page_changed: {}'.format(me))
+        #TODO: hat nichts mehr mit "page changed" zu tun, sondern mit pane close
         if me:
             self.update_background()
         else:
