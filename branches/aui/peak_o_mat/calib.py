@@ -765,4 +765,7 @@ cadmium = [
 
 from collections import OrderedDict
 
-elements = OrderedDict([('Ne',neon),('Ar',argon),('Hg',mercury),('Cd',cadmium)])
+elements = OrderedDict([('Ne',neon),
+                        ('Ar',argon),
+                        ('Hg',mercury),
+                        ('Cd',cadmium)])

@@ -63,8 +63,8 @@ class MainFrame(wx.Frame):
         if not silent:
             self.splash = Splash(self)
 
-        self._mgr = aui.AuiManager()
-        self._mgr.SetManagedWindow(self)
+        self._mgr = aui.AuiManager(self, aui.AUI_MGR_ALLOW_ACTIVE_PANE|
+                                   aui.AUI_MGR_ALLOW_FLOATING|aui.AUI_MGR_HINT_FADE)
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClosePane)
 
         self.create_menus(plotserver)

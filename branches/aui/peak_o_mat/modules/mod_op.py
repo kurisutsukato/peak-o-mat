@@ -77,7 +77,7 @@ class Module(module.Module):
         #assert self.parent_view is not None
 
     def init(self):
-        self.xmlres.AttachUnknownControl('xrc_op', controls.HistTextCtrl(self.panel, -1, ''))
+        self.xmlres.AttachUnknownControl('xrc_op', controls.HistTextCtrl(self.view, -1, ''))
         self.xrc_op.GetParent().SetMinSize(self.xrc_op.GetMinSize())
 
         ctrls = ['xrc_op',

@@ -88,14 +88,16 @@ class Module(module.BaseModule):
     title = 'Calibration'
     lastsearch = None
     _busy = False
-    
+    update_in_background = True
+
     def __init__(self, *args):
         module.BaseModule.__init__(self, *args)
         self.init()
 
         self.parent_view._mgr.AddPane(self.view, aui.AuiPaneInfo().
-                                      Float().Dockable(False).Hide().
+                                      Float().Dockable(True).Hide().
                                       Caption(self.title).Name(self.title))
+        self.parent_view._mgr.Update()
         menu.add_module(self.parent_controller.view.menubar, self.title)
 
         pub.subscribe(self.OnPageChanged, (self.view.id, 'notebook','pagechanged'))
@@ -106,18 +108,11 @@ class Module(module.BaseModule):
         self.calib = CalibrationModel([])
         self.view = Panel(self.parent_view, self.calib)
 
-        #self.calib = Calibration()
-        #self.xmlres.AttachUnknownControl('xrc_grid', CalibGrid(self.panel, self.calib))
-        #self.xrc_grid.GetParent().SetMinSize(self.xrc_grid.GetMinSize())
-        #self.xrc_grid.GetParent().Refresh()
-        #self.panel.Layout()
-
         self.init_ctrls()
         
         self.view.Bind(wx.EVT_TEXT, self.OnTol, self.view.xrc_txt_tol)
         self.view.Bind(wx.EVT_TEXT, self.OnOffset, self.view.xrc_txt_offset)
 
-        #self.panel.Bind(wx.EVT_CHOICE, self.OnElement, self.panel.xrc_ch_elem)
         self.view.Bind(wx.EVT_BUTTON, self.OnElement, self.view.xrc_btn_elem)
 
         self.view.Bind(wx.EVT_CHOICE, self.OnUnit, self.view.xrc_ch_unit)
@@ -313,7 +308,7 @@ class Module(module.BaseModule):
         #if np.sometrue(np.isnan(np.take(self.calib.data, self.calib.selection, axis=0).astype(float))):
         #    self.message('NaN found in custom calibration data')
         if 1:
-            ### TODO remplace by message
+            ### TODO: remplace by message
             trafo = self.calib.trafo(self.calib.selection, int(self.view.xrc_spin_order.Value))
             plot,sets = self.parent_controller.selection
             for set in sets:
@@ -576,6 +571,9 @@ class CalibrationModel(dv.DataViewIndexListModel):
 
     def GetColumnCount(self):
         return 3
+
+    def GetColumnType(self, col):
+        return ['bool','string','float','float','float'][col]
 
 class CalibGrid(dv.DataViewCtrl):
     def __init__(self, parent, model, **kwargs):

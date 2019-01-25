@@ -75,7 +75,7 @@ class Module(module.Module):
                 self._valid_file = True
         
     def OnSelectFile(self, evt):
-        dlg = wx.FileDialog(self.panel, misc.cwd(), wildcard="XMGrace Project files (*.agr)|*.agr",style=wx.CHANGE_DIR)
+        dlg = wx.FileDialog(self.view, misc.cwd(), wildcard="XMGrace Project files (*.agr)|*.agr", style=wx.CHANGE_DIR)
         if dlg.ShowModal() == wx.ID_OK:
             name = dlg.GetPath()
             dlg.Destroy()

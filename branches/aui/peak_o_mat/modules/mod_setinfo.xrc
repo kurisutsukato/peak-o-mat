@@ -7,13 +7,6 @@
         <object class="wxBoxSizer">
           <orient>wxVERTICAL</orient>
           <object class="sizeritem">
-            <object class="wxStaticText" name="xrc_lab_name">
-              <label>name: NN</label>
-            </object>
-            <flag>wxTOP|wxLEFT|wxEXPAND</flag>
-            <border>5</border>
-          </object>
-          <object class="sizeritem">
             <object class="wxBoxSizer">
               <orient>wxHORIZONTAL</orient>
               

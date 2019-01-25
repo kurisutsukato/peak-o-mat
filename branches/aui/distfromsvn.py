@@ -33,7 +33,7 @@ def export():
         prc = subprocess.Popen('svn export --trust-server-cert --force . {}'.format(dest_dir),
                                shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0)
     else:
-        prc = subprocess.Popen('svn export --trust-server-cert --force https://svn.hoc.net/peak-o-mat/branches/py3 {}'.format(dest_dir),
+        prc = subprocess.Popen('svn export --trust-server-cert --force https://svn.hoc.net/peak-o-mat/branches/aui {}'.format(dest_dir),
                                shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0)
 
     qout = Queue()

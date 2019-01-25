@@ -108,7 +108,7 @@ class Module(module.Module):
         locs.add('aset', _get_active_set, True)
         locs.add('intro', intro, False)
 
-        sh = shell.Shell(self.panel, -1, introText='peak-o-mat - shell module\ntype intro() to read a short introduction', showInterpIntro=False, locals=locs)
+        sh = shell.Shell(self.view, -1, introText='peak-o-mat - shell module\ntype intro() to read a short introduction', showInterpIntro=False, locals=locs)
         sh.push('from peak_o_mat.spec import Spec', True)
         sh.push('import numpy as np', True)
         sh.autoCallTip = False
@@ -117,5 +117,5 @@ class Module(module.Module):
 
         self.xmlres.AttachUnknownControl('xrc_win_shell', sh)
 
-        self.panel.GetParent().Fit()
+        self.view.GetParent().Fit()
 
