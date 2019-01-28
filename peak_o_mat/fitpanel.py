@@ -391,9 +391,6 @@ class FitPanel(wx.Panel):
         self.nb_fit.AddPage(self.pan_batch, 'Batch fit')
 
         parent = self.GetParent()
-        if isinstance(parent, wx.Notebook):
-            parent.InsertPage(0, self, 'Fit')
-            parent.SetSelection(0)
         return
 
 

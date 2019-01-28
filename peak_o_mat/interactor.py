@@ -114,10 +114,7 @@ class Interactor(object):
 
         pub.subscribe(self.pubOnStopAll, (self.view_id, 'stop_all'))
 
-        pub.subscribe(self.pubOnModuleRelease, (self.view_id, 'module', 'releasefocus'))
-
-    def pubOnModuleRelease(self):
-        self.controller._modules.release_focus()
+        pub.subscribe(self.pubOnUpdatePlot, (self.view_id, 'updateplot'))
 
     def pubOnStopAll(self):
         return
@@ -139,6 +136,9 @@ class Interactor(object):
         else:
             self.controller.add_set(spec, target)
 
+    def pubOnUpdatePlot(self):
+        self.controller.update_plot()
+
     def pubOnUpdateView(self):
         self.controller.update_plot()
         self.controller.update_tree()
@@ -152,10 +152,12 @@ class Interactor(object):
 
     def OnModuleCloseButton(self, evt):
         m = evt.GetPane().name
-        self.controller._modules[m].page_changed(False)
+        self.controller._modules[m].hide()
 
     def OnMenuShowHideModule(self, evt, mid):
         self.view._mgr.GetPane(module_menu_ids[mid]).Show()
+        m = self.controller._modules[module_menu_ids[mid]]
+        m.show()
         self.view._mgr.Update()
 
     def OnStartServer(self, evt):

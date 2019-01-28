@@ -9,7 +9,7 @@ import numpy as N
 
 class Module(module.Module):
     title = 'Ruby Calibration'
-    need_attention = True
+    need_attention = False
 
     def __init__(self, *args):
         module.Module.__init__(self, __file__, *args)
@@ -118,6 +118,4 @@ class Module(module.Module):
     def selection_changed(self):
         self.update_model()
         
-    def page_changed(self, me):
-        if me:
-            self.selection_changed()
+

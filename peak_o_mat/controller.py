@@ -93,10 +93,6 @@ class ModulesContainer(dict):
             except AttributeError:
                 pass
 
-    def release_focus(self):
-        for m in self.values():
-            m.plotme = None
-
 class Controller(object):
     def __init__(self, proj, view, interactor, lpj_path):
         self.datagrid = None
@@ -127,7 +123,7 @@ class Controller(object):
 
             self.view._mgr.AddPane(fitview, aui.AuiPaneInfo().Name('fit').
                               Caption('Fit').
-                              Bottom().MinSize(wx.Size(900, 250)).
+                              Bottom().MinSize(500, 250).
                               CloseButton(False).MaximizeButton(False))
             self.view._mgr.Update()
 
