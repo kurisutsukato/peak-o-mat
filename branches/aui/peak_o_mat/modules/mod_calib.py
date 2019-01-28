@@ -12,7 +12,6 @@ from peak_o_mat import module, spec, calib, controls, misc_ui, menu
 class Panel(wx.Panel):
     def __init__(self, parent, model):
         super(Panel, self).__init__(parent)
-        self.id = 'ID'+str(id(wx.GetTopLevelParent(parent)))
         self.calib = model
         self.setup_controls()
         self.layout()
@@ -88,7 +87,7 @@ class Module(module.BaseModule):
     title = 'Calibration'
     lastsearch = None
     _busy = False
-    update_in_background = True
+    need_attention = True
 
     def __init__(self, *args):
         module.BaseModule.__init__(self, *args)
@@ -100,8 +99,7 @@ class Module(module.BaseModule):
         self.parent_view._mgr.Update()
         menu.add_module(self.parent_controller.view.menubar, self.title)
 
-        pub.subscribe(self.OnPageChanged, (self.view.id, 'notebook','pagechanged'))
-        pub.subscribe(self.OnSelectionChanged, (self.view.id, 'selection','changed'))
+        pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
 
 
     def init(self):
@@ -131,7 +129,7 @@ class Module(module.BaseModule):
         self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApply, self.view.xrc_btn_dispersion)
         self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApplyStored, self.view.xrc_btn_applystored)
         
-        Publisher.subscribe(self.OnUpdate, (self.view.id, 'setattrchanged'))
+        Publisher.subscribe(self.OnUpdate, (self.view_id, 'setattrchanged'))
 
         super(Module, self).init()
 
@@ -148,7 +146,7 @@ class Module(module.BaseModule):
             self.plotme = 'Spikes',spec.Spec(*self.calib.spectrum)
         else:
             self.plotme = None
-        self.parent_controller.update_plot()
+        pub.sendMessage((self.view_id, 'updateplot'))
 
     def OnReadyToImport(self, evt):
         set = self.parent_controller.active_set
@@ -181,13 +179,13 @@ class Module(module.BaseModule):
         self.OnUpdate(None)
         #self.panel.xrc_btn_update.Enable(self.parent_controller.active_set is not None)
 
-    def page_changed(self, me):
-        if me:
-            self.selection_changed()
-        else:
+    def focus_changed(self, newfocus=None):
+        if newfocus != self:
             self.plotme = None
             self.view.xrc_chk_speclines.Value = False
-            pub.sendMessage((self.view.id, 'updateplot'))
+            pub.sendMessage((self.view_id, 'updateplot'))
+        else:
+            self.OnUpdate()
 
     def OnDispersion(self, evt):
         trafo = self.calib.trafo(self.calib.selection, int(self.view.xrc_spin_order.Value))
@@ -209,7 +207,7 @@ class Module(module.BaseModule):
 
         if self.view.xrc_chk_speclines.Value:
             self.plotme = 'Spikes',spec.Spec(*self.calib.spectrum)
-            self.parent_controller.update_plot()
+            pub.sendMessage((self.view_id, 'updateplot'))
 
     def OnElement(self, evt):
         dlg = controls.MultipleChoice(self.view, 'Select elements', choices=list(calib.elements.keys()))
@@ -237,7 +235,7 @@ class Module(module.BaseModule):
 
             if self.view.xrc_chk_speclines.Value:
                 self.plotme = 'Spikes',spec.Spec(*self.calib.spectrum)
-                self.parent_controller.update_plot()
+                pub.sendMessage((self.view_id, 'updateplot'))
 
             self.lastsearch = None
 
@@ -272,7 +270,7 @@ class Module(module.BaseModule):
                 print('spectrum',self.calib.spectrum)
                 self.plotme = 'Spikes',spec.Spec(*self.calib.spectrum)
 
-                self.parent_controller.update_plot()
+                pub.sendMessage((self.view_id, 'updateplot'))
 
         if evt.GetColumn() == 0:
             coerced = min(int(self.view.xrc_spin_order.Value),max(0,len(self.calib.selection)-1))
@@ -313,7 +311,7 @@ class Module(module.BaseModule):
             plot,sets = self.parent_controller.selection
             for set in sets:
                 self.parent_controller.project[plot][set].trafo.append(('x',trafo,'calib, %d lines'%len(self.calib.selection)))
-            self.parent_controller.update_plot()
+            pub.sendMessage((self.view_id, 'updateplot'))
 
     def OnStore(self, evt):
         if self.calib.element != ['Custom']:

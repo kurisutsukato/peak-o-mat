@@ -29,7 +29,7 @@ from . import controls
 from . import menu
 
 class BaseModule(object):
-    update_in_background = True
+    need_attention = False
 
     def __init__(self, controller, view):
         self.visible = False
@@ -38,35 +38,37 @@ class BaseModule(object):
         self.parent_view = view
         self.parent_controller = controller
         self.name = os.path.splitext(os.path.basename(__file__))[0]
+        self.view_id = 'ID'+str(id(wx.GetTopLevelParent(view)))
 
     def init(self):
         assert hasattr(self, 'title')
-        #pub.subscribe(self.OnPageChanged, (self.view.id, 'notebook','pagechanged'))
-        self.view.Bind(wx.EVT_ENTER_WINDOW, self.OnSetFocus)
-        self.view.Bind(wx.EVT_LEAVE_WINDOW, self.OnKillFocus)
-        pub.subscribe(self.OnSelectionChanged, (self.view.id, 'selection','changed'))
+        self.view.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
+        pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
+        pub.subscribe(self.focus_changed, (self.view_id, 'module', 'focuschanged'))
 
-    def OnSetFocus(self, evt):
-        self.page_changed(True)
-        self.visible = True
+    def focus_changed(self, newfocus):
+        pass
 
-    def OnKillFocus(self, evt):
-        self.page_changed(False)
-        self.visible = False
-
-    def OnPageChanged(self, msg):
-        if self.view == msg:
-            self.page_changed(True)
-            self.visible = True
-        elif self._last_page == self.view:
-            self.page_changed(False)
-            self.visible = False
-        self._last_page = msg
+    def OnEnter(self, evt):
+        if(self.view.HitTest(evt.Position) == wx.HT_WINDOW_INSIDE):
+            if self.need_attention:
+                pub.sendMessage((self.view_id,'module','focuschanged'),newfocus=self)
+            self.show()
 
     def OnSelectionChanged(self, plot, dataset):
-        if self.update_in_background or self.view.HasFocus():
+        if self.visible:
             self.selection_changed()
 
+    def selection_changed(self):
+        pass
+
+    def show(self):
+        self.visible = True
+        self.focus_changed(self)
+
+    def hide(self):
+        self.visible = False
+        self.focus_changed()
 
 class Module(object):
     # this means that the module will plot something
@@ -89,6 +91,7 @@ class MyModule(module.Module):
         self.project = controller.project
         self.doc = doc
         self.plotme = None
+        self.visible = False
 
         self.view_id = 'ID'+str(id(wx.GetTopLevelParent(self.controller.view)))
 
@@ -126,6 +129,7 @@ class MyModule(module.Module):
             #pub.subscribe(self.OnPageChanged, (self.view_id, 'notebook','pagechanged'))
             menu.add_module(controller.view.menubar, self.title)
             pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
+            pub.subscribe(self.focus_changed, (self.view_id, 'module', 'focuschanged'))
 
             self.view.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
 
@@ -142,11 +146,14 @@ class MyModule(module.Module):
         else:
             raise AttributeError(name)
 
+    def focus_changed(self, newfocus=None):
+        pass
+
     def OnEnter(self, evt):
         if(self.view.HitTest(evt.Position) == wx.HT_WINDOW_INSIDE):
             if self.need_attention:
-                pub.sendMessage((self.view_id,'module','releasefocus'))
-            self.page_changed(True)
+                pub.sendMessage((self.view_id,'module','focuschanged'),newfocus=self)
+            self.show()
 
     def message(self, msg, target=1, blink=False):
         event = misc_ui.ShoutEvent(-1, msg=msg, target=target, blink=blink)
@@ -165,16 +172,6 @@ class MyModule(module.Module):
         else:
             evt.Skip()
 
-    def OnPageChanged(self, msg):
-        print('page changed: {}, {}'.format(self.title, msg))
-        if self.view == msg:
-            self.page_changed(True)
-            self.visible = True
-        elif self._last_page == self.view:
-            self.page_changed(False)
-            self.visible = False
-        self._last_page = msg
-
     def OnSelectionChanged(self, plot, dataset):
        self.selection_changed()
 
@@ -182,5 +179,14 @@ class MyModule(module.Module):
         pass
 
     def page_changed(self, me):
+        print('page_changed deprecated in module',self.title)
         pass
+
+    def show(self):
+        self.visible = True
+        self.focus_changed(self)
+
+    def hide(self):
+        self.visible = False
+        self.focus_changed()
 

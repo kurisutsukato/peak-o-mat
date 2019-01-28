@@ -90,7 +90,7 @@ class ParGrid(wx.grid.Grid):
     """
           
     def __init__(self, parent):
-        wx.grid.Grid.__init__(self, parent, size=(1000,-1), style=wx.SIMPLE_BORDER)
+        wx.grid.Grid.__init__(self, parent, size=(600,-1), style=wx.SIMPLE_BORDER)
         self.parent = parent
         self.selecting = False
         self.selection = None

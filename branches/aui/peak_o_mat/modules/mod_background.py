@@ -17,6 +17,7 @@
 """New implementaion based on SNIP algorithm"""
 
 import wx
+from wx.lib.pubsub import pub
 
 from peak_o_mat import module,spec,misc
 
@@ -42,12 +43,6 @@ class Module(module.Module):
     
     def init(self):
         self.niter = 1
-        #self.xrc_cho_der.Bind(wx.EVT_UPDATE_UI, self.OnConstraintChecked)
-        #self.xrc_cho_sign.Bind(wx.EVT_UPDATE_UI, self.OnConstraintChecked)
-
-        #self.xrc_btn_find.Bind(wx.EVT_UPDATE_UI, self.OnSingleSelection)
-
-        #self.xrc_btn_find.Bind(wx.EVT_BUTTON, self.OnFind)
 
         self.xrc_sl_iteration.Bind(wx.EVT_SLIDER, self.OnSlider)
         self.xrc_btn_create.Bind(wx.EVT_BUTTON, self.OnBtn)
@@ -55,13 +50,15 @@ class Module(module.Module):
 
     def calc_background(self, dataset):
         x,y = dataset.xy
+        off = min(0,y.min())
+        y = y-off
 
         v = np.log(np.log(np.sqrt(y+1)+1)+1)
 
         for p in range(1,self.niter+1):
             v = np.vstack((v, (roll(v,-p)+roll(v,+p))/2)).min(axis=0)
-        tv = x,np.power(np.exp(np.exp(v)-1)-1,2)-1
-        return tv
+        v = np.power(np.exp(np.exp(v)-1)-1,2)-1
+        return x,v+off
 
     def update_background(self):
         self.niter = self.xrc_sl_iteration.Value
@@ -72,7 +69,7 @@ class Module(module.Module):
                 dataset = self.controller.project[p][s[0]]
                 x,y = self.calc_background(dataset)
                 self.plotme = 'Line', spec.Spec(x,y,'bg_{}'.format(dataset.name))
-                self.controller.update_plot()
+                pub.sendMessage((self.view_id, 'updateplot'))
 
     def OnBtn(self, evt):
         p,s = self.controller.selection
@@ -86,7 +83,7 @@ class Module(module.Module):
                 x,y = self.calc_background(dataset)
                 if evt.GetEventObject() == self.xrc_btn_substract:
                     dataset -= y
-                    self.controller.update_plot()
+                    pub.sendMessage((self.view_id, 'updateplot'))
                 else:
                     self.controller.add_set(spec.Spec(x,y,'bg_{}'.format(dataset.name)))
 
@@ -96,14 +93,12 @@ class Module(module.Module):
             self.update_background()
 
     def selection_changed(self):
-        print('mod_background.selection_changed')
-        self.update_background()
-
-    def page_changed(self, me):
-        #TODO: hat nichts mehr mit "page changed" zu tun, sondern mit pane close
-        if me:
+        if self.visible:
             self.update_background()
-        else:
+
+    def focus_changed(self, newfocus=None):
+        if newfocus != self:
             self.plotme = None
             self.controller.update_plot()
-
+        else:
+            pub.sendMessage((self.view_id, 'updateplot'))
