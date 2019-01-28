@@ -28,8 +28,14 @@ from . import misc_ui
 from . import controls
 from . import menu
 
-class BaseModule(object):
+class Module:
+    last_focus = None
+
+    # this means that the module will plot something
+    # it will steal the focus from any other module
     need_attention = False
+
+class BaseModule(Module):
 
     def __init__(self, controller, view):
         self.visible = False
@@ -39,9 +45,11 @@ class BaseModule(object):
         self.parent_controller = controller
         self.name = os.path.splitext(os.path.basename(__file__))[0]
         self.view_id = 'ID'+str(id(wx.GetTopLevelParent(view)))
+        self.view = None
 
     def init(self):
         assert hasattr(self, 'title')
+        print('init')
         self.view.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
         pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
         pub.subscribe(self.focus_changed, (self.view_id, 'module', 'focuschanged'))
@@ -50,10 +58,11 @@ class BaseModule(object):
         pass
 
     def OnEnter(self, evt):
-        if(self.view.HitTest(evt.Position) == wx.HT_WINDOW_INSIDE):
+        if(self.view.HitTest(evt.Position) == wx.HT_WINDOW_INSIDE) and Module.last_focus != self:
             if self.need_attention:
                 pub.sendMessage((self.view_id,'module','focuschanged'),newfocus=self)
             self.show()
+            Module.last_focus = self
 
     def OnSelectionChanged(self, plot, dataset):
         if self.visible:
@@ -70,11 +79,7 @@ class BaseModule(object):
         self.visible = False
         self.focus_changed()
 
-class Module(object):
-    # this means that the module will plot something
-    # it will steal the focus from any other module
-
-    need_attention = False
+class XRCModule(Module):
 
     def __init__(self, module, controller, doc):
         if module is None:
@@ -150,10 +155,11 @@ class MyModule(module.Module):
         pass
 
     def OnEnter(self, evt):
-        if(self.view.HitTest(evt.Position) == wx.HT_WINDOW_INSIDE):
+        if(self.view.HitTest(evt.Position) == wx.HT_WINDOW_INSIDE) and Module.last_focus != self:
             if self.need_attention:
                 pub.sendMessage((self.view_id,'module','focuschanged'),newfocus=self)
             self.show()
+            Module.last_focus = self
 
     def message(self, msg, target=1, blink=False):
         event = misc_ui.ShoutEvent(-1, msg=msg, target=target, blink=blink)

@@ -2,7 +2,7 @@ import wx
 
 from peak_o_mat import module
 
-class Module(module.Module):
+class XRCModule(module.XRCModule):
     """
     Every module must subclass module.Module. You have to set the class
     variable 'title', which should hold the text that appears in the notebook
@@ -41,7 +41,7 @@ class Module(module.Module):
         '__file__' is needed in order to tell the XRC loader name and location
         of the xrc file.
         """
-        module.Module.__init__(self, __file__, *args)
+        module.XRCModule.__init__(self, __file__, *args)
     
     def init(self):
         """\

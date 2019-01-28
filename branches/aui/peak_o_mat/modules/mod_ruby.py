@@ -7,12 +7,12 @@ from peak_o_mat import settings as config
 
 import numpy as N
 
-class Module(module.Module):
+class XRCModule(module.XRCModule):
     title = 'Ruby Calibration'
     need_attention = False
 
     def __init__(self, *args):
-        module.Module.__init__(self, __file__, *args)
+        module.XRCModule.__init__(self, __file__, *args)
         
     def init(self):
         self.view.Bind(wx.EVT_TEXT, self.OnTemp, self.xrc_txt_temp)

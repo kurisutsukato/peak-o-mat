@@ -378,7 +378,7 @@ class Controller(object):
                     continue
                 for name, obj in inspect.getmembers(mod):
                     if inspect.isclass(obj):
-                        if hasattr(obj, '__base__') and obj.__base__ == module.Module:
+                        if hasattr(obj, '__base__') and obj.__base__ == module.XRCModule:
                             self._modules.append(obj(self, mod.__doc__))
                         if hasattr(obj, '__base__') and obj.__base__ == module.BaseModule:
                             self._modules.append(obj(self, self.view.nb_modules))
@@ -397,7 +397,7 @@ class Controller(object):
 
                     for name, obj in inspect.getmembers(mod):
                         if inspect.isclass(obj):
-                            if hasattr(obj, '__base__') and obj.__base__ == module.Module:
+                            if hasattr(obj, '__base__') and obj.__base__ == module.XRCModule:
                                 self._modules.append(obj(self, mod.__doc__))
                             if hasattr(obj, '__base__') and obj.__base__ == module.BaseModule:
                                 self._modules.append(obj(self, self.view))
@@ -416,7 +416,7 @@ class Controller(object):
                 print('user module %s import error: %s'%(name, msg))
             else:
                 try:
-                    if mod.Module.__base__ == module.Module:
+                    if mod.Module.__base__ == module.XRCModule:
                         self._modules.append(mod.Module(self, mod.__doc__))
                     elif mod.Module.__base__ == module.BaseModule:
                         self._modules.append(mod.Module(self, self.view.nb_modules))

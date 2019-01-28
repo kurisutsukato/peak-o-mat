@@ -84,11 +84,11 @@ class Locals(dict):
         else:
             dict.__setitem__(self,name,val)
             
-class Module(module.Module):
+class XRCModule(module.XRCModule):
     title = 'Shell'
 
     def __init__(self, *args):
-        module.Module.__init__(self, __file__, *args)
+        module.XRCModule.__init__(self, __file__, *args)
     
     def init(self):
         locs = Locals(locals())

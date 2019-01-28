@@ -34,12 +34,12 @@ def roll(a,d):
     if d<0:
         return np.pad(a,(0,abs(d)),'edge')[abs(d):]
 
-class Module(module.Module):
+class XRCModule(module.XRCModule):
     title = 'Background'
     need_attention = True
 
     def __init__(self, *args):
-        module.Module.__init__(self, __file__, *args)
+        module.XRCModule.__init__(self, __file__, *args)
     
     def init(self):
         self.niter = 1
@@ -99,6 +99,6 @@ class Module(module.Module):
     def focus_changed(self, newfocus=None):
         if newfocus != self:
             self.plotme = None
-            self.controller.update_plot()
-        else:
             pub.sendMessage((self.view_id, 'updateplot'))
+        else:
+            self.update_background()
