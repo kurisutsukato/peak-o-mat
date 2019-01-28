@@ -113,15 +113,11 @@ class Interactor(object):
         pub.subscribe(self.pubOnGenerateGrid, (self.view_id, 'generate_grid'))
 
         pub.subscribe(self.pubOnStopAll, (self.view_id, 'stop_all'))
-        self.view._mgr.Bind(aui.EVT_AUI_PANE_ACTIVATED, lambda evt,msg='activate': self.YES(evt, msg))
-        self.view._mgr.Bind(aui.EVT_AUI_PANE_RESTORE, lambda evt,msg='restore': self.YES(evt, msg))
-        self.view._mgr.Bind(aui.EVT_AUI_PANE_BUTTON, lambda evt,msg='button': self.YES(evt, msg))
-        self.view._mgr.Bind(aui.EVT_AUI_PANE_MAXIMIZE, lambda evt,msg='maximize': self.YES(evt, msg))
-        self.view._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, lambda evt,msg='close': self.YES(evt, msg))
 
-    def YES(self, evt, msg):
-        print('yes',msg)
-        evt.Skip()
+        pub.subscribe(self.pubOnModuleRelease, (self.view_id, 'module', 'releasefocus'))
+
+    def pubOnModuleRelease(self):
+        self.controller._modules.release_focus()
 
     def pubOnStopAll(self):
         return

@@ -9,7 +9,7 @@ import numpy as N
 
 class Module(module.Module):
     title = 'Ruby Calibration'
-    update_in_background = True
+    need_attention = True
 
     def __init__(self, *args):
         module.Module.__init__(self, __file__, *args)

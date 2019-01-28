@@ -35,7 +35,7 @@ def roll(a,d):
 
 class Module(module.Module):
     title = 'Background'
-    update_in_background = False
+    need_attention = True
 
     def __init__(self, *args):
         module.Module.__init__(self, __file__, *args)

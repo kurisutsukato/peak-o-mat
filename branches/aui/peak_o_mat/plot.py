@@ -428,7 +428,7 @@ class Interactor:
         # OnSize called to make sure the buffer is initialized.
         # This might result in OnSize getting called twice on some
         # platforms at initialization, but little harm done.
-        wx.CallAfter(self.OnSize,None) # sets the initial size based on client size
+        #wx.CallAfter(self.OnSize,None) # sets the initial size based on client size
 
     def OnMouseEnter(self, evt):
         if wx.GetTopLevelParent(self.view).IsActive():
