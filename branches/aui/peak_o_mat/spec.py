@@ -443,14 +443,9 @@ bbox : boundingbox of points to be removed
                 return data[ind,::-1]
             else:
                 return data[ind]
-        else:            
+        else:
             cond = np.logical_and(np.isfinite(data[0]),np.isfinite(data[1]))
-            # TODO
-            # mod_calib, mode custom, show lines
-            '''
-cond = np.logical_and(np.isfinite(data[0]),np.isfinite(data[1]))
-TypeError: ufunc 'isfinite' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''
-'''
+
             data = np.compress(cond,data,1)
             mask = np.compress(cond,self.mask)
             cond = np.logical_and(np.isreal(data[0]),np.isreal(data[1]))

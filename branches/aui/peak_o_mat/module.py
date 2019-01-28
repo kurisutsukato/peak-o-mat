@@ -61,8 +61,8 @@ class BaseModule(Module):
         if(self.view.HitTest(evt.Position) == wx.HT_WINDOW_INSIDE) and Module.last_focus != self:
             if self.need_attention:
                 pub.sendMessage((self.view_id,'module','focuschanged'),newfocus=self)
+                Module.last_focus = self
             self.show()
-            Module.last_focus = self
 
     def OnSelectionChanged(self, plot, dataset):
         if self.visible:
@@ -158,8 +158,8 @@ class MyModule(module.Module):
         if(self.view.HitTest(evt.Position) == wx.HT_WINDOW_INSIDE) and Module.last_focus != self:
             if self.need_attention:
                 pub.sendMessage((self.view_id,'module','focuschanged'),newfocus=self)
+                Module.last_focus = self
             self.show()
-            Module.last_focus = self
 
     def message(self, msg, target=1, blink=False):
         event = misc_ui.ShoutEvent(-1, msg=msg, target=target, blink=blink)

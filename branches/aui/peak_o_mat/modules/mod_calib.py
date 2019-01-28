@@ -267,7 +267,6 @@ class Module(module.BaseModule):
                 self.calib.findmatch(meas, recalc=True)
 
             if self.view.xrc_chk_speclines.Value:
-                print('spectrum',self.calib.spectrum)
                 self.plotme = 'Spikes',spec.Spec(*self.calib.spectrum)
 
                 pub.sendMessage((self.view_id, 'updateplot'))
@@ -493,6 +492,7 @@ class CalibrationModel(dv.DataViewIndexListModel):
         if self.element == ['Custom']:
             tmp = np.asarray(self.data)[:,3:]
             tmp[:,1] = 1.0
+            tmp = np.asarray(tmp, dtype=float)
         else:
             choice = [calib.elements[q] for q in self.element]
             tmp = np.take(np.vstack((choice)), np.argsort(np.vstack(choice)[:,0], 0), 0)
@@ -500,7 +500,6 @@ class CalibrationModel(dv.DataViewIndexListModel):
             standard = eval(self.conversion_map[self.unit])   # ugly, picks up 'standard' as local variable
             tmp[:,0] = standard
         return tmp.T[0],tmp.T[1],'speclines'
-
 
     def findmatch(self, measured, recalc=False):
         try:
