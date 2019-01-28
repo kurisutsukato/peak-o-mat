@@ -21,7 +21,7 @@ Eval Module
 import sys
 
 import wx
-from wx.lib.pubsub import pub as Publisher
+from wx.lib.pubsub import pub
 
 import numpy as np
 from scipy.misc import comb as nOk
@@ -43,7 +43,8 @@ class DummyEvent:
 
 class XRCModule(module.XRCModule):
     title = 'Evaluate'
-
+    need_attention = True
+    
     def __init__(self, *args):
         module.XRCModule.__init__(self, __file__, *args)
         self.plot = None
@@ -52,7 +53,7 @@ class XRCModule(module.XRCModule):
         self.xrc_btn_bez_load.Disable()
         self.xrc_btn_bez_load.Bind(wx.EVT_BUTTON, self.OnAnchor)
         self.xrc_btn_place_handles.Bind(wx.EVT_TOGGLEBUTTON, self.OnPlaceHandles)
-        Publisher.subscribe(self.OnCanvasMode, ('canvas','newmode'))
+        pub.subscribe(self.OnCanvasMode, ('canvas','newmode'))
 
         self.xrc_btn_eq_load.Bind(wx.EVT_BUTTON, self.OnLoad)
 
@@ -97,17 +98,13 @@ class XRCModule(module.XRCModule):
             self.xrc_cb_bez_pts.Value = True
             self.xrc_cb_bez_fromset.Enable(False)
 
-    def page_changed(self, state):
-        return
-        if not state:
+
+    def focus_changed(self, newfocus=None):
+        if newfocus != self:
+            self.plotme = None
             self.leave()
-        else:
-            try:
-                self.plot,sel = self.controller.selection
-            except:
-                self.plot = None
-            self.sync_controls(self.plot)
-                
+            pub.sendMessage((self.view_id, 'updateplot'))
+
     def selection_changed(self):
         try:
             plot,sel = self.controller.selection
@@ -131,7 +128,7 @@ class XRCModule(module.XRCModule):
         self.xrc_btn_bez_load.Disable()
         self.xrc_btn_place_handles.SetValue(False)
         self.controller.view.canvas.state.restore_last()
-        self.controller.update_plot()
+        pub.sendMessage((self.view_id, 'updateplot'))
 
     def OnCanvasMode(self, mode):
         if mode != 'handle':
