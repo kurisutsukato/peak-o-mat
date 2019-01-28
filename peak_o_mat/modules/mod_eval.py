@@ -41,11 +41,11 @@ class DummyEvent:
     def GetEventObject(self):
         return self.obj
 
-class Module(module.Module):
+class XRCModule(module.XRCModule):
     title = 'Evaluate'
 
     def __init__(self, *args):
-        module.Module.__init__(self, __file__, *args)
+        module.XRCModule.__init__(self, __file__, *args)
         self.plot = None
 
     def init(self):

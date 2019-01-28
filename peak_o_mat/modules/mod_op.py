@@ -55,11 +55,11 @@ trafomap = {'xrc_btn_A2eV' :'12398.52/x',
             'xrc_btn_eV2cm' : 'x*8.065478*1000',
             'xrc_btn_cm2eV' : 'x/8.065478/1000'}
 
-class Module(module.Module):
+class XRCModule(module.XRCModule):
     title = 'Transformations'
     
     def __init__(self, *args):
-        module.Module.__init__(self, __file__, *args)
+        module.XRCModule.__init__(self, __file__, *args)
 
         self.funcs = [self.op_general,
                       self.op_predef,

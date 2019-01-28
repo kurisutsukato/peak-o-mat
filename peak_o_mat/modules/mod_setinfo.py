@@ -70,12 +70,12 @@ class TrafoListCtrl(wx.ListCtrl,
         if not data[3]:
             self.CheckItem(index)
 
-class Module(module.Module):
+class XRCModule(module.XRCModule):
     title = 'Set info'
     update_in_background = True
 
     def __init__(self, *args):
-        module.Module.__init__(self, __file__, *args)
+        module.XRCModule.__init__(self, __file__, *args)
 
     def init(self):
         self._current_selection = 0
@@ -216,5 +216,5 @@ if __name__ == '__main__':
     f = wx.Frame(None)
     p = wx.Panel(f)
     c = Dummy(f)
-    Module(c, '')
+    XRCModule(c, '')
     app.MainLoop()
