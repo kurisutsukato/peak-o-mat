@@ -42,8 +42,9 @@ class Interactor(object):
 
         self.view.Bind(wx.EVT_MENU, self.OnAbout, id=menu_ids['About'])
 
-        for mid in module_menu_ids.values():
-            self.view.Bind(wx.EVT_MENU, lambda evt, mid=mid: self.OnMenuShowHideModule(evt, mid), id=mid)
+        for mid,name in module_menu_ids.items():
+            if type(name) == str:
+                self.view.Bind(wx.EVT_MENU, lambda evt, mid=mid: self.OnMenuShowHideModule(evt, mid), id=mid)
 
         self.view.frame_annotations.Bind(wx.EVT_CLOSE, self.OnNotesClose)
 

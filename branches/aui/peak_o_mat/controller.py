@@ -118,7 +118,7 @@ class Controller(object):
         self._modules = ModulesContainer()
 
         if view is not None:
-            interactor.Install(self, self.view)
+            self.load_modules()
             fitview = fitpanel.FitPanel(self.view)
 
             self.view._mgr.AddPane(fitview, aui.AuiPaneInfo().Name('fit').
@@ -136,7 +136,6 @@ class Controller(object):
             self.figure_list_controller = FigureListController(self.view, self.project.figure_list)
             self.view.SetTitle(self.project.name)
             self.load_filehistory()
-            self.load_modules()
 
             self.open_project(lpj_path)
             self.datagrid.new()
@@ -151,6 +150,7 @@ class Controller(object):
             else:
                 wx.CallAfter(self.view._mgr.LoadPerspective, perspective, True)
 
+            interactor.Install(self, self.view)
             wx.CallAfter(pub.sendMessage, (self.view.id, 'figurelist','needsupdate'))
 
     def message(self, msg, blink=False, forever=False):
@@ -379,18 +379,17 @@ class Controller(object):
                 for name, obj in inspect.getmembers(mod):
                     if inspect.isclass(obj):
                         if hasattr(obj, '__base__') and obj.__base__ == module.XRCModule:
-                            self._modules.append(obj(self, mod.__doc__))
-                        if hasattr(obj, '__base__') and obj.__base__ == module.BaseModule:
-                            self._modules.append(obj(self, self.view.nb_modules))
+                            m = obj(self, mod.__doc__)
+                            self._modules.append(m)
+                        elif hasattr(obj, '__base__') and obj.__base__ == module.BaseModule:
+                            m = obj(self, self.view)
+                            self._modules.append(m)
 
         else:
             for mod in modules.__all__:
                 try:
                     __import__('modules',globals(),locals(),[mod],1)
                 except:
-                    #tp,val,tb = sys.exc_info()
-                    #print(mod,tp,val)
-                    #traceback.print_tb(tb)
                     print('unable to load module \'{}\''.format(mod))
                 else:
                     mod = getattr(modules, mod)
@@ -398,10 +397,11 @@ class Controller(object):
                     for name, obj in inspect.getmembers(mod):
                         if inspect.isclass(obj):
                             if hasattr(obj, '__base__') and obj.__base__ == module.XRCModule:
-                                self._modules.append(obj(self, mod.__doc__))
-                            if hasattr(obj, '__base__') and obj.__base__ == module.BaseModule:
-                                self._modules.append(obj(self, self.view))
-
+                                m = obj(self, mod.__doc__)
+                                self._modules.append(m)
+                            elif hasattr(obj, '__base__') and obj.__base__ == module.BaseModule:
+                                m = obj(self, self.view)
+                                self._modules.append(m)
         #user modules 
         moddir = os.path.join(configdir(),'modules')
         print('loading user modules from',moddir)
