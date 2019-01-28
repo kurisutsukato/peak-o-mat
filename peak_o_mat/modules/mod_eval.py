@@ -98,6 +98,7 @@ class Module(module.Module):
             self.xrc_cb_bez_fromset.Enable(False)
 
     def page_changed(self, state):
+        return
         if not state:
             self.leave()
         else:

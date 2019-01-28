@@ -69,7 +69,10 @@ class BaseModule(object):
 
 
 class Module(object):
-    update_in_background = False
+    # this means that the module will plot something
+    # it will steal the focus from any other module
+
+    need_attention = False
 
     def __init__(self, module, controller, doc):
         if module is None:
@@ -122,8 +125,10 @@ class MyModule(module.Module):
             #self.notebook.AddPage(self.panel, self.title, select=False)
             #pub.subscribe(self.OnPageChanged, (self.view_id, 'notebook','pagechanged'))
             menu.add_module(controller.view.menubar, self.title)
-
             pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
+
+            self.view.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
+
             wx.CallAfter(self.init)
             wx.CallAfter(self.view.Layout)
         else:
@@ -136,6 +141,12 @@ class MyModule(module.Module):
             return xrc.XRCCTRL(self.view, name)
         else:
             raise AttributeError(name)
+
+    def OnEnter(self, evt):
+        if(self.view.HitTest(evt.Position) == wx.HT_WINDOW_INSIDE):
+            if self.need_attention:
+                pub.sendMessage((self.view_id,'module','releasefocus'))
+            self.page_changed(True)
 
     def message(self, msg, target=1, blink=False):
         event = misc_ui.ShoutEvent(-1, msg=msg, target=target, blink=blink)
@@ -154,10 +165,6 @@ class MyModule(module.Module):
         else:
             evt.Skip()
 
-    def OnActivated(self, evt):
-        print(evt)
-        evt.Skip()
-
     def OnPageChanged(self, msg):
         print('page changed: {}, {}'.format(self.title, msg))
         if self.view == msg:
@@ -169,9 +176,8 @@ class MyModule(module.Module):
         self._last_page = msg
 
     def OnSelectionChanged(self, plot, dataset):
-        if self.update_in_background or self.view.HasFocus():
-            self.selection_changed()
-        
+       self.selection_changed()
+
     def selection_changed(self):
         pass
 

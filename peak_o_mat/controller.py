@@ -93,6 +93,10 @@ class ModulesContainer(dict):
             except AttributeError:
                 pass
 
+    def release_focus(self):
+        for m in self.values():
+            m.plotme = None
+
 class Controller(object):
     def __init__(self, proj, view, interactor, lpj_path):
         self.datagrid = None
