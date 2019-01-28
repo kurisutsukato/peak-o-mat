@@ -31,7 +31,7 @@ module_counter = 1
 # TODO: das ist nicht schoen: besser als 1000 IDs zu reservieren waere es den omodule_counter
 # wieder auf 1 zu setzen, wenn ein neues Projekt geoeffnet wird.
 
-module_menu_ids = dict([(q,wx.NewId()) for q in range(module_counter,1000)])
+module_menu_ids = dict([(q,wx.NewId()) for q in range(module_counter,100)])
 
 def add_module(mb, name):
     global module_counter
