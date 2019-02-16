@@ -46,13 +46,13 @@ def svn_revision():
             return None
 
         try:
-            svn_info = subprocess.check_output(('svnversion'))
+            svn_info = subprocess.check_output(('svnversion')).decode('ascii')
         except (OSError,subprocess.CalledProcessError):
             log.debug('svn exectable not found')
             return None
         else:
             try:
-                rev = (re.match(r".*:(\d+).*", svn_info)).groups()[0]
+                rev = (re.match(r".*:(\d+).*", svn_info)).groups()[-1]
             except AttributeError:
                 return None
             return int(rev)
