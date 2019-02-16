@@ -278,6 +278,7 @@ class Interactor(object):
         self.controller.delete_selection(msg)
 
     def OnTreeRename(self, msg):
+        print('interactor:ontreerename')
         plot, set, name = msg
         wx.CallAfter(self.controller.rename_set, name, (plot, set))
 
