@@ -104,7 +104,7 @@ class MyModule(module.Module):
 
         self._last_page = None
         self.visible = False
-        
+
         #self.notebook = controller.view.nb_modules
         module_dir = os.path.dirname(module)
         module = os.path.splitext(os.path.basename(module))[0]
@@ -173,13 +173,13 @@ class MyModule(module.Module):
             btnname = 'xrc_btn_help'
         if btnname == 'xrc_btn_help':
             dlg = controls.ScrolledMessageDialog(self.view, self.doc, self.title)
-            
+
             dlg.ShowModal()
         else:
             evt.Skip()
 
     def OnSelectionChanged(self, plot, dataset):
-       self.selection_changed()
+        self.selection_changed()
 
     def selection_changed(self):
         pass

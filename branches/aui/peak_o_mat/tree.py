@@ -31,6 +31,7 @@ if os.name == 'posix':
 
 class TreeCtrl(CustomTreeCtrl):
     def __init__(self, parent):
+
         style = wx.TR_EDIT_LABELS|wx.TR_HAS_BUTTONS|wx.TR_MULTIPLE|wx.TR_HIDE_ROOT
         if os.name == 'posix':
             CustomTreeCtrl.__init__(self, parent, style=style)
@@ -68,7 +69,7 @@ class TreeCtrl(CustomTreeCtrl):
         self.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnEndEdit)
         self.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.OnBeginEdit)
 
-        self.Bind(wx.EVT_TIMER, self.OnTime)        
+        self.Bind(wx.EVT_TIMER, self.OnTime)
 
         self.Bind(wx.EVT_CHAR, self.OnChar)
         
@@ -78,7 +79,7 @@ class TreeCtrl(CustomTreeCtrl):
 
     def OnMouseEnter(self, evt):
         if wx.GetTopLevelParent(self).IsActive():
-            self.SetFocus() #IgnoringChildren()
+            self.SetFocus()
 
     @property
     def view_id(self):
@@ -99,7 +100,7 @@ class TreeCtrl(CustomTreeCtrl):
         if p >= nc:
             for i in range(p-nc+1):
                 p_item = self.AppendItem(self.root, '....')
-                self.SetPyData(p_item, -1)
+                self.SetItemData(p_item, -1)
         else:
             for n,p_item in enumerate(self.walk()):
                 if n == p:
@@ -111,7 +112,7 @@ class TreeCtrl(CustomTreeCtrl):
             if s >= nc:
                 for i in range(s-nc+1):
                     s_item = self.AppendItem(p_item, '....')
-                    self.SetPyData(s_item, -1)
+                    self.SetItemData(s_item, -1)
             else:
                 for n,s_item in enumerate(self.walk(p_item)):
                     if n == s:
@@ -138,6 +139,7 @@ class TreeCtrl(CustomTreeCtrl):
         self.EditLabel(self.item)
 
     def OnBeginEdit(self,evt):
+        self.Unbind(wx.EVT_ENTER_WINDOW)
         if self.item == self.root:
             evt.Veto()
             return
@@ -150,7 +152,7 @@ class TreeCtrl(CustomTreeCtrl):
         except AttributeError:
             pass
         self.SetItemText(self.edit_item, name)
-        
+
     def OnEndEdit(self, evt):
         name = evt.GetLabel().strip()
 
@@ -159,14 +161,15 @@ class TreeCtrl(CustomTreeCtrl):
         if not evt.IsEditCancelled():
             parent = self.GetItemParent(self.edit_item)
             if parent == self.root:
-                plot = self.GetPyData(self.edit_item)
+                plot = self.GetItemData(self.edit_item)
             else:
-                plot = self.GetPyData(parent)
-                set = self.GetPyData(self.edit_item)
+                plot = self.GetItemData(parent)
+                set = self.GetItemData(self.edit_item)
             pub.sendMessage((self.view_id, 'tree', 'rename'),msg=(plot,set,name))
         else:
             evt.Veto()
             self.SetItemText(self.edit_item, self.item_old_name)
+        self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
 
     def initMenus(self):
         self.menumap = [(-1,'Edit label',self.OnEdit),
@@ -244,7 +247,7 @@ class TreeCtrl(CustomTreeCtrl):
         return
 
     def OnInsertPlot(self, evt):
-        loc = self.GetPyData(self.item)
+        loc = self.GetItemData(self.item)
         pub.sendMessage((self.view_id, 'tree', 'insert'), msg=loc)
     
     def OnRemFit(self, evt=None):
@@ -275,6 +278,8 @@ class TreeCtrl(CustomTreeCtrl):
             if self.item is None:
                 return
             self.OnRemItem(evt=None)
+        if kc == 13:
+            self.OnEdit(None)
         evt.Skip()
 
     def OnDragBegin(self, evt):
@@ -309,20 +314,20 @@ class TreeCtrl(CustomTreeCtrl):
                 self._drag = False
                 return
             else:
-                s_plot, t_plot = [self.GetPyData(x) for x in [source, target]]
+                s_plot, t_plot = [self.GetItemData(x) for x in [source, target]]
                 s_sets = None
                 t_set = None
         else:
-            s_sets = [self.GetPyData(x) for x in self.dragitem]
+            s_sets = [self.GetItemData(x) for x in self.dragitem]
 
             if self.GetItemParent(target) != self.root:
-                t_set = self.GetPyData(target)
+                t_set = self.GetItemData(target)
                 target = self.GetItemParent(target)
             else:
                 t_set = 0
                 
-            s_plot = self.GetPyData(self.GetItemParent(self.dragitem[0]))
-            t_plot = self.GetPyData(target)
+            s_plot = self.GetItemData(self.GetItemParent(self.dragitem[0]))
+            t_plot = self.GetItemData(target)
 
         self._drag = False
         
@@ -342,15 +347,15 @@ class TreeCtrl(CustomTreeCtrl):
         if self.item == self.root:
             plotnum = None
         elif self.isPlot(item):
-            plotnum = self.GetPyData(evt.GetItem())
+            plotnum = self.GetItemData(evt.GetItem())
         else:
-            plotnum = self.GetPyData(self.GetItemParent(item))
+            plotnum = self.GetItemData(self.GetItemParent(item))
             if len(self.GetSelections()) > 1:
                 setnum = []
                 for sel in self.GetSelections():
-                    setnum.append(self.GetPyData(sel))
+                    setnum.append(self.GetItemData(sel))
             else:
-                setnum = [self.GetPyData(evt.GetItem())]
+                setnum = [self.GetItemData(evt.GetItem())]
         evt.Skip()
         pub.sendMessage((self.view_id, 'tree', 'select'),selection=(plotnum,setnum))
 
@@ -384,7 +389,7 @@ class TreeCtrl(CustomTreeCtrl):
     def set_item(self, parent, child, name, hide=False, model=False):
         item = self[[child,(parent,child)][int(parent != -1)]]
         
-        self.SetPyData(item, child)
+        self.SetItemData(item, child)
         if parent == -1:
             self.SetItemImage(item, self.icon_plot, wx.TreeItemIcon_Normal)
             self.SetItemText(item, 'p%d %s'%(child,name))
