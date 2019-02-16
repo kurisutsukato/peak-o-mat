@@ -21,70 +21,66 @@ from .appdata import configdir
 from .symbols import pom_globals
 
 from .misc import frozen_base, source_base, darwin_base
+from .version import __version__
 
-if hasattr(sys, 'frozen') and sys.frozen == "windows_exe":
-    revpath = path.join(frozen_base, 'SVNREVISION')
-elif hasattr(sys, 'frozen') and sys.platform == 'darwin':
-    revpath = path.join(darwin_base, 'SVNREVISION')
-else:
-    revpath = path.join(source_base, 'SVNREVISION')
+#if hasattr(sys, 'frozen') and sys.frozen == "windows_exe":
+#    revpath = path.join(frozen_base, 'SVNREVISION')
+#elif hasattr(sys, 'frozen') and sys.platform == 'darwin':
+#    revpath = path.join(darwin_base, 'SVNREVISION')
+#else:
+#    revpath = path.join(source_base, 'SVNREVISION')
 
-def svn_revision():
-    #log.debug('sys.frozen: %d'%hasattr(sys, "frozen"))
-    if hasattr(sys, "frozen"):
-        #log.debug(path.abspath(__file__))
-        try:
-            mom_dir = path.normpath(path.join(__file__,'../../..'))
-            #log.debug(mom_dir)
-            rev = int(open(path.join(mom_dir,'SVNREVISION')).read())
-            #log.debug(rev)
-        except IOError:
-            tp,val,trace = sys.exc_info()
-            tb.print_exception(tp,val,trace)
-            return None
-        else:
-            return rev
-    else:
-        if sys.platform == 'win32':
-            try:
-                #chdir(path.dirname(path.abspath(__file__)))
-                with open(os.devnull, 'w') as devnull:
-                    out = subprocess.check_output(['subwcrev',path.dirname(path.abspath(__file__))], stderr=devnull)
-                out = out.decode(sys.getfilesystemencoding()).split('\n')
-            except:
-                pass
-            else:
-                mat = re.match(r'.*\s(\d+)$',out[1].strip(),flags=re.MULTILINE)
-                if mat is not None:
-                    return int(mat.groups()[0])
-                return None
-        else:
-            try:
-                with open(os.devnull, 'w') as devnull:
-                    svn_info = subprocess.check_output(('svn','info'), stderr=devnull).decode(sys.getfilesystemencoding())
-                rev = (re.search(r"Revision:\s(\d+)", svn_info)).groups()[0]
-            except subprocess.CalledProcessError:
-                pass
-            else:
-                return int(rev)
-
-        try:
-            mom_dir = path.normpath(path.join(path.dirname(__file__),'..'))
-            rev = int(open(path.join(mom_dir,'SVNREVISION')).read())
-        except IOError:
-            tp,val,trace = sys.exc_info()
-            tb.print_exception(tp,val,trace)
-            return None
-        else:
-            return rev
-
-
-    return int(999999)
-
-
-rev = svn_revision()
-if rev is not None:
-    __version__ = '{:06d}'.format(rev)
+# def svn_revision():
+#     #log.debug('sys.frozen: %d'%hasattr(sys, "frozen"))
+#     if hasattr(sys, "frozen"):
+#         #log.debug(path.abspath(__file__))
+#         try:
+#             mom_dir = path.normpath(path.join(__file__,'../../..'))
+#             #log.debug(mom_dir)
+#             rev = int(open(path.join(mom_dir,'SVNREVISION')).read())
+#             #log.debug(rev)
+#         except IOError:
+#             tp,val,trace = sys.exc_info()
+#             tb.print_exception(tp,val,trace)
+#             return None
+#         else:
+#             return rev
+#     else:
+#         if sys.platform == 'win32':
+#             try:
+#                 #chdir(path.dirname(path.abspath(__file__)))
+#                 with open(os.devnull, 'w') as devnull:
+#                     out = subprocess.check_output(['subwcrev',path.dirname(path.abspath(__file__))], stderr=devnull)
+#                 out = out.decode(sys.getfilesystemencoding()).split('\n')
+#             except:
+#                 pass
+#             else:
+#                 mat = re.match(r'.*\s(\d+)$',out[1].strip(),flags=re.MULTILINE)
+#                 if mat is not None:
+#                     return int(mat.groups()[0])
+#                 return None
+#         else:
+#             try:
+#                 with open(os.devnull, 'w') as devnull:
+#                     svn_info = subprocess.check_output(('svn','info'), stderr=devnull).decode(sys.getfilesystemencoding())
+#                 rev = (re.search(r"Revision:\s(\d+)", svn_info)).groups()[0]
+#             except subprocess.CalledProcessError:
+#                 pass
+#             else:
+#                 return int(rev)
+#
+#         try:
+#             mom_dir = path.normpath(path.join(path.dirname(__file__),'..'))
+#             rev = int(open(path.join(mom_dir,'SVNREVISION')).read())
+#         except IOError:
+#             tp,val,trace = sys.exc_info()
+#             tb.print_exception(tp,val,trace)
+#             return None
+#         else:
+#             return rev
+#
+#
+#     return int(999999)
 
 
 from . import lineshapes, lineshapebase
