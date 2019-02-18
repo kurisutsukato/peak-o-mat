@@ -135,22 +135,22 @@ guess the columns delimiter and ignoring comments.
             except UnicodeDecodeError:
                 break
             # try to guess the delimiter
-            for i in range(2):
-                for delimiter in delimiters:
-                    try:
-                        assert len([float(x.strip()) for x in re.split(delimiter,line)]) >= 2
-                    except AssertionError:
-                        pass
-                    except ValueError:
-                        pass # non numeric data
-                    except IndexError:
-                        pass # less than 2 columns
-                    else:
-                        raise Found
+            for delimiter in delimiters:
+                try:
+                    assert len([float(x.strip()) for x in re.split(delimiter,line)]) >= 2
+                except AssertionError:
+                    pass
+                except ValueError:
+                    pass # non numeric data
+                except IndexError:
+                    pass # less than 2 columns
+                else:
+                    raise Found
+            if ',' not in delimiters:
                 line = line.replace(',','.')
                 replace_comma = True
     except Found:
-        #print 'delimiter identified at row {}'.format(row)
+        print('delimiter identified at row {}: {}'.format(row,delimiter))
         pass
     else:
         f.close()

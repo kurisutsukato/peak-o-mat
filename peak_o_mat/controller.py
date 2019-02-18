@@ -308,7 +308,7 @@ class Controller(object):
                     else:
                         #name = u'{}_{}'.format(os.path.basename(p).decode(sys.getfilesystemencoding()),lab)
                         name = lab
-                        self.project[plot].name = os.path.basename(p).decode(sys.getfilesystemencoding())
+                        self.project[plot].name = os.path.basename(p)
                     s = spec.Spec(data[0],y,name)
                     setnum = self.project[plot].add(s)
             if len(path) > 1 and not one_plot_each:

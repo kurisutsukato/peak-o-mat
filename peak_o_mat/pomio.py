@@ -34,25 +34,6 @@ class PomDialect(csv.Dialect):
 import re
 reg = re.compile(r'(\S+)\s*(\s{1})')
 
-class UTF8Recoder(object):
-    """
-    Iterator that reads an encoded stream and reencodes the input to UTF-8
-    """
-    def __init__(self, path, encoding):
-        self.reader = codecs.getreader(encoding)(path, errors='ignore')
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        '''
-        strip multiple delimiters
-        '''
-        a = next(self.reader)
-        while a == '':
-            a = next(self.reader)
-        return reg.sub(r'\1\2',a).encode("utf-8")
-
 class LocaleAware(object):
     def __init__(self):
         locale.setlocale(locale.LC_ALL, '')
@@ -64,17 +45,15 @@ class CSVReader(LocaleAware):
     which is encoded in the given encoding.
     """
 
-    def __init__(self, path, dialect=csv.excel, encoding=None):
+    def __init__(self, f, dialect=csv.excel, encoding=None):
         super(CSVReader, self).__init__()
         if encoding is None:
             encoding = self.defaultencoding
-        print(('reader with {}'.format(encoding)))
-        f = UTF8Recoder(path, encoding)
         self.reader = csv.reader(f, dialect=dialect)
 
     def __next__(self):
         row = next(self.reader)
-        return [str(s, "utf-8") for s in row]
+        return row
 
     def __iter__(self):
         return self
@@ -89,7 +68,7 @@ class CSVWriter(LocaleAware):
         super(CSVWriter, self).__init__()
         if encoding is None:
             encoding = self.defaultencoding
-        print(('writer with {}'.format(encoding)))
+            print(encoding)
 
         # Redirect output to a queue
         self.queue = io.StringIO()
@@ -98,15 +77,17 @@ class CSVWriter(LocaleAware):
         self.encode = codecs.getencoder(encoding)
 
     def writerow(self, row):
-        self.writer.writerow([s.encode("utf-8") for s in row])
+        #self.writer.writerow([s.encode("utf-8") for s in row])
+        self.writer.writerow(row)
         # Fetch UTF-8 output from the queue ...
-        data = self.queue.getvalue().decode("utf-8")
+        data = self.queue.getvalue()#.decode("utf-8")
         # ... and reencode it into the target encoding
         data,length = self.encode(data)
         # write to the target stream
         self.stream.write(data)
         # empty queue
         self.queue.truncate(0)
+        self.queue.seek(0)
 
     def writerows(self, rows):
         for row in rows:
