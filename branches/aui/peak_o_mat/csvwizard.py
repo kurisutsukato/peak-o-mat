@@ -235,7 +235,7 @@ class CSVWizard:
         data = []
 
         csvr = CSVReader(StringIO(self.rawdata), dialect=self.dialect)
-        self.preview = self.rawdata.decode(csvr.defaultencoding, 'ignore')
+        self.preview = self.rawdata
 
         try:
             for row in csvr:

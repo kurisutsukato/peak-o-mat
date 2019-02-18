@@ -192,9 +192,26 @@ class HistTextCtrl(wx.ComboBox):
                 self._cycle = 0
         self.SetValue(self._history[self._cycle])
 
+class TGButton(buttons.GenBitmapToggleButton):
+    def InitColours(self):
+        """
+        Calculate a new set of highlight and shadow colours based on
+        the background colour. Works okay if the colour is dark...
+        """
+
+        faceClr = self.GetBackgroundColour()
+        r, g, b, a = faceClr
+        fr, fg, fb = min(255,r-60), min(255,g-60), min(255,b+32)
+        self.faceDnClr = wx.Colour(fr, fg, fb)
+        sr, sg, sb = max(0,r-32), max(0,g-32), max(0,b-32)
+        self.shadowPenClr = wx.Colour(sr,sg,sb)
+        hr, hg, hb = min(255,r+64), min(255,g+64), min(255,b+64)
+        self.highlightPenClr = wx.Colour(hr,hg,hb)
+        self.focusClr = wx.Colour(hr, hg, hb)
+
 class Toolbar(wx.Panel):
     tbdata = [
-        ['logx.png','btn_logx', 'toggle Xlog/lin scale', 1, False],
+        [('logx.png','logx_selected.png'),'btn_logx', 'toggle Xlog/lin scale', 1, False],
         ['logy.png','btn_logy', 'toggle Ylog/lin scale', 1, False],
         ['linestyle.png','btn_style', 'toggle line/dot linestyle', 1, False],
         ['peaks.png','btn_peaks', 'toggle show single peaks', 1, False],
@@ -214,23 +231,36 @@ class Toolbar(wx.Panel):
         sizer = wx.BoxSizer(wx.VERTICAL)
         
         for image,name,help,btn,action in self.tbdata:
-            bmp = images.get_bmp(image)
+            bmp_sel = None
+            if type(image) == tuple:
+                bmp = images.get_bmp(image[0])
+                bmp_sel = images.get_bmp(image[1])
+            else:
+                bmp = images.get_bmp(image)
 
             if btn in [1,2]:
-                btn = buttons.GenBitmapToggleButton(self, -1, bmp, name=name, style=wx.BORDER_NONE)
+                btn = TGButton(self, -1, bmp, name=name)#, style=wx.BORDER_NONE)
+                btn.SetBezelWidth(0)
+                btn.SetInitialSize()
+                #btn.SetBackgroundColour(wx.Colour(100,120,150))
+                if bmp_sel is not None:
+                    #btn.SetBitmapSelected(bmp_sel)
+                    pass
                 #btn.SetBitmap(bmp)
             elif btn == 0:
-                btn = buttons.GenBitmapButton(self, -1, bmp, name=name, style=wx.BORDER_NONE)
+                btn = buttons.GenBitmapButton(self, -1, bmp, name=name)#, style=wx.BORDER_NONE)
+                btn.SetBezelWidth(0)
+                btn.SetInitialSize()
                 #btn.SetBitmap(bmp)
-            btn.SetMinSize((30,30))
+            #btn.SetMinSize((20,20))
             if action:
                 self.ActionButton(btn)
             btn.SetToolTip(wx.ToolTip(help))
-            sizer.Add(btn, 0, wx.BOTTOM|wx.EXPAND,1)
+            sizer.Add(btn, 0)
 
         self.SetSizer(sizer)
         self.Layout()
-        self.SetMinSize((30,400))
+        #self.SetMinSize((20,-1))
 
         pub.subscribe(self.OnNewMode, ('ID'+str(id(wx.GetTopLevelParent(self))),'canvas','newmode'))
 
