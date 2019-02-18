@@ -36,6 +36,7 @@ def svn_revision():
     else:
         try:
             out = subprocess.check_output(['subwcrev',path.dirname(path.abspath(__file__))], shell=False)
+            out = out.decode(sys.getdefaultencoding())
             out = out.split('\n')
         except (OSError,subprocess.CalledProcessError):
             log.debug('subwcrev exectable not found')
