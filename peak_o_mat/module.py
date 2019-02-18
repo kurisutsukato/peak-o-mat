@@ -35,6 +35,9 @@ class Module:
     # it will steal the focus from any other module
     need_attention = False
 
+
+#TODO: remove similiar code from XRCModule and BaseModule
+
 class BaseModule(Module):
 
     def __init__(self, controller, view):
@@ -49,7 +52,6 @@ class BaseModule(Module):
 
     def init(self):
         assert hasattr(self, 'title')
-        print('init')
         self.view.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
         pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
         pub.subscribe(self.focus_changed, (self.view_id, 'module', 'focuschanged'))
