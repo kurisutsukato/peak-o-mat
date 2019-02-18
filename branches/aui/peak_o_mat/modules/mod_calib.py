@@ -31,9 +31,20 @@ class Panel(wx.Panel):
         self.xrc_btn_apply = wx.Button(self, label='Apply')
 
     def layout(self):
-        outer = wx.BoxSizer(wx.VERTICAL)
-        inner = wx.BoxSizer(wx.HORIZONTAL)
-        inner.Add(self.xrc_grid, 1, flag=wx.ALL|wx.EXPAND, border=5)
+        outer = wx.BoxSizer(wx.HORIZONTAL)
+        left = wx.BoxSizer(wx.VERTICAL)
+        left.Add(self.xrc_grid, 1, flag=wx.ALL|wx.EXPAND, border=5)
+
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        row.Add(wx.StaticText(self, label='Tolerance '), 0, wx.RIGHT|wx.EXPAND, 5)
+        row.Add(self.xrc_txt_tol, 0, wx.RIGHT|wx.EXPAND, 30)
+        row.Add(wx.StaticText(self, label='Offset'), 0, wx.RIGHT|wx.EXPAND, 5)
+        row.Add(self.xrc_txt_offset, 0, wx.ALL|wx.EXPAND)
+        left.Add(row, 0, wx.EXPAND|wx.ALL, 5)
+
+        outer.Add(left,1,wx.EXPAND)
+
+        right = wx.BoxSizer(wx.VERTICAL)
 
         col = wx.BoxSizer(wx.VERTICAL)
         grd = wx.FlexGridSizer(cols=2, hgap=15,vgap=5)
@@ -43,11 +54,8 @@ class Panel(wx.Panel):
         grd.Add(self.xrc_ch_unit, 1, flag=wx.ALL|wx.EXPAND)
         grd.Add(wx.StaticText(self, label='Show'), 1, flag=wx.ALL|wx.EXPAND)
         grd.Add(self.xrc_chk_speclines, 1, flag=wx.ALL|wx.EXPAND)
-        grd.Add(wx.StaticText(self, label='Tolerance '), 1, flag=wx.ALL|wx.EXPAND)
-        grd.Add(self.xrc_txt_tol, 1, flag=wx.ALL|wx.EXPAND)
-        grd.Add(wx.StaticText(self, label='Offset'), 1, flag=wx.ALL|wx.EXPAND)
-        grd.Add(self.xrc_txt_offset, 1, flag=wx.ALL|wx.EXPAND)
         col.Add(grd, 1, wx.EXPAND|wx.ALL, 5)
+
 
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(wx.StaticText(self, label='Order of regression'), 1, flag=wx.ALL|wx.EXPAND, border=5)
@@ -69,8 +77,8 @@ class Panel(wx.Panel):
         row.Add(wx.Window(self), 1)
         row.Add(self.xrc_btn_apply, 1, flag=wx.ALL|wx.EXPAND, border=5)
         col.Add(row, 0, wx.EXPAND)
-        inner.Add(col, 0, wx.EXPAND)
-        outer.Add(inner, 1, wx.EXPAND)
+        right.Add(col, 0, wx.EXPAND)
+        outer.Add(right, 0, wx.EXPAND)
         self.SetSizer(outer)
         outer.SetSizeHints(self.GetParent())
         #fsizer = wx.BoxSizer(wx.HORIZONTAL)
