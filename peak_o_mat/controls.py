@@ -211,7 +211,7 @@ class TGButton(buttons.GenBitmapToggleButton):
 
 class Toolbar(wx.Panel):
     tbdata = [
-        [('logx.png','logx_selected.png'),'btn_logx', 'toggle Xlog/lin scale', 1, False],
+        ['logx.png','btn_logx', 'toggle Xlog/lin scale', 1, False],
         ['logy.png','btn_logy', 'toggle Ylog/lin scale', 1, False],
         ['linestyle.png','btn_style', 'toggle line/dot linestyle', 1, False],
         ['peaks.png','btn_peaks', 'toggle show single peaks', 1, False],
