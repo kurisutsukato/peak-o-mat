@@ -318,8 +318,8 @@ class Controller(object):
         misc.set_cwd(p)
             
         self.update_tree()
-        self.update_plot()
         self.view.tree.selection = (plot,setnum)
+        self.update_plot()
 
     def show_export_dialog(self):
         if self.active_set is None: # multiple selections
