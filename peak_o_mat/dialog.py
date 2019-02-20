@@ -22,13 +22,34 @@ class xrcctrl(object):
     def __getitem__(self, item):
         return self.FindWindowByName(item)
 
+class ColumnDialog(wx.Dialog):
+    def __init__(self, parent):
+        wx.Dialog.__init__(self, parent)
+        self.order = 0 #0: xyyy, 1: xyxy
+
+        lab = wx.StaticText(self, label='Multicolumn file. Indicate column ordering:')
+        self.ch = wx.Choice(self, choices=['XYYY..','XYXY..'])
+        self.ch.SetSelection(0)
+
+        self.btn_ok = wx.Button(self, label='Ok', id=wx.ID_OK)
+
+        box = wx.BoxSizer(wx.VERTICAL)
+        box.Add(lab, 0, wx.ALL, 5)
+        box.Add(self.ch, 0, wx.ALL, 5)
+        box.Add(wx.Window(self, size=(-1,20)),0)
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(wx.Window(self, size=(1,1)),1)
+        hbox.Add(self.btn_ok, 0, wx.EXPAND|wx.ALL,5)
+        box.Add(hbox,0,wx.EXPAND)
+        self.SetSizer(box)
+
+
 class ImportDialog(wx.Dialog, xrcctrl):
     def __init__(self, parent):
         wx.Dialog.__init__(self)
         self.one_plot_each = False
         self.res = misc_ui.xrc_resource()
         self.res.LoadDialog(self, parent, 'xrc_dlg_import')
-        #self.Create(parent)
 
         self['xrc_btn_single'].Bind(wx.EVT_BUTTON, self.OnSingle)
         self['xrc_btn_oneeach'].Bind(wx.EVT_BUTTON, self.OnEach)
@@ -52,7 +73,6 @@ class ExportDialog(wx.Dialog, xrcctrl):
         wx.Dialog.__init__(self)
         self.res = misc_ui.xrc_resource()
         self.res.LoadDialog(self, parent, 'xrc_dlg_export')
-        #self.Create(parent)
 
         self['xrc_txt_ext'].Bind(wx.EVT_UPDATE_UI, self.OnEnterExt)
         self['xrc_lab_ext'].Bind(wx.EVT_UPDATE_UI, self.OnEnterExt)
@@ -86,3 +106,8 @@ class ExportDialog(wx.Dialog, xrcctrl):
         self.overwrite = self['xrc_chk_overwrite'].IsChecked()
         self.EndModal(wx.ID_OK)
     
+if __name__ == '__main__':
+    app = wx.App()
+    d = ColumnDialog(None)
+    d.ShowModal()
+    app.MainLoop()
