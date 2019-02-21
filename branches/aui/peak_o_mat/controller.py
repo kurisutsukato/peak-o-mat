@@ -983,11 +983,12 @@ class Controller(object):
                             for i in set.loadpeaks(set.mod, addbg=True):
                                 lines.append(plotcanvas.Line(i, colour='blue', skipbb=True))
                 else:
-                    if config.fast_display:
-                        skip = max(1,int(len(set.x)/config.fast_max_pts+.5))
-                    else:
-                        skip = 1
-                    lines.append(Line(set.xy[:,::skip], colour='black'))
+                    #TODO: obsolete fast-display
+                    # if config.fast_display:
+                    #     skip = max(1,int(len(set.x)/config.fast_max_pts+.5))
+                    # else:
+                    #     skip = 1
+                    lines.append(Line(set.xy, colour='black'))
             xr, yr = self.project[plot].rng
         for ptype, spec in self._modules.get_plot_objects():
             lines.append(getattr(plotcanvas,ptype)([spec.x,spec.y], colour=wx.Colour(0,0,250,180), width=1))
