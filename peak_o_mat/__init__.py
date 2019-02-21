@@ -148,6 +148,7 @@ if os.path.exists(configfile):
 else:
     print('no peak-o-mat.cfg in \'%s\''%configdir())
     config.read_string(defaultconfig)
+    config.write()
 
 
 load_userfunc()

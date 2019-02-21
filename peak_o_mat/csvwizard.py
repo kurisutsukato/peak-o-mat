@@ -85,9 +85,9 @@ class Dialog(wx.Dialog):
         # this does not work when run from 'ipython -wthread'
         #wx.CallAfter(self.grid.AutoSizeColumns)
         
-class Table(wx.grid.PyGridTableBase):
+class Table(wx.grid.GridTableBase):
     def __init__(self):
-        wx.grid.PyGridTableBase.__init__(self)
+        wx.grid.GridTableBase.__init__(self)
 
         self.colLabels = ['']*10
         self.rowLabels = ['']*200
@@ -346,6 +346,9 @@ def mist():
         print(row)
 
 if __name__ == '__main__':
-    mist()
+    app = wx.App()
+    d = CSVWizard(None, 'data.csv')
+    d.show()
+    app.MainLoop()
 
     

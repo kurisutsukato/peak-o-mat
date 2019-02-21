@@ -14,29 +14,31 @@
 ##     along with this program; if not, write to the Free Software
 ##     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import os
-from .appdata import configdir
+print('accessing obsolete file: settings.py')
 
-fast_display = False
-fast_max_pts = 200
-
-truncate = False
-truncate_max_pts = 1000
-truncate_interpolate = True
-
-floating_point_is_comma = False
-
-from .appdata import configdir
-
-configfile = os.path.join(configdir(),'config.py')
-if os.path.exists(configfile):
-    try:
-        exec(compile(open(configfile).read(), configfile, 'exec'))
-    except:
-        print('could not read config.py')
-else:
-    print('no config.py in \'%s\''%configdir())
-
-
-
-
+# import os
+# from .appdata import configdir
+#
+# fast_display = False
+# fast_max_pts = 200
+#
+# truncate = False
+# truncate_max_pts = 1000
+# truncate_interpolate = True
+#
+# floating_point_is_comma = False
+#
+# from .appdata import configdir
+#
+# configfile = os.path.join(configdir(),'config.py')
+# if os.path.exists(configfile):
+#     try:
+#         exec(compile(open(configfile).read(), configfile, 'exec'))
+#     except:
+#         print('could not read config.py')
+# else:
+#     print('no config.py in \'%s\''%configdir())
+#
+#
+#
+#

@@ -98,29 +98,30 @@ name : short description of the data
         else:
             raise TypeError('wrong arguments'+self.__init__.__doc__)
 
-        if config.truncate:
-            self.truncate(config.truncate_max_pts, config.truncate_interpolate)
+#TODO: obsolete: truncating of spectra
+    #     if config.truncate:
+    #         self.truncate(config.truncate_max_pts, config.truncate_interpolate)
         self.name = name
         self.mask = np.zeros(self.data.shape[1])
-
-    def truncate(self, pts, interpolate=True):
-        if len(self.data[0]) > pts:
-            self.truncated = True
-            if not hasattr(config, 'interpolate'):
-                config.interpolate = False
-            
-            if not config.interpolate:
-                l = len(self.data[0])
-                if l > pts:
-                    inc = float(l)/float(pts) 
-                    at = np.arange(0.0, l, inc, float).astype(int)
-                    self.data = self.data.take(at, 1)
-            else:
-                a,b = min(self.data[0])+1e-2,max(self.data[0])-1e-2
-                x = np.arange(a,b,(b-a)/pts)
-                interpolate = interp1d(self.data[0], self.data[1])
-                y = interpolate(x)
-                self.data = np.array([x,y])
+    #
+    # def truncate(self, pts, interpolate=True):
+    #     if len(self.data[0]) > pts:
+    #         self.truncated = True
+    #         if not hasattr(config, 'interpolate'):
+    #             config.interpolate = False
+    #
+    #         if not config.interpolate:
+    #             l = len(self.data[0])
+    #             if l > pts:
+    #                 inc = float(l)/float(pts)
+    #                 at = np.arange(0.0, l, inc, float).astype(int)
+    #                 self.data = self.data.take(at, 1)
+    #         else:
+    #             a,b = min(self.data[0])+1e-2,max(self.data[0])-1e-2
+    #             x = np.arange(a,b,(b-a)/pts)
+    #             interpolate = interp1d(self.data[0], self.data[1])
+    #             y = interpolate(x)
+    #             self.data = np.array([x,y])
 
     def __copy__(self):
         return Spec(self.x.copy(), self.y.copy(), 'copy_%s'%self.name)

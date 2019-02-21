@@ -93,7 +93,8 @@ class CSVWriter(LocaleAware):
         for row in rows:
             self.writerow(row)
 
-def read_txt(path):
+#TODO: not used
+def __read_txt(path):
     """\
 Reads numeric data with an arbitrary number of columns while trying to
 guess the columns delimiter and ignoring comments.
