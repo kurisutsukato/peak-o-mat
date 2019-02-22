@@ -5,7 +5,6 @@ import re
 import numpy as np
 from io import open
 
-from .. import settings as config
 from ..misc import PomError
 from .. import config
 

@@ -3,7 +3,6 @@ from wx.lib.pubsub import pub
 from math import log10,exp,pow
 
 from peak_o_mat import module, lineshapebase, controls
-from peak_o_mat import settings as config
 
 import numpy as N
 

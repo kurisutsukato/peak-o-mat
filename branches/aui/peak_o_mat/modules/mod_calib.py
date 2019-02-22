@@ -5,25 +5,27 @@ import wx.aui as aui
 
 import numpy as np
 from wx.lib.pubsub import pub
-
+from wx.lib.scrolledpanel import ScrolledPanel
 
 from peak_o_mat import module, spec, calib, controls, misc_ui, menu
 
-class Panel(wx.Panel):
+class Panel(ScrolledPanel):
     def __init__(self, parent, model):
         super(Panel, self).__init__(parent)
         self.calib = model
         self.setup_controls()
         self.layout()
         self.Fit()
+        self.SetAutoLayout(1)
+        self.SetupScrolling()
 
     def setup_controls(self):
         self.xrc_grid = CalibGrid(self, self.calib, size=(200,-1))
         self.xrc_btn_elem = wx.Button(self)
         self.xrc_ch_unit = wx.Choice(self)
         self.xrc_chk_speclines = wx.CheckBox(self)
-        self.xrc_txt_tol = wx.TextCtrl(self, value='2.0', style=wx.TE_RIGHT)
-        self.xrc_txt_offset = wx.TextCtrl(self, value='0.0', style=wx.TE_RIGHT)
+        self.xrc_txt_tol = wx.TextCtrl(self, value='4.0', size=(50,-1), style=wx.TE_RIGHT)
+        self.xrc_txt_offset = wx.TextCtrl(self, value='0.0', size=(50,-1), style=wx.TE_RIGHT)
         self.xrc_spin_order = wx.SpinCtrl(self, size=(60,-1), value='0', min=0, max=2)
         self.xrc_btn_dispersion = wx.Button(self, label='Plot dispersion')
         self.xrc_btn_store = wx.Button(self, label='Save')
@@ -56,7 +58,6 @@ class Panel(wx.Panel):
         grd.Add(self.xrc_chk_speclines, 1, flag=wx.ALL|wx.EXPAND)
         col.Add(grd, 1, wx.EXPAND|wx.ALL, 5)
 
-
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(wx.StaticText(self, label='Order of regression'), 1, flag=wx.ALL|wx.EXPAND, border=5)
         row.Add(self.xrc_spin_order, 1, flag=wx.ALL|wx.EXPAND, border=5)
@@ -80,7 +81,9 @@ class Panel(wx.Panel):
         right.Add(col, 0, wx.EXPAND)
         outer.Add(right, 0, wx.EXPAND)
         self.SetSizer(outer)
-        outer.SetSizeHints(self.GetParent())
+        outer.SetSizeHints(self)#.GetParent())
+        self.Fit()
+
         #fsizer = wx.BoxSizer(wx.HORIZONTAL)
         #fsizer.Add(self, 1, wx.EXPAND)
         #self.GetParent().SetSizer(fsizer)
