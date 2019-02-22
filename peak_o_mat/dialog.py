@@ -17,18 +17,20 @@
 import wx
 from . import misc
 from . import misc_ui
+from . import images
 
 class xrcctrl(object):
     def __getitem__(self, item):
         return self.FindWindowByName(item)
 
+
 class ColumnDialog(wx.Dialog):
     def __init__(self, parent):
-        wx.Dialog.__init__(self, parent)
-        self.order = 0 #0: xyyy, 1: xyxy
+        wx.Dialog.__init__(self, parent, title='Multicolumn file')
+        self.order = 0  # 0: xyyy, 1: xyxy
 
-        lab = wx.StaticText(self, label='Multicolumn file. Indicate column ordering:')
-        self.ch = wx.Choice(self, choices=['XYYY..','XYXY..'])
+        lab = wx.StaticText(self, label='Select column ordering:')
+        self.ch = wx.Choice(self, choices=['XYYY..', 'XYXY..'])
         self.ch.SetSelection(0)
 
         self.btn_ok = wx.Button(self, label='Ok', id=wx.ID_OK)
@@ -36,13 +38,19 @@ class ColumnDialog(wx.Dialog):
         box = wx.BoxSizer(wx.VERTICAL)
         box.Add(lab, 0, wx.ALL, 5)
         box.Add(self.ch, 0, wx.ALL, 5)
-        box.Add(wx.Window(self, size=(-1,20)),0)
+        box.Add(wx.Window(self, size=(-1, 20)), 0)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(wx.Window(self, size=(1,1)),1)
-        hbox.Add(self.btn_ok, 0, wx.EXPAND|wx.ALL,5)
-        box.Add(hbox,0,wx.EXPAND)
+        hbox.Add(wx.Window(self, size=(1, 1)), 1)
+        hbox.Add(self.btn_ok, 0, wx.EXPAND | wx.ALL, 5)
+        box.Add(hbox, 0, wx.EXPAND)
         self.SetSizer(box)
+        box.SetSizeHints(self)
+        self.Fit()
 
+        ico = wx.Icon()
+        ico.CopyFromBitmap(images.get_bmp('logosmall.png'))
+        self.pom_ico = ico
+        self.SetIcon(ico)
 
 class ImportDialog(wx.Dialog, xrcctrl):
     def __init__(self, parent):
@@ -59,7 +67,7 @@ class ImportDialog(wx.Dialog, xrcctrl):
 
     def OnClose(self, evt):
         self.EndModal(wx.ID_CANCEL)
-        
+
     def OnSingle(self, evt):
         self.one_plot_each = False
         self.EndModal(wx.ID_OK)
@@ -67,6 +75,7 @@ class ImportDialog(wx.Dialog, xrcctrl):
     def OnEach(self, evt):
         self.one_plot_each = True
         self.EndModal(wx.ID_OK)
+
 
 class ExportDialog(wx.Dialog, xrcctrl):
     def __init__(self, parent):
@@ -85,7 +94,7 @@ class ExportDialog(wx.Dialog, xrcctrl):
 
     def OnEnterExt(self, evt):
         evt.Enable(self['xrc_chk_ext'].IsChecked())
-        
+
     def OnReadyToExport(self, evt):
         evt.Enable(self['xrc_txt_dir'].GetValue() != '')
 
@@ -95,7 +104,7 @@ class ExportDialog(wx.Dialog, xrcctrl):
             name = dlg.GetPath()
             dlg.Destroy()
             self['xrc_txt_dir'].SetValue(name)
-        
+
     def OnClose(self, evt):
         self.EndModal(wx.ID_CANCEL)
 
@@ -105,9 +114,9 @@ class ExportDialog(wx.Dialog, xrcctrl):
         self.onlyvisible = self['xrc_chk_visible'].IsChecked()
         self.overwrite = self['xrc_chk_overwrite'].IsChecked()
         self.EndModal(wx.ID_OK)
-    
+
+
 if __name__ == '__main__':
     app = wx.App()
     d = ColumnDialog(None)
-    d.ShowModal()
-    app.MainLoop()
+    print(d.ShowModal())

@@ -7,7 +7,6 @@ import numpy as np
 
 import locale
 
-from . import settings as config
 from .misc import PomError
 
 def asfloat(arg):

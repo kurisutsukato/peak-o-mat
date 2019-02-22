@@ -22,8 +22,6 @@ from numpy import inf, nan
 
 import re
 
-from . import settings as config
-
 frozen_base = os.path.dirname(sys.executable)
 source_base = os.path.split(os.path.dirname(__file__))[0]
 darwin_base = os.path.join(frozen_base,'..','Resources')
@@ -63,13 +61,6 @@ def set_cwd(cwd):
 _special_numbers=dict([('-1.#INF',-inf),('1.#INF',inf),
                       ('-1.#IND',nan),('-1.#IND00',nan),
                       ('1.#QNAN',nan),('1.#QNAN0',-nan)])
-
-def _atof(x):
-    if config.floating_point_is_comma:
-        x = x.replace(',','.')
-    if x in list(_special_numbers.keys()):
-        return _special_numbers[x]
-    return np.float32(x)
 
 def atof(x):
     try:

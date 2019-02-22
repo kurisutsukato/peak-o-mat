@@ -108,15 +108,7 @@ def load_userfunc():
 
 
 defaultconfig ='''\
-[display]
-fast = False
-fast_max_pts = 200
-
 [general]
-truncate = False
-truncate_max_pts = 1000
-truncate_interpolate = True
-
 floating_point_is_comma = False
 
 [encodings]
@@ -124,7 +116,6 @@ ascii
 utf-8
 iso8859-1
 iso2022-jp-2
-
 '''
 
 class Config(configparser.RawConfigParser):

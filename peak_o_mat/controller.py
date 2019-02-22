@@ -37,7 +37,6 @@ from . import misc
 from . import misc_ui
 
 from . import plotcanvas
-from . import settings as config
 from . import fitpanel
 from . import fitcontroller
 from . import fitinteractor
@@ -45,7 +44,6 @@ from . import fitinteractor
 from . import datagrid
 from . import spec
 from . import project
-from .fit import Fit
 from . import module
 from . import codeeditor
 from .mplplot import controller as mplcontroller

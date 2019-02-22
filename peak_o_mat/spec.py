@@ -24,7 +24,7 @@ import copy
 import re
 import os, sys
 
-from . import settings as config
+from . import config
 from .misc import PomError
 
 from .symbols import pom_globals
