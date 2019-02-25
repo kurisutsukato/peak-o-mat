@@ -3,7 +3,7 @@
 -||1|8|green|1.0|1.90RBM.dat|True
 -||1|8|red|1.0|1.91RBM.dat|True
 -||1|8|blue|1.0|1.92RBM.dat|True
--||1|8|magenta|1.0|1.93RBM.dat|True</linedata></figure></mpmodel><griddata collabels="2:::LO1:pos;3:::GA:pos;4:::LO2:pos" name="exported fit parameters" rowlabels="0:::ruby.dat;1:::lali;3:::ruby2.dat" thegrid="True">0 1 6925.47476477136 6929.46699993182 6939.62652311271 0 0 0 0
+-||1|8|magenta|1.0|1.93RBM.dat|True</linedata></figure></mpmodel><griddata collabels="0:::&#12381;&#12363;&#12381;&#12363;;2:::LO1:pos;3:::GA:pos;4:::LO2:pos" name="exported fit parameters" rowlabels="0:::ruby.dat;1:::n&#246;&#246;&#246;&#246;&#246;&#246;!;3:::ruby2.dat" thegrid="True">0 1 6925.47476477136 6929.46699993182 6939.62652311271 0 0 0 0
 0 1.5 6924.27944100342 6929.46699783577 6938.40611336738 0 0 0 0
 0 0 0 0 0 0 0 0 0
 0 2 6923.08411723547 6929.46699573972 6937.18570362205 0 0 0 0
@@ -96,6 +96,11 @@ for s in project[2][-1::-1]:
     mod.update_from_fit(res)
     s.model = mod#.copy()
 sync()</code><code name="new">for p in project:
+for p in project:
+for p in project:
+for p in project:
+for p in project:
+for p in project:
 
 				p.name = ''
 
