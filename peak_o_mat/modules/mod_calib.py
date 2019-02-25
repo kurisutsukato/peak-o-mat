@@ -16,8 +16,8 @@ class Panel(ScrolledPanel):
         self.setup_controls()
         self.layout()
         self.Fit()
-        self.SetAutoLayout(1)
-        self.SetupScrolling()
+
+        self.SetupScrolling(scrollToTop=False, scrollIntoView=False)
 
     def setup_controls(self):
         self.xrc_grid = CalibGrid(self, self.calib, size=(200,-1))
@@ -39,9 +39,9 @@ class Panel(ScrolledPanel):
 
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(wx.StaticText(self, label='Tolerance '), 0, wx.RIGHT|wx.EXPAND, 5)
-        row.Add(self.xrc_txt_tol, 0, wx.RIGHT|wx.EXPAND, 30)
+        row.Add(self.xrc_txt_tol, 1, wx.RIGHT|wx.EXPAND, 30)
         row.Add(wx.StaticText(self, label='Offset'), 0, wx.RIGHT|wx.EXPAND, 5)
-        row.Add(self.xrc_txt_offset, 0, wx.ALL|wx.EXPAND)
+        row.Add(self.xrc_txt_offset, 1, wx.ALL|wx.EXPAND)
         left.Add(row, 0, wx.EXPAND|wx.ALL, 5)
 
         outer.Add(left,1,wx.EXPAND)
@@ -54,25 +54,21 @@ class Panel(ScrolledPanel):
         grd.Add(self.xrc_btn_elem, 1, flag=wx.ALL|wx.EXPAND)
         grd.Add(wx.StaticText(self, label='Unit'), 1, flag=wx.ALL|wx.EXPAND)
         grd.Add(self.xrc_ch_unit, 1, flag=wx.ALL|wx.EXPAND)
-        grd.Add(wx.StaticText(self, label='Show'), 1, flag=wx.ALL|wx.EXPAND)
+        grd.Add(wx.StaticText(self, label='Show lines'), 1, flag=wx.ALL|wx.EXPAND)
         grd.Add(self.xrc_chk_speclines, 1, flag=wx.ALL|wx.EXPAND)
         col.Add(grd, 1, wx.EXPAND|wx.ALL, 5)
 
         row = wx.BoxSizer(wx.HORIZONTAL)
-        row.Add(wx.StaticText(self, label='Order of regression'), 1, flag=wx.ALL|wx.EXPAND, border=5)
-        row.Add(self.xrc_spin_order, 1, flag=wx.ALL|wx.EXPAND, border=5)
-        col.Add(row, 0, wx.EXPAND)
-
-        row = wx.BoxSizer(wx.HORIZONTAL)
-        row.Add(wx.Window(self), 1)
-        row.Add(self.xrc_btn_dispersion, 0, flag=wx.ALL|wx.EXPAND)
+        row.Add(wx.StaticText(self, label='Order of regression'), 1, wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5)
+        row.Add(self.xrc_spin_order, 0, wx.FIXED_MINSIZE|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5)
+        row.Add(self.xrc_btn_dispersion, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
         col.Add(row, 0, wx.EXPAND|wx.ALL, 5)
 
         row = wx.BoxSizer(wx.HORIZONTAL)
-        row.Add(wx.StaticText(self, label='Search pattern'), 1, flag=wx.ALL|wx.EXPAND, border=5)
-        row.Add(self.xrc_btn_store, 1, flag=wx.ALL|wx.EXPAND, border=5)
-        row.Add(self.xrc_btn_applystored, 1, flag=wx.ALL|wx.EXPAND, border=5)
-        col.Add(row, 0, wx.EXPAND)
+        row.Add(wx.StaticText(self, label='Search pattern'), 1, wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTRE_VERTICAL, 5)
+        row.Add(self.xrc_btn_store, 0, wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.BU_EXACTFIT, 5)
+        row.Add(self.xrc_btn_applystored, 0, wx.EXPAND|wx.ALIGN_CENTRE_VERTICAL|wx.BU_EXACTFIT)
+        col.Add(row, 0, wx.ALL|wx.EXPAND, 5)
 
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(wx.Window(self), 1)
@@ -93,7 +89,6 @@ class Panel(ScrolledPanel):
         event = misc_ui.ShoutEvent(-1, msg=msg, target=target, blink=blink)
         wx.PostEvent(self, event)
 
-
 class Module(module.BaseModule):
     title = 'Calibration'
     lastsearch = None
@@ -111,7 +106,6 @@ class Module(module.BaseModule):
         menu.add_module(self.parent_controller.view.menubar, self.title)
 
         pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
-
 
     def init(self):
         self.calib = CalibrationModel([])

@@ -6,6 +6,7 @@ import sys, io
 import numpy as np
 
 import locale
+from . import config
 
 from .misc import PomError
 
@@ -37,17 +38,10 @@ class LocaleAware(object):
     def __init__(self):
         locale.setlocale(locale.LC_ALL, '')
         self.defaultencoding = locale.getpreferredencoding()
+        print('default encoding:',self.defaultencoding)
 
-class CSVReader(LocaleAware):
-    """
-    A CSV reader which will iterate over lines in the CSV file "f",
-    which is encoded in the given encoding.
-    """
-
-    def __init__(self, f, dialect=csv.excel, encoding=None):
-        super(CSVReader, self).__init__()
-        if encoding is None:
-            encoding = self.defaultencoding
+class CSVReader:
+    def __init__(self, f, dialect=csv.excel):
         self.reader = csv.reader(f, dialect=dialect)
 
     def __next__(self):
@@ -58,16 +52,10 @@ class CSVReader(LocaleAware):
         return self
 
 class CSVWriter(LocaleAware):
-    """
-    A CSV writer which will write rows to CSV file "f",
-    which is encoded in the given encoding.
-    """
-
     def __init__(self, f, dialect=csv.excel, encoding=None):
         super(CSVWriter, self).__init__()
         if encoding is None:
             encoding = self.defaultencoding
-            print(encoding)
 
         # Redirect output to a queue
         self.queue = io.StringIO()
@@ -81,7 +69,7 @@ class CSVWriter(LocaleAware):
         # Fetch UTF-8 output from the queue ...
         data = self.queue.getvalue()#.decode("utf-8")
         # ... and reencode it into the target encoding
-        data,length = self.encode(data)
+        data,length = self.encode(data, 'ignore')
         # write to the target stream
         self.stream.write(data)
         # empty queue

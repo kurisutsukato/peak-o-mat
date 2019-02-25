@@ -10,6 +10,9 @@ from .pomio import CSVReader, PomDialect, asfloat
 delimiters = [',',';',':',' ','\t']
 choices = [',',';',':','space','tab']
 
+class FormatExpection(Exception):
+    pass
+
 class Dialog(wx.Dialog):
     def __init__(self, parent, dialect):
         wx.Dialog.__init__(self, parent, -1, 'csv wizard', style=wx.DEFAULT_DIALOG_STYLE|wx.FRAME_FLOAT_ON_PARENT)
@@ -226,22 +229,23 @@ class CSVWizard:
 
     def read(self, all=False):
         if not hasattr(self, 'rawdata') or all:
-            with open(self.path) as f:
-                if not all:
-                    self.rawdata = '\n'.join([q for q in [f.readline().strip() for q in range(20)] if len(q)>0])
-                else:
-                    self.rawdata = '\n'.join([q.strip() for q in f.readlines()])
+            try:
+                with open(self.path) as f:
+                    if not all:
+                        self.rawdata = '\n'.join([q for q in [f.readline().strip() for q in range(20)] if len(q)>0])
+                    else:
+                        self.rawdata = '\n'.join([q.strip() for q in f.readlines()])
+            except UnicodeDecodeError as msg:
+                msg = 'File with unkown encoding.\nChange the encoding settings in the preferences to force a specific encoding for reading.\n'
+                raise FormatExpection(msg)
 
         data = []
 
         csvr = CSVReader(StringIO(self.rawdata), dialect=self.dialect)
         self.preview = self.rawdata
 
-        try:
-            for row in csvr:
-                data.append(row)
-        except UnicodeDecodeError as msg:
-            wx.MessageBox(str(msg), 'Error', wx.ICON_ERROR)
+        for row in csvr:
+            data.append(row)
 
         return data
 

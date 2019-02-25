@@ -213,10 +213,14 @@ class GridController(object):
             self.view.grid.SetRowLabelValue(row, val)
 
     def import_data(self, path):
-        cr = csvwizard.CSVWizard(self.view, path)
+        try:
+            cr = csvwizard.CSVWizard(self.view, path)
+        except csvwizard.FormatExpection as fe:
+            wx.MessageBox(str(fe))
+            return
+
         if cr.show():
             data, rlab, clab = cr.get_data()
-            print(np.asarray(data).shape)
 
             self.table.data = data
 
