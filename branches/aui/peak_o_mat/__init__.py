@@ -110,9 +110,9 @@ def load_userfunc():
 defaultconfig ='''\
 [general]
 floating_point_is_comma = False
+default_encoding
 
 [encodings]
-ascii
 utf-8
 iso8859-1
 iso2022-jp-2

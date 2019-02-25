@@ -38,7 +38,6 @@ class LocaleAware(object):
     def __init__(self):
         locale.setlocale(locale.LC_ALL, '')
         self.defaultencoding = locale.getpreferredencoding()
-        print('default encoding:',self.defaultencoding)
 
 class CSVReader:
     def __init__(self, f, dialect=csv.excel):
@@ -236,6 +235,9 @@ def write_txt(path, data):
     np.savetxt(path, data)
 
 def write_csv(path, data, rlab=None, clab=None, encoding=None):
+    opt_enc = config.get('general','default_encoding')
+    if opt_enc is not None:
+        encoding = opt_enc
     data = data.astype(list)
 
     data = [[str(col) for col in row] for row in data]
