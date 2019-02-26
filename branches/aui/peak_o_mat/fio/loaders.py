@@ -8,6 +8,8 @@ from io import open
 from ..misc import PomError
 from .. import config
 
+from .fileformat import guess_format
+
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
