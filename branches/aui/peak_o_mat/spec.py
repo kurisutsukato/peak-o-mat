@@ -126,33 +126,22 @@ name : short description of the data
     def __copy__(self):
         return Spec(self.x.copy(), self.y.copy(), 'copy_%s'%self.name)
 
-    def write(self, path, overwrite=True):
+    def write(self, path):
         """
 writes the current spectrum data in two columns
 path : obviously, the path
 """
         try:
-            exists = os.path.exists(path)
-        except:
-            exists = os.path.exists(path.encode('mbcs'))
-            
-        if exists and not overwrite:
-            #print 'file \'%s\' exists and overwrite mode is False'%path
-            return False
-        try:
             f = open(path, 'w')
         except IOError:
-            print('unable to access %s' % (path))
+            print('IOError: cannot write to %s' % (path))
             return False
         
         data = np.transpose(np.array([self.x,self.y]))
-        if config.floating_point_is_comma:
-            data = [[('%.15g'%x).replace('.',','),('%.15g'%y).replace('.',',')] for x,y in data]
-            for x,y in data:
-                f.write('%s\t%s\n'%(x,y))
+        if config.getboolean('general','floating_point_is_comma'):
+            f.write('\n'.join(['{:.15g}\t{:.15g}'.format(x,y).replace('.',',') for x,y in data]))
         else:
-            for x,y in data:
-                f.write('%s\t%s\n'%('%.15g'%x,'%.15g'%y))
+            f.write('\n'.join(['{:.15g}\t{:.15g}'.format(x,y) for x,y in data]))
         f.close()
         return True
         
