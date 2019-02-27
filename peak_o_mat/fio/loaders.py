@@ -94,6 +94,38 @@ Reads numeric data with an arbitrary number of columns while trying to
 guess the columns delimiter and ignoring comments.
 """
 
+    try:
+        enc, cl, rl, delimiter, fpc, datastart, columns = guess_format(path)
+        print('cl: {}, rl: {}'.format(cl,rl))
+    except PomError as pe:
+        raise
+    else:
+        rowlabels = []
+        collabels = []
+
+        with open(path, encoding=enc) as datafile:
+            mat = re.compile(delimiter)
+            data = []
+            for k in range(datastart - int(cl)):
+                datafile.readline()
+            if cl:
+                collabels = datafile.readline().split(delimiter)
+            for line in datafile:
+                if fpc:
+                    line = line.replace(',', '.')
+                line = mat.split(line)
+                if rl:
+                    rowlabels.append(line[0])
+                data.append([float(q) for q in line[int(rl):]])
+
+            #print(np.asarray(data).shape)
+            #print(collabels)
+            #print(rowlabels)
+
+        return collabels if len(collabels) == len(data[0]) else None, np.asarray(data).T
+               #rowlabels if rowlabels != [] else None, \
+
+
     data = []
 
     class Found(Exception):
@@ -121,11 +153,11 @@ guess the columns delimiter and ignoring comments.
 
     delimiters = ['\t',r'\s+',';']
     try:
-        fp = config.getboolean('general','floating_point_is_comma')
+        datafile = config.getboolean('general','floating_point_is_comma')
     except:
         pass
     else:
-        if not fp:
+        if not datafile:
             delimiters.append(',')
 
     replace_comma = False

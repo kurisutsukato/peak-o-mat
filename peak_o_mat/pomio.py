@@ -92,7 +92,7 @@ guess the columns delimiter and ignoring comments.
     except IOError as e:
         raise PomError('unable to open \'%s\'\n{}'.format(path, e))
 
-    if config.floating_point_is_comma:
+    if config.getboolean('general','floating_point_is_comma'):
         delimiters = ['\t',r'\s+',';']
     else:
         delimiters = ['\t',r'\s+',',',';']
@@ -167,7 +167,7 @@ def read_csv(path):
     dialect = PomDialect()
     
     delimiters = [',',' ',';']
-    if config.floating_point_is_comma:
+    if config.getboolean('general','floating_point_is_comma'):
         delimiters = [';',' ']
 
     for dialect.delimiter in delimiters:
@@ -179,7 +179,7 @@ def read_csv(path):
                 row = next(csvr)
             except:
                 break
-            if config.floating_point_is_comma:
+            if config.getboolean('general','floating_point_is_comma'):
                 row = [q.replace(',','.') for q in row]
             data.append(row)
 
@@ -231,8 +231,8 @@ def read_csv(path):
     
     return data, rlab, clab
 
-def write_txt(path, data):
-    np.savetxt(path, data)
+def __write_txt(path, data):
+    np.savetxt(path, data, encoding='utf-8')
 
 def write_csv(path, data, rlab=None, clab=None, encoding=None):
     opt_enc = config.get('general','default_encoding')

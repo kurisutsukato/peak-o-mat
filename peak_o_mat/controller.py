@@ -300,12 +300,17 @@ class Controller(object):
                 if not plot_created or one_plot_each:
                     plot = self.add_plot()
                     plot_created = True
-                for lab,y in zip(labels[1:],data[1:]):
-                    if lab is None:
+                #for lab,y in zip(labels[1:],data[1:]):
+                for n,y in enumerate(data[1:]):
+                    if labels is None:
                         name = os.path.basename(p)
                     else:
                         #name = u'{}_{}'.format(os.path.basename(p).decode(sys.getfilesystemencoding()),lab)
-                        name = lab
+                        try:
+                            name = labels[n]
+                        except IndexError:
+                            print(n,labels)
+                            continue
                         self.project[plot].name = os.path.basename(p)
                     s = spec.Spec(data[0],y,name)
                     setnum = self.project[plot].add(s)
@@ -337,17 +342,17 @@ class Controller(object):
             p,s = self.selection
             sets = iter([self.project[p][q] for q in s])
             ext, only_vis, overwrite = options
-            for set in sets:
+            for dataset in sets:
                 nall += 1
-                if set.hide and only_vis:
+                if dataset.hide and only_vis:
                     continue
-                name = set.name
+                name = dataset.name
                 if ext is not None:
                     if name.find('.') == -1:
                         name = name+'.'+ext
                     else:
                         name = re.sub(r'\.(\w*$)', '.'+ext, name)
-                nwritten += int(set.write(os.path.join(path, name),overwrite))
+                nwritten += int(dataset.write(os.path.join(path, name),overwrite))
             misc.set_cwd(path)
             self.message('saved %d of %d set(s)'%(nwritten,nall))
         else:

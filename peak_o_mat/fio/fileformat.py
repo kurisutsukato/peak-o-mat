@@ -25,6 +25,8 @@ def guess_format(path):
                 f = open(path,encoding=enc)
             except IOError:
                 raise PomError('Cannot read \'%s\'. Check file permissions.'%path)
+            except FileNotFoundError:
+                raise PomError('Cannot read \'%s\'. File not found.' % path)
             else:
                 try:
                     rawdata = f.read()
@@ -38,8 +40,7 @@ def guess_format(path):
         pass
     else:
         raise PomError('Cannot read \'%s\'. Unknown encoding.'%path)
-    finally:
-        f.close()
+    f.close()
 
     text = rawdata.rstrip().split('\n')
 
@@ -93,8 +94,9 @@ def guess_format(path):
     if len(data) == 0 or data.dtype == np.dtype('object'):
         raise PomError('I tried my best but I am unable to identify the file format.')
 
-    # try to load labels:
-    collabels = [x.strip() for x in mat.split(text[max(0,datastart-1)])]
+    collabels = []
+    if datastart > 0:
+        collabels = [x.strip() for x in mat.split(text[datastart-1])]
     has_collabels = len(collabels) == data.shape[1]+skipcol
 
     return enc, has_collabels, bool(skipcol), delimiter, replace_comma, datastart, data.shape[1]
@@ -107,6 +109,7 @@ windows_utf-tab.csv
 windows_utf-tab-comma.csv
 windows_utf-tab-comma-nocollabel.csv
 windows_utf-misaligned.csv
+test.txt
 '''
     print('encoding has_collabels has_rowlabels delimiter replace_comma datastart columns')
     for f in files.strip().split('\n'):
@@ -116,23 +119,27 @@ windows_utf-misaligned.csv
             print(f, str(pe))
             continue
 
-        enc, rl, cl, delimiter, fpc, datastart, columns = guess_format(f)
-        fp = open(f, encoding=enc)
-
-        data = []
         rowlabels = []
-        for k in range(datastart-int(cl)):
-            print(fp.readline())
-        if cl:
-            collabels = fp.readline().strip().split(delimiter)
-        while True:
+        collabels = []
 
-            line = fp.readline().strip().split(delimiter)
-            if rl:
-                rowlabels.append(line[0])
-            data.append(line[int(rl):])
-        f.close()
+        enc, cl, rl, delimiter, fpc, datastart, columns = guess_format(f)
+        with open(f, encoding=enc) as fp:
+            mat = re.compile(delimiter)
+            data = []
+            for k in range(datastart-int(cl)):
+                fp.readline()
+            if cl:
+                collabels = fp.readline().rstrip().split(delimiter)
+            for line in fp:
+                if fpc:
+                    line = line.replace(',','.')
+                line = mat.split(line.rstrip())
+                if rl:
+                    rowlabels.append(line[0])
+                data.append([float(q) for q in line[int(rl):]])
 
-        print(np.asarray(data).shape)
+            print(np.asarray(data).shape)
+            print(collabels)
+            print(rowlabels)
 
 
