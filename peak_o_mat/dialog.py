@@ -15,6 +15,8 @@
 ##     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import wx
+import re
+
 from . import misc
 from . import misc_ui
 from . import images
@@ -23,34 +25,76 @@ class xrcctrl(object):
     def __getitem__(self, item):
         return self.FindWindowByName(item)
 
+class PairValidator(wx.Validator):
+    def __init__(self, pyVar=None):
+        wx.Validator.__init__(self)
+        self.Bind(wx.EVT_CHAR, self.OnChar)
+
+    def OnChar(self, evt):
+        evt.Skip()
+        return True
+
+    def Clone(self):
+        return PairValidator()
+
+    def Validate(self, win):
+        textCtrl = self.GetWindow()
+        text = textCtrl.GetValue()
+
+        if len(re.findall(r'(\(\d+,\d+\))', text)) == 0:
+            textCtrl.SetBackgroundColour("pink")
+            textCtrl.SetFocus()
+            textCtrl.Refresh()
+            return False
+        else:
+            textCtrl.SetBackgroundColour(
+                wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+            textCtrl.Refresh()
+            return True
+
+    def TransferToWindow(self):
+        return True
+
+    def TransferFromWindow(self):
+        return True
 
 class ColumnDialog(wx.Dialog):
-    def __init__(self, parent, collabels=None):
+    def __init__(self, parent, collabels=None, multifile=False):
         wx.Dialog.__init__(self, parent, title='Multicolumn file')
+        self.multifile = multifile
 
         self.controls(collabels)
         self.layout()
 
         self.ch.Bind(wx.EVT_CHOICE, self.OnChoice)
 
+    def results(self):
+        return self.ch.Selection, self.txt_custom.Value, self.chk.IsChecked()
+
+    def Validate(self):
+        if self.ch.Selection == 2:
+            return super(ColumnDialog, self).Validate()
+        else:
+            return True
+
     def OnChoice(self, evt):
         self.txt_custom.Enable(evt.Selection == 2)
         self.lab_custom.Enable(evt.Selection == 2)
         if evt.Selection == 2:
+            #self.txt_custom.SetInsertionPointEnd()
             self.txt_custom.SetFocus()
-            self.txt_custom.SetInsertionPointEnd()
-            self.txt_collabels.SelectAll()
-        self.Layout()
 
     def controls(self, collabels=None):
-
         self.ch = wx.Choice(self, choices=['XYYY..', 'XYXY..','Custom'])
         self.ch.SetSelection(0)
         self.txt_collabels = wx.TextCtrl(self, value='', style=wx.TE_READONLY)
-        self.txt_custom = wx.TextCtrl(self, value='', style=wx.TE_PROCESS_ENTER)
+        self.txt_custom = wx.TextCtrl(self, value='', validator=PairValidator(), style=wx.TE_PROCESS_ENTER)
         self.txt_custom.Disable()
+        self.txt_custom.SetHint('e.g. (0,1) (0,3) (0,6) ...')
 
-        self.btn_ok = wx.Button(self, label='Ok', id=wx.ID_OK)
+        self.chk = wx.CheckBox(self, label='Apply to all files.')
+        if not self.multifile:
+            self.chk.Hide()
 
         if collabels is not None:
             self.txt_collabels.SetValue(' '.join(['{}:{}'.format(q,p) for q,p in zip(range(len(collabels)),collabels)]))
@@ -70,23 +114,34 @@ class ColumnDialog(wx.Dialog):
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(lab_collab, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
         hbox.Add(self.txt_collabels, 1, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
-        box.Add(hbox, 0, wx.EXPAND|wx.ALL, 5)
+        box.Add(hbox, 0, wx.EXPAND|wx.LEFT|wx.RIGHT, 5)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(lab, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
         hbox.Add(self.ch, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
-        box.Add(hbox, 0, wx.EXPAND|wx.ALL, 5)
+        box.Add(hbox, 0, wx.EXPAND|wx.LEFT|wx.RIGHT, 5)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(self.lab_custom, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
         hbox.Add(self.txt_custom, 1, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 5)
-        box.Add(hbox, 0, wx.EXPAND|wx.ALL, 5)
+        box.Add(hbox, 0, wx.EXPAND|wx.LEFT|wx.RIGHT, 5)
 
-        box.Add((-1, 20), 0)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add((1,1), 1)
-        hbox.Add(self.btn_ok, 0, wx.ALL, 5)
-        box.Add(hbox, 0, wx.EXPAND|wx.ALL, 5)
+        hbox.Add(self.chk, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+        box.Add(hbox, 0, wx.EXPAND|wx.LEFT|wx.RIGHT, 5)
+
+        #box.Add((-1, 20), 0)
+
+        btn_ok = wx.Button(self, wx.ID_OK, "OK")
+        btn_ok.SetDefault()
+        btn_cancel = wx.Button(self, wx.ID_CANCEL, "Cancel")
+
+        buttons = wx.StdDialogButtonSizer()
+        buttons.AddButton(btn_ok)
+        buttons.AddButton(btn_cancel)
+        buttons.Realize()
+
+        box.Add(buttons, 0, wx.EXPAND|wx.ALL, 5)
         self.SetSizer(box)
         box.SetSizeHints(self)
         self.Fit()
@@ -95,8 +150,6 @@ class ColumnDialog(wx.Dialog):
         ico.CopyFromBitmap(images.get_bmp('logosmall.png'))
         self.pom_ico = ico
         self.SetIcon(ico)
-
-
 
 class ImportDialog(wx.Dialog, xrcctrl):
     def __init__(self, parent):
@@ -161,8 +214,9 @@ class ExportDialog(wx.Dialog, xrcctrl):
         self.overwrite = self['xrc_chk_overwrite'].IsChecked()
         self.EndModal(wx.ID_OK)
 
-
 if __name__ == '__main__':
+
     app = wx.App()
-    d = ColumnDialog(None, ['eins','zwei','drei'])
-    print(d.ShowModal())
+    d = ColumnDialog(None, ['eins', 'zwei', 'drei'], True)
+    if d.ShowModal() == wx.ID_OK:
+        print(d.results())
