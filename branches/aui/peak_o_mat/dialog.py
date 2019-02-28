@@ -25,24 +25,68 @@ class xrcctrl(object):
 
 
 class ColumnDialog(wx.Dialog):
-    def __init__(self, parent):
+    def __init__(self, parent, collabels=None):
         wx.Dialog.__init__(self, parent, title='Multicolumn file')
-        self.order = 0  # 0: xyyy, 1: xyxy
 
-        lab = wx.StaticText(self, label='Select column ordering:')
-        self.ch = wx.Choice(self, choices=['XYYY..', 'XYXY..'])
+        self.controls(collabels)
+        self.layout()
+
+        self.ch.Bind(wx.EVT_CHOICE, self.OnChoice)
+
+    def OnChoice(self, evt):
+        self.txt_custom.Enable(evt.Selection == 2)
+        self.lab_custom.Enable(evt.Selection == 2)
+        if evt.Selection == 2:
+            self.txt_custom.SetFocus()
+            self.txt_custom.SetInsertionPointEnd()
+            self.txt_collabels.SelectAll()
+        self.Layout()
+
+    def controls(self, collabels=None):
+
+        self.ch = wx.Choice(self, choices=['XYYY..', 'XYXY..','Custom'])
         self.ch.SetSelection(0)
+        self.txt_collabels = wx.TextCtrl(self, value='', style=wx.TE_READONLY)
+        self.txt_custom = wx.TextCtrl(self, value='', style=wx.TE_PROCESS_ENTER)
+        self.txt_custom.Disable()
 
         self.btn_ok = wx.Button(self, label='Ok', id=wx.ID_OK)
 
+        if collabels is not None:
+            self.txt_collabels.SetValue(' '.join(['{}:{}'.format(q,p) for q,p in zip(range(len(collabels)),collabels)]))
+            self.txt_collabels.SetMinSize((500,-1))
+        else:
+            self.txt_collabels.SetValue('no column labels')
+            self.txt_collabels.Disable()
+
+    def layout(self):
+        lab_collab = wx.StaticText(self, label='Column labels:')
+        lab = wx.StaticText(self, label='Select column ordering:')
+        self.lab_custom = wx.StaticText(self, label='XY pairs')
+        self.lab_custom.Disable()
+
         box = wx.BoxSizer(wx.VERTICAL)
-        box.Add(lab, 0, wx.ALL, 5)
-        box.Add(self.ch, 0, wx.ALL, 5)
-        box.Add(wx.Window(self, size=(-1, 20)), 0)
+
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(wx.Window(self, size=(1, 1)), 1)
-        hbox.Add(self.btn_ok, 0, wx.EXPAND | wx.ALL, 5)
-        box.Add(hbox, 0, wx.EXPAND)
+        hbox.Add(lab_collab, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+        hbox.Add(self.txt_collabels, 1, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+        box.Add(hbox, 0, wx.EXPAND|wx.ALL, 5)
+
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(lab, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+        hbox.Add(self.ch, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+        box.Add(hbox, 0, wx.EXPAND|wx.ALL, 5)
+
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(self.lab_custom, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+        hbox.Add(self.txt_custom, 1, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 5)
+        box.Add(hbox, 0, wx.EXPAND|wx.ALL, 5)
+
+        box.Add((-1, 20), 0)
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add((1,1), 1)
+        hbox.Add(self.btn_ok, 0, wx.ALL, 5)
+        box.Add(hbox, 0, wx.EXPAND|wx.ALL, 5)
         self.SetSizer(box)
         box.SetSizeHints(self)
         self.Fit()
@@ -51,6 +95,8 @@ class ColumnDialog(wx.Dialog):
         ico.CopyFromBitmap(images.get_bmp('logosmall.png'))
         self.pom_ico = ico
         self.SetIcon(ico)
+
+
 
 class ImportDialog(wx.Dialog, xrcctrl):
     def __init__(self, parent):
@@ -118,5 +164,5 @@ class ExportDialog(wx.Dialog, xrcctrl):
 
 if __name__ == '__main__':
     app = wx.App()
-    d = ColumnDialog(None)
+    d = ColumnDialog(None, ['eins','zwei','drei'])
     print(d.ShowModal())
