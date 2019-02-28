@@ -300,14 +300,12 @@ class Controller(object):
                 if not plot_created or one_plot_each:
                     plot = self.add_plot()
                     plot_created = True
-                #for lab,y in zip(labels[1:],data[1:]):
                 for n,y in enumerate(data[1:]):
                     if labels is None:
                         name = os.path.basename(p)
                     else:
-                        #name = u'{}_{}'.format(os.path.basename(p).decode(sys.getfilesystemencoding()),lab)
                         try:
-                            name = labels[n]
+                            name = labels[n+1]
                         except IndexError:
                             print(n,labels)
                             continue
@@ -316,8 +314,6 @@ class Controller(object):
                     setnum = self.project[plot].add(s)
             if len(path) > 1 and not one_plot_each:
                 self.project[plot].name = split(os.path.dirname(p))[-1]
-            if s.truncated:
-                self.message('data has been truncated')
         misc.set_cwd(p)
             
         self.update_tree()

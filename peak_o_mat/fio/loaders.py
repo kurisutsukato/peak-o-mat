@@ -96,7 +96,7 @@ guess the columns delimiter and ignoring comments.
 
     try:
         enc, cl, rl, delimiter, fpc, datastart, columns = guess_format(path)
-        print('cl: {}, rl: {}'.format(cl,rl))
+        #print('cl: {}, rl: {}'.format(cl,rl))
     except PomError as pe:
         raise
     else:
@@ -109,11 +109,11 @@ guess the columns delimiter and ignoring comments.
             for k in range(datastart - int(cl)):
                 datafile.readline()
             if cl:
-                collabels = datafile.readline().split(delimiter)
+                collabels = datafile.readline().rstrip('\n').split(delimiter)[int(rl):]
             for line in datafile:
                 if fpc:
                     line = line.replace(',', '.')
-                line = mat.split(line)
+                line = mat.split(line.rstrip('\n'))
                 if rl:
                     rowlabels.append(line[0])
                 data.append([float(q) for q in line[int(rl):]])
@@ -121,7 +121,8 @@ guess the columns delimiter and ignoring comments.
             #print(np.asarray(data).shape)
             #print(collabels)
             #print(rowlabels)
-
+        print(collabels)
+        print(np.asarray(data).shape)
         return collabels if len(collabels) == len(data[0]) else None, np.asarray(data).T
                #rowlabels if rowlabels != [] else None, \
 
