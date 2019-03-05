@@ -12,7 +12,7 @@ from . import tree
 from . import menu
 from . import images
 from .misc_ui import xrc_resource
-from .dialog import ImportDialog, ExportDialog
+from .dialog import ImportDialog, ExportDialog, ColumnDialog
 
 from peak_o_mat import __version__
 
@@ -267,6 +267,13 @@ class MainFrame(wx.Frame):
         else:
             dlg.Destroy()
             return False
+
+    def multicolumn_import_dialog(self, name=None, collabels=None, multiple=False):
+        d = ColumnDialog(self, name, collabels, multiple)
+        if d.ShowModal() == wx.ID_OK:
+            return d.results()
+        else:
+            return None
 
     def export_excel_dialog(self, def_dir, name=''):
         wc = "Excel files (*.xls)|*.xls"

@@ -179,11 +179,13 @@ class LData(list):
         
 class Plot(LData):
     type = 'plot'
-    def __init__(self, uuid=None):
+    def __init__(self, uuid=None, name=None):
         LData.__init__(self)
         self.xrng,self.yrng = None,None
         self._references = []
         self.uuid = uuid or UUID.uuid4().hex
+        if name is not None:
+            self.name = name
 
     def __repr__(self):
         return 'plot \'{}\' with {} set(s)'.format(self.name,len(self))
@@ -221,6 +223,62 @@ class Plot(LData):
         for s in self:
             m = m+s.name
         return m
+
+    def import_data(self, data, basename, collabels=None, order='xyyy'):
+        """import multicolumn data
+
+        data: numeric 2D data
+        collabels: list of str or None
+        order: one of 'xyyy', 'xyxy' or a list of tuples indicating x and y column
+
+        """
+        print(order, basename)
+        if order == 'xyyy':
+            for n in range(1,data.shape[1]):
+                if collabels is not None:
+                    lab = collabels[n]
+                elif data.shape[1] == 2:
+                    lab = basename
+                else:
+                    lab = '{} - col {}'.format(basename, n)
+                s = Spec(data[:,0], data[:,n], lab)
+                self.add(s)
+        elif order == 'xyxy':
+            for n in range(0,data.shape[1],2):
+                if collabels is not None:
+                    try:
+                        lab = collabels[n+1]
+                    except IndexError:
+                        lab = basename
+                elif data.shape[1] == 2:
+                    lab = basename
+                else:
+                    lab = '{} - col {}'.format(basename, n+1)
+                try:
+                    s = Spec(data[:,n], data[:,n+1], lab)
+                    self.add(s)
+                except IndexError: # impair number of columns
+                    print('impair number of columns - skipped last column')
+                    break
+        elif type(order) == list:
+            for x,y in order:
+                if len(order) == 1:
+                    lab = basename
+                elif collabels is not None:
+                    try:
+                        lab = collabels[y]
+                    except IndexError:
+                        lab = basename
+                else:
+                    lab = '{} - col {}'.format(basename, y)
+                try:
+                    s = Spec(data[:,x], data[:,y], lab)
+                except IndexError:
+                    raise POMEx('Column indices {},{} exceed available number of columns'.format(x,y))
+                    continue
+                else:
+                    self.add(s)
+
 
 def xmlset2set(element):
     name, attrs = element.tag, element.attrib
@@ -303,6 +361,9 @@ class Project(LData):
         self._figure_uuid = None
         self._figure_settings = None
         self._settings_element = None
+
+    def append_plot(self, name=None):
+        return self.add(Plot(name=name))
 
     def index(self, value):
         for n,p in enumerate(self):

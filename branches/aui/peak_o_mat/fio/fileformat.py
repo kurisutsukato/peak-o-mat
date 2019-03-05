@@ -22,14 +22,14 @@ def guess_format(path):
         for enc in [None]+config.options('encodings'):
             # None corresponds to the default platform encoding
             try:
-                f = open(path,encoding=enc)
-            except IOError:
-                raise PomError('Cannot read \'%s\'. Check file permissions.'%path)
+                f = open(path, encoding=enc)
             except FileNotFoundError:
-                raise PomError('Cannot read \'%s\'. File not found.' % path)
+                raise PomError('Cannot read \'{}\'. File not found.'.format(path))
+            except IOError:
+                raise PomError('Cannot read \'{}\'. Check file permissions.'.format(path))
             else:
                 try:
-                    rawdata = f.read()
+                    rawdata = f.read(10000)
                 except UnicodeDecodeError:
                     continue
                 else:
@@ -45,8 +45,8 @@ def guess_format(path):
     text = rawdata.rstrip().split('\n')
 
     delimiters = ['\t',r'\s+',';']
-    fp = config.getboolean('general','floating_point_is_comma')
-    if not fp:
+    fpc = config.getboolean('general','floating_point_is_comma')
+    if not fpc:
         delimiters.append(',')
 
     replace_comma = False
@@ -88,7 +88,7 @@ def guess_format(path):
 
     mat = re.compile(delimiter)
 
-    data = [[asfloat(x) for x in mat.split(line)[skipcol:]] for line in text[datastart:]]
+    data = [[asfloat(x) for x in mat.split(line)[skipcol:]] for line in text[datastart:-1]]
     data = np.asarray(data)
 
     if len(data) == 0 or data.dtype == np.dtype('object'):
@@ -110,6 +110,7 @@ windows_utf-tab-comma.csv
 windows_utf-tab-comma-nocollabel.csv
 windows_utf-misaligned.csv
 test.txt
+scan_nr_064_monot.tsv
 '''
     print('encoding has_collabels has_rowlabels delimiter replace_comma datastart columns')
     for f in files.strip().split('\n'):
@@ -141,5 +142,4 @@ test.txt
             print(np.asarray(data).shape)
             print(collabels)
             print(rowlabels)
-
 

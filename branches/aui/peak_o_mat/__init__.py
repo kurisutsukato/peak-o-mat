@@ -107,16 +107,12 @@ def load_userfunc():
                 pom_globals.update({name: sym})
 
 
-defaultconfig ='''\
-[general]
-floating_point_is_comma = False
-default_encoding
+defaultconfig = {'general':{'floating_point_is_comma':False,
+                            'default_encoding':'utf-8',
+                            },
+                 'encodings':{'utf-8':'','iso8859-1':'','iso2022-jp-2':''}
+                 }
 
-[encodings]
-utf-8
-iso8859-1
-iso2022-jp-2
-'''
 
 class Config(configparser.RawConfigParser):
     def write(self):
@@ -128,6 +124,7 @@ class Config(configparser.RawConfigParser):
 
 configfile = os.path.join(configdir(),'peak-o-mat.cfg')
 config = Config(allow_no_value=True)
+config.read_dict(defaultconfig)
 
 if os.path.exists(configfile):
     try:
@@ -138,9 +135,7 @@ if os.path.exists(configfile):
         print('syntax error in peak-o-mat.cfg, skipping')
 else:
     print('no peak-o-mat.cfg in \'%s\''%configdir())
-    config.read_string(defaultconfig)
     config.write()
-
 
 load_userfunc()
 load_peaks()
