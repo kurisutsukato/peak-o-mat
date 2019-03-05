@@ -286,6 +286,9 @@ class Controller(object):
         return False
 
     def import_data(self, path, one_plot_each=False):
+        added_plot = False
+
+        self._multicolumn_config = False
         plot_created = False
         if type(path) != list:
             path = [path]
@@ -297,28 +300,33 @@ class Controller(object):
                 self.view.msg_dialog(e.value)
                 return
             else:
-                if not plot_created or one_plot_each:
-                    plot = self.add_plot()
-                    plot_created = True
-                for n,y in enumerate(data[1:]):
-                    if labels is None:
-                        name = os.path.basename(p)
-                    else:
-                        try:
-                            name = labels[n+1]
-                        except IndexError:
-                            print(n,labels)
+                if data.shape[1] > 2:
+                    plotname = os.path.basename(p)
+                    if not self._multicolumn_config:
+                        res = self.view.multicolumn_import_dialog(p, labels, len(path) > 1)
+                        if res is not None:
+                            ordering, custom, apply_to_all = res
+                            if apply_to_all:
+                                self._multicolumn_config = True
+                        else:
                             continue
-                        self.project[plot].name = os.path.basename(p)
-                    s = spec.Spec(data[0],y,name)
-                    setnum = self.project[plot].add(s)
-            if len(path) > 1 and not one_plot_each:
-                self.project[plot].name = split(os.path.dirname(p))[-1]
+                        order = {1:'xyxy',0:'xyyy',2:custom}.get(ordering)
+                else:
+                    plotname = None
+                    order = 'xyyy'
+                if not plot_created or one_plot_each:
+                    plot = self.project.append_plot()
+                    plot_created = True
+                    if not one_plot_each and data.shape[1] == 2:
+                        plotname = split(os.path.dirname(p))[-1]
+
+                self.project[plot].import_data(data, os.path.basename(p), labels, order)
+            added_plot = True
         misc.set_cwd(p)
-            
-        self.update_tree()
-        self.view.tree.selection = (plot,setnum)
-        self.update_plot()
+
+        if added_plot:
+            self.update_tree()
+            self.view.tree.selection = (plot,0)
 
     def show_export_dialog(self):
         if self.active_set is None: # multiple selections
@@ -509,11 +517,11 @@ class Controller(object):
         self.update_tree()
         self.project_modified = True
         
-    def add_plot(self):
+    def add_plot(self, name=None):
         """\
         Add an empty plot.
         """
-        added = self.project.add(project.Plot())
+        added = self.project.add(project.Plot(name=name))
         self.update_tree()
         self.view.tree.selection = added
         self.project_modified = True
@@ -712,9 +720,12 @@ class Controller(object):
     selection = property(_get_selection, _set_selection, doc="the current tree selection")
 
     def update_plot(self, *args, **kwargs):
+        print('update plot')
         if not self._updating:
             self.view.Bind(wx.EVT_IDLE, lambda x: self._update(x, *args, **kwargs))
             self._updating = True
+        else:
+            print('still updating')
 
     def _update(self, evt, *args, **kwargs):
         self._updating = False
