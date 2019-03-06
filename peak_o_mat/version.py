@@ -53,11 +53,11 @@ def svn_revision():
             return None
         else:
             try:
-                rev = (re.match(r"(?:.*:(\d+).*|(\d+)M)", svn_info)).groups()[-1]
+                a = svn_info.strip().split(':')[-1]
+                rev = re.match(r"(\d+).*", a).group(1)
             except AttributeError:
                 return None
             return int(rev)
-
     return None
 
 from os.path import exists, normpath, join, dirname
