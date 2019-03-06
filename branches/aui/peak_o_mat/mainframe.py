@@ -2,6 +2,7 @@ import wx
 import wx.aui as aui
 import wx.html as html
 import wx.adv as adv
+from datetime import datetime
 
 import sys
 
@@ -351,12 +352,12 @@ about = """
 <td>
 <b>peak-o-mat</b><br /><br />
 A multi purpose curve fitting program written in python.<br /><br />
-(c) 2003-2016 Christian Kristukat (ckkart@hoc.net)<br /><br />
+(c) 2003-{} Christian Kristukat (ckkart@hoc.net)<br /><br />
 http://lorentz.sf.net
 </td><td width='10'></td></tr>
 </table>
 </body>
-"""
+""".format(datetime.now().year)
         
 class About(wx.Dialog):    
     def __init__(self, parent):
