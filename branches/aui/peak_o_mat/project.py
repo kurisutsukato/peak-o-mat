@@ -232,7 +232,7 @@ class Plot(LData):
         order: one of 'xyyy', 'xyxy' or a list of tuples indicating x and y column
 
         """
-        print(order, basename)
+
         if order == 'xyyy':
             for n in range(1,data.shape[1]):
                 if collabels is not None:
