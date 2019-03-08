@@ -315,10 +315,13 @@ class Controller(object):
                     plotname = None
                     order = 'xyyy'
                 if not plot_created or one_plot_each:
-                    plot = self.project.append_plot()
-                    plot_created = True
-                    if not one_plot_each and (data.shape[1] == 2 or (custom is not None and len(custom) == 1)):
+                    #if not one_plot_each and (data.shape[1] == 2 or (custom is not None and len(custom) == 1)):
+                    #    plotname = split(os.path.dirname(p))[-1]
+                    #    print('plotname')
+                    if not one_plot_each:
                         plotname = split(os.path.dirname(p))[-1]
+                    plot = self.project.append_plot(name=plotname)
+                    plot_created = True
 
                 self.project[plot].import_data(data, os.path.basename(p), labels, order)
             added_plot = True
