@@ -31,7 +31,9 @@ class PairValidator(wx.Validator):
         self.Bind(wx.EVT_CHAR, self.OnChar)
 
     def OnChar(self, evt):
-        if evt.KeyCode in [32,40,41,44]+list(range(48,58)):
+        if evt.KeyCode in [32,40,41,44]+list(range(48,58))+\
+                [wx.WXK_BACK,wx.WXK_LEFT,wx.WXK_RIGHT,wx.WXK_DELETE,wx.WXK_SHIFT,wx.WXK_HOME,wx.WXK_END]+\
+                [wx.WXK_CONTROL_C,wx.WXK_CONTROL_V,wx.WXK_CONTROL_X]:
             evt.Skip()
 
     def Clone(self):

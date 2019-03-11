@@ -85,8 +85,7 @@ class Message(list):
         super(Message, self).append(data)
         self.type = tp
 
-class POMEx(Exception):
-    pass
+from .misc import PomError
 
 def dict2xmlattrs(data):
     xml = []
@@ -274,7 +273,7 @@ class Plot(LData):
                 try:
                     s = Spec(data[:,x], data[:,y], lab)
                 except IndexError:
-                    raise POMEx('Column indices {},{} exceed available number of columns'.format(x,y))
+                    raise PomError('Column indices {},{} exceed available number of columns'.format(x,y))
                     continue
                 else:
                     self.add(s)
