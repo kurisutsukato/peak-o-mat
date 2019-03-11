@@ -297,8 +297,8 @@ class Controller(object):
                 _,ext = os.path.splitext(p)
                 labels,data = fio.loaders.get(ext)(p)
             except (misc.PomError) as e:
-                self.view.msg_dialog(e.value)
-                return
+                self.view.msg_dialog('{}\n\n{}'.format(p, e.value))
+                continue
             else:
                 if data.shape[1] > 2:
                     plotname = os.path.basename(p)
@@ -315,15 +315,15 @@ class Controller(object):
                     plotname = None
                     order = 'xyyy'
                 if not plot_created or one_plot_each:
-                    #if not one_plot_each and (data.shape[1] == 2 or (custom is not None and len(custom) == 1)):
-                    #    plotname = split(os.path.dirname(p))[-1]
-                    #    print('plotname')
-                    if not one_plot_each:
+                    if (not one_plot_each and len(path) > 1):
                         plotname = split(os.path.dirname(p))[-1]
                     plot = self.project.append_plot(name=plotname)
                     plot_created = True
-
-                self.project[plot].import_data(data, os.path.basename(p), labels, order)
+                try:
+                    self.project[plot].import_data(data, os.path.basename(p), labels, order)
+                except (misc.PomError) as e:
+                    self.view.msg_dialog('{}\n\n{}'.format(p, e.value))
+                    continue
             added_plot = True
         misc.set_cwd(p)
 
