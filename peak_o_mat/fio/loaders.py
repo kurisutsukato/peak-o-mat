@@ -116,7 +116,10 @@ guess the columns delimiter and ignoring comments.
                 line = mat.split(line.rstrip('\n'))
                 if rl:
                     rowlabels.append(line[0])
-                data.append([float(q) for q in line[int(rl):]])
+                try:
+                    data.append([float(q) for q in line[int(rl):]])
+                except ValueError:
+                    continue
 
         return collabels if len(collabels) == len(data[0]) else None, np.asarray(data)
                #rowlabels if rowlabels != [] else None, \
@@ -133,7 +136,7 @@ class Loaders(OrderedDict):
 all = Loaders([
     ('.txt',{'wildcard':'Text files (*.txt)|*.txt', 'loader':TXTLoader}),
     #('.dat',{'wildcard':'Geotherm Ergebnis files (*.dat)|*.dat', 'loader':DATLoader}),
-    ('.xml',{'wildcard':'Profilometer XML (*.xml)|*.xml', 'loader':XMLLoader}),
+    #('.xml',{'wildcard':'Profilometer XML (*.xml)|*.xml', 'loader':XMLLoader}),
     #('.spc',{'wildcard':'Thermo Scientific (*.spc)|*.spc', 'loader':SPCLoader}),
     #('.pp',{'wildcard':'PPM XRR code (*.pp?)|*.pp?', 'loader':PPMLoader}),
     #('.ngs',{'wildcard':'SpecWin (*.ngs)|*.ngs', 'loader':NGSLoader}),

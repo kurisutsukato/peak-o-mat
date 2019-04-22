@@ -105,7 +105,7 @@ class ColumnDialog(wx.Dialog):
         self.txt_custom.Disable()
         self.txt_custom.SetHint('e.g. (0,1) (0,3) (0,6) ...')
 
-        self.chk = wx.CheckBox(self, label='Apply to all files.')
+        self.chk = wx.CheckBox(self, label='Apply to all files with equally shaped data.')
         if not self.multifile:
             self.chk.Hide()
 
@@ -190,7 +190,6 @@ class ImportDialog(wx.Dialog, xrcctrl):
     def OnEach(self, evt):
         self.one_plot_each = True
         self.EndModal(wx.ID_OK)
-
 
 class ExportDialog(wx.Dialog, xrcctrl):
     def __init__(self, parent):

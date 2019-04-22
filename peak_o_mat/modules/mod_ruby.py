@@ -28,11 +28,15 @@ class XRCModule(module.XRCModule):
         try:
             self.neon + self.r1
         except:
+            # TODO: was wird denn hier gemacht?
             return
-        
-        if log10(self.neon) < 3.0:
-            self.neon *= 10
-            self.r1 *= 10
+
+        try:
+            if log10(self.neon) < 3.0:
+                self.neon *= 10
+                self.r1 *= 10
+        except ValueError:
+            return
 
         r1 = self.r1+(ne_line-self.neon)
         try:
@@ -96,7 +100,10 @@ class XRCModule(module.XRCModule):
         units = ['A','nm']
         sel = self.xrc_ch_r1.GetStringSelection()
         self.r1 = self.model[sel].pos.value
-        unit = units[int(log10(self.r1) < 3.0)]
+        try:
+            unit = units[int(log10(self.r1) < 3.0)]
+        except ValueError:
+            return
         self.xrc_lab_r1.SetLabel('%04.1f %s'%(self.r1,unit))
         sel = self.xrc_ch_neon.GetStringSelection()
         self.neon = self.model[sel].pos.value
