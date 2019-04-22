@@ -301,11 +301,14 @@ class FitController(object):
         return x,withmodel==len(x)
 
     def generate_dataset(self, xexpr, yexpr, target):
+        print(xexpr, yexpr)
+
         data = self._batch_parameters(xexpr, yexpr)
+        print(data)
         try:
             spec = [data.as_spec(c) for c in sorted(data.keys())]
         except IndexError:
-            print('not equal')
+            raise
             return False
 
         pub.sendMessage((self.view.id, 'generate_dataset'), spec=spec, target=target)
