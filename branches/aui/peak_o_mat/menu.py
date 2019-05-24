@@ -17,58 +17,39 @@
 
 import wx
 
-menu_ids = ['New','Open project...','Save as...','Save','Quit',
-            'Import...','Export...',
-            'Notepad','Code Editor','Data Grid',
-            'Start plot server',
-            'About']
-menu_ids = dict([(q,wx.NewId()) for q in menu_ids])
-
-menu_ids['About'] = wx.ID_ABOUT
-menu_ids['Preferences'] = wx.ID_PREFERENCES
-
-module_counter = 1
-# TODO: das ist nicht schoen: besser als 1000 IDs zu reservieren waere es den omodule_counter
-# wieder auf 1 zu setzen, wenn ein neues Projekt geoeffnet wird.
-
-module_menu_ids = dict([(q,wx.NewId()) for q in range(module_counter,100)])
+module_menu_ids = {}
+menu_ids = {'About': wx.ID_ABOUT}
 
 def add_module(mb, name):
-    global module_counter
-    mid = module_menu_ids.pop(module_counter)
-    module_menu_ids[mid] = name
     menu = mb.GetMenu(2)
-    menu.Append(mid, '{}\tCTRL-{}'.format(name,module_counter))
-    module_counter += 1
+    count = menu.GetMenuItemCount()
+    module_menu_ids[menu.Append(wx.ID_ANY, '{}\tCTRL-{}'.format(name,count)).GetId()] = name
 
 def create(plotserver=False):
     mb = wx.MenuBar()
 
-    def _q(arg):
-        mid = arg.split('\t')[0]
-        return menu_ids[mid], arg
+    def append(menu, mi_desc, **kwargs):
+        lab = mi_desc.split('\t')[0]
+        menu_ids[lab] = menu.Append(wx.ID_ANY, mi_desc, **kwargs).GetId()
 
     file_menu = wx.Menu()
-    file_menu.Append(*_q('New'))
-    file_menu.Append(*_q('Open project...'))
-    file_menu.Append(*_q('Save as...'))
-    file_menu.Append(*_q('Save\tCTRL-s'))
-    file_menu.Append(*_q('Preferences'))
+    append(file_menu,'New')
+    append(file_menu,'Open project...')
+    append(file_menu,'Save as...')
+    append(file_menu,'Save\tCTRL-s')
+    #append(file_menu,'Preferences')
     file_menu.AppendSeparator()
-    file_menu.Append(*_q('Quit\tCTRL-q'))
+    append(file_menu,'Quit\tCTRL-q')
 
     data_menu = wx.Menu()
-    data_menu.Append(*_q('Import...'))
-    data_menu.Append(*_q('Export...'))
+    append(data_menu,'Import...')
+    append(data_menu,'Export...')
 
     view_menu = wx.Menu()
-    view_menu.AppendCheckItem(*_q('Code Editor\tCTRL-e'))
-    view_menu.AppendCheckItem(*_q('Data Grid\tCTRL-d'))
-    view_menu.AppendCheckItem(*_q('Notepad\tCTRL-i'))
+    append(view_menu,'Code Editor\tCTRL-e', kind=wx.ITEM_CHECK)
+    append(view_menu,'Data Grid\tCTRL-d', kind=wx.ITEM_CHECK)
+    append(view_menu,'Notepad\tCTRL-i', kind=wx.ITEM_CHECK)
     view_menu.AppendSeparator()
-
-    #for n,m in enumerate(modules):
-    #    view_menu.AppendCheckItem(*_q('{}\tCTRL-{}'.format(m,n)))
 
     help_menu = wx.Menu()
     help_menu.Append(wx.ID_ABOUT, "&About peak-o-mat")
@@ -78,7 +59,7 @@ def create(plotserver=False):
     mb.Append(view_menu, 'View')
     if plotserver:
         tools_menu = wx.Menu()
-        tools_menu.Append(*_q('Start plot server'))
+        append(tools_menu,'Start plot server')
         mb.Append(tools_menu, 'Tools')
     mb.Append(help_menu, "&Help")
 
