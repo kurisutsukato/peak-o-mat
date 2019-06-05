@@ -202,11 +202,7 @@ class Controller(object):
             msg = self.project.load(path, datastore=self.datagrid)
 
             if msg is not None:
-                if msg.type == 'warn':
-                    wx.CallAfter(self.view.msg_dialog, '\n'.join([str(q) for q in msg]))
-                else:
-                    wx.CallAfter(self.view.error_dialog, '\n'.join([str(q) for q in msg]))
-                    return
+                wx.CallAfter(self.view.msg_dialog, '\n'.join(msg))
 
             self.view.title = self.project.name
             self.view.annotations = self.project.annotations

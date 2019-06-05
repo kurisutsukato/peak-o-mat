@@ -196,11 +196,8 @@ class MainFrame(wx.Frame):
     annotations = property(_get_annotations,_set_annotations)
 
     def close_splash(self):
-        try:
-            self.splash.Close()
-        except wx._core.PyDeadObjectError:
-            pass
-        
+        self.splash.Close()
+
     def start(self, startapp=False):
         self.SetSize((1024,720))
         self.CenterOnScreen()

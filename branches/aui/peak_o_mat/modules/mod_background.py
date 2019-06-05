@@ -14,7 +14,7 @@
 ##     along with this program; if not, write to the Free Software
 ##     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-"""New implementaion based on SNIP algorithm"""
+"""New implementation based on SNIP algorithm"""
 
 import wx
 from wx.lib.pubsub import pub
