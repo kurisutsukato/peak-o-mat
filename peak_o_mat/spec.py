@@ -71,7 +71,7 @@ name : short description of the data
         self._limits = None
         self._trafo = TrafoList([])
         self._mask = np.zeros((0), dtype=np.int8)
-        self._rawdata = np.empty((2,0),dtype=np.float64)
+        self._rawdata = np.empty((3,0),dtype=np.float64)
 
         self.parse_args(*args)
 
@@ -79,6 +79,10 @@ name : short description of the data
         if len(args) == 3:
             x,y,name = args
             data = np.asarray([x,y])
+            self.data = data
+        elif len(args) == 4:
+            x,y,y2,name = args
+            data = np.asarray([x,y,y2])
             self.data = data
         elif len(args) == 1:
             if isinstance(args[0], Spec):
@@ -423,15 +427,18 @@ bbox : boundingbox of points to be removed
     mask = property(_get_mask, _set_mask, doc='mask storing deleted points')
     
     def _get_data(self, axis, unmasked=False, limited=False):
-        ind = ['x','y'].index(axis)
+        ind = ['x','y','y2'].index(axis)
         data = np.copy(self.data)
 
-        locs = {'x': data[0], 'y': data[1]}
+        try:
+            locs = {'x': data[0], 'y': data[1], 'y2': data[2]}
+        except IndexError:
+            locs = {'x': data[0], 'y': data[1]}
 
         for type,tr,comment,skip in self.trafo:
             if skip:
                 continue
-            data[['x','y'].index(type),:] = eval(tr, pom_globals, locs)
+            data[['x','y','y2'].index(type),:] = eval(tr, pom_globals, locs)
 
         if unmasked:
             if self._inverse:
@@ -440,9 +447,9 @@ bbox : boundingbox of points to be removed
                 return data[ind]
         else:
             cond = np.logical_and(np.isfinite(data[0]),np.isfinite(data[1]))
-
             data = np.compress(cond,data,1)
             mask = np.compress(cond,self.mask)
+
             cond = np.logical_and(np.isreal(data[0]),np.isreal(data[1]))
             data = np.compress(cond,data,1)
             mask = np.compress(cond,mask)
@@ -489,8 +496,17 @@ bbox : boundingbox of points to be removed
     def _get_y_unmasked(self):
         return self._get_data('y', True)
 
+    def _get_y2(self):
+        return self._get_data('y2')
+
+    def _get_y2_unmasked(self):
+        return self._get_data('y2', True)
+
     def _get_xy(self):
         return np.array([self.x,self.y])
+
+    def _get_xyy2(self):
+        return np.array([self.x,self.y,self.y2])
 
     def _get_x_limited(self):
         if self.limits is not None:
@@ -525,11 +541,13 @@ bbox : boundingbox of points to be removed
 
     x = property(_get_x, doc='returns masked x-data including trafos')
     y = property(_get_y, doc='returns masked y-data including trafos')
+    y2 = property(_get_y2, doc='returns masked y2-data including trafos')
     _x = property(_get_x_unmasked, doc='returns unmasked x-data including trafos')
     _y = property(_get_y_unmasked, doc='returns unmasked y-data including trafos')
     x_limited = property(_get_x_limited, doc='returns masked x-data including trafos within limits')
     y_limited = property(_get_y_limited, doc='returns masked y-data including trafos within limits')
     xy = property(_get_xy, doc='returns masked x-y-data, shape(2,x)')
+    xyy2 = property(_get_xyy2, doc='returns masked x-y-y2-data, shape(3,x)')
     xy_limited = property(_get_xy_limited, doc='returns masked x-y-data within limits, shape(2,x)')
     
     def __eq__(self, other):
@@ -734,6 +752,12 @@ class SpecTests(unittest.TestCase):
         self.s.trafo.append(('x','1/x','inverse'))
         self.assertEqual(self.s.x.tolist(),[0.125,0.1])
         self.assertEqual(self.s._get_x_unmasked().tolist(),[0.5,0.2,0.125,0.1])
+
+    def test_y2(self):
+        x = np.array([2,5,8,10],dtype=float)
+        y = np.sin(x)
+        y2 = np.cos(x)
+        s = Spec(x,y,y2,'unittest')
 
 if __name__ == '__main__':
     unittest.main()

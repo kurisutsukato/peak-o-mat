@@ -65,8 +65,8 @@ class BatchParameters(dict):
         xvalues = list(range(len(self[item].values)))
         for n,idx in enumerate(self[item].index):
             xvalues[n] = self.x[idx]
-        print(len(xvalues),xvalues)
-        print(len([q.value for q in self[item].values]), [q.value for q in self[item].values])
+        #print(len(xvalues),xvalues)
+        #print(len([q.value for q in self[item].values]), [q.value for q in self[item].values])
         return Spec(xvalues, [q.value for q in self[item].values], '{}:{}:{}'.format(self.name,item,self.par))
 
     def __str__(self):
@@ -115,7 +115,7 @@ class Fit:
         
         data = FitData(self.ds)
         guess = list(self.func.par_fit.values())
-        #print guess
+
         if not autostep:
             self.odr = O.ODR(data, model, beta0=guess, maxit=maxiter, stpb=np.ones((len(guess)))*stepsize)
         else:

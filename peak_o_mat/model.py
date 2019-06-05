@@ -119,7 +119,9 @@ tokens: a space separated list of valid function symbols
         self.listener = listener
         self.tokens = ''
 
-        if tokens.isupper()  or tokens == '':# and lineshapebase.lineshapes.tokens_known(tokens):
+        if tokens.isupper() or tokens == '':
+            if tokens != '':
+                lineshapebase.lineshapes.known_tokens(tokens)
             self.predefined = True
             self.tokens = tokens
         else:
@@ -533,15 +535,9 @@ class Component(dict):
         self.count = count
         self.parse()
 
-    def __repr__(self):
-        return '<%s.%s at %s>' % (
-            self.__class__.__module__,
-            self.__class__.__name__,
-            hex(id(self))
-            )
-
     def __str__(self):
-        return '%s: function of '%self.name+','.join("'%s'"%q for q in list(self.keys()))
+        pars = ', '.join(['{}={:.4g}'.format(q,p.value) for q,p in self.items()])
+        return '{}: {}'.format(self.name,pars)
 
     def clear(self):
         for k in self.keys():
@@ -670,6 +666,9 @@ class Var(object):
         
     value_mapped = property(_coerce, _decoerce)
 
+    def __str__(self):
+        return '{:.3g}'.format(self.value)
+
 class curry_var(object):
     def __init__(self, var):
         self.amin = var.amin
@@ -742,6 +741,9 @@ def test1():
     print(m.get_parameter_names())
 
 if __name__ == '__main__':
-    test1()
-    pass
+    #test1()
+    c = Component('LO1','+',3)
+    c.amp.value= 3.4
+    print(c)
+
     

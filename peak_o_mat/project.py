@@ -78,12 +78,10 @@ class Queue(BytesIO):
         BytesIO.write(self, arg)
 
 class Message(list):
-    def __init__(self, data, type='error'):
-        self.type = type
-        list.__init__(self, data)
-    def append(self, data, tp=None):
-        super(Message, self).append(data)
-        self.type = tp
+    def append(self, data, type='warn'):
+        print('msg appended: {}'.format(data))
+        lead = {'warn':'Warning','error':'Error'}
+        super(Message, self).append('{}: {}'.format(lead[type],data))
 
 from .misc import PomError
 
@@ -323,23 +321,28 @@ def xmlmod2mod(element, lastmod=None):
             vars[attrs['name']] = par
         components.append(vars)
 
+    #TODO: ist lastmod wirklich nötig? Dauert das so lange?
     warn = []
     if lastmod is None or lastmod.tokens != tokens:
         try:
             model = Model(tokens)
             model.parse()
             model.evaluate([-1,1])
-        except (KeyError,NameError) as err:
-            warn.append('Unknown symbol encountered: "%s"' %(err))
-            return None, warn
+        except (KeyError, NameError) as err:
+            warn.append('Unknown symbol encountered: {}'.format(err))
+            model = None
+            return model, warn
     else:
         model = lastmod.copy()
 
     try:
         model.set_parameters(components)
     except KeyError as err:
-        warn.append('Unknown parameter encountered: "%s"'%(err))
+        print('par keyerror')
+        warn.append('Unknown parameter encountered: {}'.format(err))
         return None, warn
+    else:
+        print(model.parameters_as_table())
 
     return model, warn
 
@@ -411,7 +414,7 @@ class Project(LData):
         self.lastplot = None
         self.lastset = None
         self.lastmod = None
-        self.warn = Message([])
+        self.warn = Message()
         self.gridname = None
         self.griddata = None
         self.rowlabels = {}
@@ -473,7 +476,8 @@ class Project(LData):
                         for mod_elem in set_elem.findall('mod'):
                             mod, warn = xmlmod2mod(mod_elem, self.lastmod)
                             if mod is None:
-                                self.warn.append(warn)
+                                for w in warn:
+                                    self.warn.append(w)
                             else:
                                 self.lastmod = mod
                                 self[self.lastplot][self.lastset].mod = mod
@@ -536,15 +540,15 @@ class Project(LData):
                 name, attrs, data = elem.tag, elem.attrib, elem.text
                 self.code.append((attrs.get('name', 'new'), deslash(data) if data is not None else ''))
 
-        warn = Message([], type='warn')
-        for e in self.warn:
-            if e not in warn:
-                warn.append(e)
+        #TODO: warning/error message system is buggy
 
+        #for e in self.warn:
+        #    if e not in warn:
+        #        warn.append(e, type='warn')
         self.path = os.path.abspath(path)
         self.name = os.path.basename(path)
 
-        return [None, warn][int(len(warn)>0)]
+        return [None, self.warn][int(len(warn)>0)]
 
     def save(self, path=None, griddata=[], compress=False):
         if path is not None:

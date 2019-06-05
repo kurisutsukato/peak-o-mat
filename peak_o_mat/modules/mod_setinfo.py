@@ -61,6 +61,7 @@ class TrafoListCtrl(wx.ListCtrl,
 
     def Insert(self, data):
         #TODO: sys.maxsize is zu gross, daher 20000
+
         index = self.InsertItem(20000, data[0])
         for col in range(3):
             self.SetItem(index, col, data[col])
