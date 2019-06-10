@@ -399,8 +399,8 @@ Update the model with the results from a fit.
         background = None
         
         if self.parsed is False:
-            self.parsed = True
             self.parse()
+            self.parsed = True
 
         evaly = np.zeros((0,len(x)))
         newy = []
@@ -418,14 +418,20 @@ Update the model with the results from a fit.
                     newy = eval(component.func,pom_globals,locs)
             except (ValueError, TypeError, ZeroDivisionError) as msg:
                 continue #does never happen
-            else:   
+            else:
+                if type(newy) == tuple:
+                    # double-y model
+                    return newy
                 if single and np.isfinite(newy).all():
                     if component.name in lineshapebase.lineshapes.background:
                         background = newy
                     evaly = np.vstack((np.asarray(evaly),newy))
                     continue
                 if np.logical_not(np.isfinite(newy)).any():
-                    tmpy = np.zeros(newy.shape,float)
+                    try:
+                        tmpy = np.zeros(newy.shape,float)
+                    except AttributeError:
+                        raise
                     np.put(tmpy, np.isfinite(newy), np.compress(np.isfinite(newy),newy))
                     newy = tmpy
                 if len(evaly) == 0:
@@ -562,12 +568,15 @@ class Component(dict):
 
     def open(self, p, x):
         self._plevel += 1
+        return x
 
     def close(self, p, x):
         self._plevel -= 1
+        return x
 
     def func_found(self, p, x):
         self._plevel += 1
+        return x
 
     def comma_found(self, p, x):
         if self._plevel == 0:

@@ -979,14 +979,34 @@ class Controller(object):
                         x = set.x_limited
                         if len(x) > 0:
                             y = fit.evaluate(x)
-                            if y is not False:
-                                lines.append(plotcanvas.Line([x,y], colour=wx.Colour(0,200,50,200), width=2, skipbb=True))
+                            print('check y', y is False, y is None)
+                            if y is not None:
+                                try:
+                                    y1,y2 = y
+                                except ValueError:
+                                    lines.append(plotcanvas.Line([x, y], colour=wx.Colour(0, 200, 50, 200), width=2,
+                                                                 skipbb=True))
+                                else:
+                                    lines.append(plotcanvas.Line([x, y1], colour=wx.Colour(0, 200, 50, 200), width=2,
+                                                                 skipbb=True))
+                                    lines.append(plotcanvas.Line([x, y2], colour=wx.Colour(0, 200, 50, 200), width=2,
+                                                                 skipbb=True))
                     elif set.mod is not None:
                         x = set.x_limited
                         if len(x) > 0:
                             y = set.mod.evaluate(x)
-                            if y is not False:
-                                lines.append(plotcanvas.Line([x,y], colour=wx.Colour(0,200,50,200), width=2, skipbb=True))
+                            print('check y', y is False, y is None)
+                            if y is not None:
+                                try:
+                                    y,y2 = y
+                                except ValueError:
+                                    lines.append(plotcanvas.Line([x, y], colour=wx.Colour(0, 200, 50, 200), width=2,
+                                                                 skipbb=True))
+                                else:
+                                    lines.append(plotcanvas.Line([x, y], colour=wx.Colour(0, 200, 50, 200), width=2,
+                                                                 skipbb=True))
+                                    lines.append(plotcanvas.Line([x, y2], colour=wx.Colour(0, 200, 50, 200), width=2,
+                                                                 skipbb=True))
                     if self.app_state.show_peaks:
                         if fit is not None:
                             for i in set.loadpeaks(fit, addbg=True):

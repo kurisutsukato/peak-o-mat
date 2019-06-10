@@ -96,8 +96,8 @@ class MFitModel(O.Model):
         O.Model.__init__(self, self.evaluate)
 
     def evaluate(self, a, x):
-        y1,y2 = self.func(x.T[0], a)
-        return np.vstack([y1,y2]).T
+        y1,y2 = self.func(x[:len(x)//2], a)
+        return np.hstack([y1,y2])
 
 class MFitData(O.Data):
     def __init__(self, spec):
@@ -106,7 +106,7 @@ class MFitData(O.Data):
             weights = spec.weights.getWeights(spec.xyy2_limited)
         else:
             weights = None
-        O.Data.__init__(self, np.vstack((x,x)).T, np.vstack((y,y2)).T, we=weights)
+        O.Data.__init__(self, np.hstack((x,x)), np.hstack((y,y2)), we=weights)
 
 def pprint(result):
     out = []
@@ -129,7 +129,7 @@ class Fit:
         self.ds = copy.deepcopy(ds)
         self.func = QuickEvaluate(copy.deepcopy(model))
 
-        if ',' in m.func:
+        if ',' in model.func:
             fitmodel = MFitModel(self.func)
             data = MFitData(self.ds)
         else:
@@ -149,7 +149,7 @@ class Fit:
         out = self.odr.run()
         pars, errors = self.func.fill(out.beta,out.sd_beta)
         msg = pprint(out)
-
+        print(msg)
 
         return pars,errors,msg
 
@@ -171,23 +171,24 @@ def test1():
 
 if __name__ == '__main__':
     import numpy as np
-    x = np.vstack((np.linspace(0,5,3),np.linspace(0,5,3))).T
+    x = np.hstack((np.linspace(0,5,10),np.linspace(0,5,10)))
 
-    y = x*3+.5
-    print(x.shape)
+    y = x*3+.5+np.random.randn(*x.shape)
 
     from .model import Model
-    m = Model('a*x+b,a*x-b')
+    from .spec import Spec
+    m = Model('a*x,a*x+b*x**2+c')
     m.parse()
-    #m.CUSTOM.a.value = 2
-    #m.CUSTOM.b.value = 1
-    func = QuickEvaluate(m)
+    m.CUSTOM.a.value = 5.0
+    m.CUSTOM.b.value = 5.0
+    m.CUSTOM.c.value = 5.0
 
-    mfm = MFitModel(func)
-    d = O.Data(x,y)
-    o = O.ODR(d, mfm, [1.0,1])
-    out = o.run()
-    print(out.beta)
+    ds = Spec(x[:len(x)//2],y[:len(x)//2],y[len(x)//2:],'lala')
+    f = Fit(ds, m)
+    print(f.run())
+    #o = O.ODR(d, mfm, [1.0])
+    #out = o.run()
+    #print(out.beta)
 
 
 

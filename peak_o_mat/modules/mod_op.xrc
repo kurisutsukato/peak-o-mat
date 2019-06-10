@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resource>
+<resource class="wxBoxSizer">
   <object class="wxPanel" name="mod_op">
     <style>wxNO_BORDER</style>
     <object class="wxBoxSizer">
@@ -39,18 +39,7 @@
             <object class="wxBoxSizer">
               <orient>wxHORIZONTAL</orient>
               <object class="sizeritem">
-                <object class="wxBoxSizer">
-                  <object class="sizeritem">
-                    <object class="wxStaticText">
-                      <label>Smoothing</label>
-                      <font>
-                        <style>normal</style>
-                        <weight>bold</weight>
-                        <underlined>0</underlined>
-                        <family>default</family>
-                      </font>
-                    </object>
-                  </object>
+                <object class="wxStaticBoxSizer">
                   <object class="sizeritem">
                     <object class="wxBoxSizer">
                       <object class="sizeritem">
@@ -188,6 +177,7 @@
                       </object>
                     </object>
                   </object>
+                  <label>Smoothing</label>
                   <orient>wxVERTICAL</orient>
                 </object>
                 <flag>wxRIGHT|wxEXPAND</flag>

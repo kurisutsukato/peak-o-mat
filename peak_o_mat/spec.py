@@ -128,16 +128,11 @@ name : short description of the data
     def __copy__(self):
         return Spec(self.x.copy(), self.y.copy(), 'copy_%s'%self.name)
 
-    def write(self, path, overwrite=False):
+    def write(self, path):
         """
 writes the current spectrum data in two columns
 path : obviously, the path
 """
-
-        if os.path.exists(path) and not overwrite:
-            # print 'file \'%s\' exists and overwrite mode is False'%path
-            return False
-
         try:
             f = open(path, 'w')
         except IOError:
