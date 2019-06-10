@@ -1,296 +1,242 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resource class="wxPanel">
+<resource class="wxBoxSizer">
   <object class="wxPanel" name="mod_eval">
     <object class="wxBoxSizer">
       <orient>wxHORIZONTAL</orient>
       <object class="sizeritem">
-        <object class="wxBoxSizer">
-          <orient>wxVERTICAL</orient>
-          <object class="sizeritem">
-            <object class="wxBoxSizer">
-              <object class="sizeritem">
-                <object class="wxStaticText">
-                  <label>Beziér</label>
-                  <font>
-                    <weight>bold</weight>
-                  </font>
-                </object>
-              </object>
-              <object class="sizeritem">
-                <object class="wxStaticLine">
-                  <style>wxLI_HORIZONTAL</style>
-                </object>
-                <option>1</option>
-                <flag>wxLEFT|wxEXPAND</flag>
-                <border>15</border>
-              </object>
-            </object>
-            <flag>wxALL</flag>
-            <border>10</border>
-          </object>
-          <object class="sizeritem">
-            <object class="wxPanel" name="xrc_pan_bez">
+        <object class="wxPanel" name="xrc_pan_eq">
+          <object class="wxStaticBoxSizer">
+            <object class="sizeritem">
               <object class="wxBoxSizer">
+                <object class="sizeritem">
+                  <object class="wxStaticText">
+                    <label>y = </label>
+                  </object>
+                  <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                  <border>5</border>
+                </object>
+                <object class="sizeritem">
+                  <object class="wxTextCtrl" name="xrc_txt_eq">
+                    <size>60,-1</size>
+                    <value>np.sin(x)</value>
+                  </object>
+                  <option>1</option>
+                  <flag>wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+                  <border>2</border>
+                </object>
                 <orient>wxHORIZONTAL</orient>
-                <object class="sizeritem">
-                  <object class="wxBoxSizer">
-                    <object class="sizeritem">
-                      <object class="wxBoxSizer">
-                        <object class="sizeritem">
-                          <object class="wxRadioButton" name="xrc_cb_bez_pts">
-                            <label>Equidistant points</label>
-                            <value>1</value>
-                            <style>wxRB_GROUP</style>
-                          </object>
-                          <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                          <border>2</border>
-                        </object>
-                        <object class="sizeritem">
-                          <object class="wxSpinCtrl" name="xrc_spn_bez_pts">
-                            <size>70,-1</size>
-                            <value>500</value>
-                            <min>1</min>
-                            <max>5000</max>
-                          </object>
-                          <flag>wxLEFT|wxALIGN_CENTRE_VERTICAL</flag>
-                          <border>2</border>
-                        </object>
-                        <orient>wxHORIZONTAL</orient>
-                      </object>
-                      <flag>wxALL|wxEXPAND</flag>
-                      <border>5</border>
-                    </object>
-                    <orient>wxVERTICAL</orient>
-                    <object class="sizeritem">
-                      <object class="wxBoxSizer">
-                        <object class="sizeritem">
-                          <object class="wxRadioButton" name="xrc_cb_bez_fromset">
-                            <label>X-values from</label>
-                          </object>
-                          <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                          <border>2</border>
-                        </object>
-                        <object class="sizeritem">
-                          <object class="wxChoice" name="xrc_cmb_bez_fromset">
-                            <content>
-                              <item>s0</item>
-                              <item>s1</item>
-                            </content>
-                          </object>
-                          <flag>wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
-                          <border>2</border>
-                        </object>
-                        <orient>wxHORIZONTAL</orient>
-                      </object>
-                      <flag>wxALL|wxEXPAND</flag>
-                      <border>5</border>
-                    </object>
-                  </object>
-                  <option>1</option>
-                  <flag>wxEXPAND</flag>
-                </object>
-                <object class="sizeritem">
-                  <object class="wxBoxSizer">
-                    <object class="spacer">
-                      <option>1</option>
-                    </object>
-                    <object class="sizeritem">
-                      <object class="wxToggleButton" name="xrc_btn_place_handles">
-                        <label>Pick control points</label>
-                      </object>
-                      <flag>wxRIGHT|wxEXPAND</flag>
-                      <border>15</border>
-                    </object>
-                    <object class="sizeritem">
-                      <object class="wxButton" name="xrc_btn_bez_load">
-                        <label>Create Dataset</label>
-                      </object>
-                      <flag>wxALL|wxEXPAND</flag>
-                      <border>5</border>
-                    </object>
-                    <orient>wxHORIZONTAL</orient>
-                  </object>
-                  <flag>wxALIGN_BOTTOM</flag>
-                </object>
               </object>
+              <flag>wxEXPAND</flag>
             </object>
-            <flag>wxEXPAND</flag>
-          </object>
-          <object class="sizeritem">
-            <object class="wxBoxSizer">
-              <object class="sizeritem">
-                <object class="wxStaticText">
-                  <label>Evaluate expression</label>
-                  <font>
-                    <weight>bold</weight>
-                  </font>
-                </object>
-              </object>
-              <object class="sizeritem">
-                <object class="wxStaticLine">
-                  <style>wxLI_HORIZONTAL</style>
-                </object>
-                <option>1</option>
-                <flag>wxLEFT|wxEXPAND</flag>
-                <border>15</border>
-              </object>
-            </object>
-            <flag>wxALL</flag>
-            <border>10</border>
-          </object>
-          <object class="sizeritem">
-            <object class="wxPanel" name="xrc_pan_eq">
+            <object class="sizeritem">
               <object class="wxBoxSizer">
                 <object class="sizeritem">
-                  <object class="wxBoxSizer">
-                    <orient>wxVERTICAL</orient>
-                    <object class="sizeritem">
-                      <object class="wxBoxSizer">
-                        <orient>wxHORIZONTAL</orient>
-                        <object class="sizeritem">
-                          <object class="wxStaticText">
-                            <label>y = </label>
-                          </object>
-                          <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                          <border>5</border>
-                        </object>
-                        <object class="sizeritem">
-                          <object class="wxTextCtrl" name="xrc_txt_eq">
-                            <size>400,-1</size>
-                            <value>np.sin(x)</value>
-                          </object>
-                          <option>1</option>
-                          <flag>wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
-                          <border>2</border>
-                        </object>
+                  <object class="wxRadioButton" name="xrc_cb_eq_range">
+                    <label>Range</label>
+                    <style>wxRB_GROUP</style>
+                  </object>
+                  <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                  <border>2</border>
+                </object>
+                <object class="sizeritem">
+                  <object class="wxPanel" name="xrc_pan_range">
+                    <object class="wxBoxSizer">
+                      <orient>wxHORIZONTAL</orient>
+                      <object class="spacer">
+                        <size>10,0</size>
                       </object>
-                      <flag>wxALL|wxEXPAND</flag>
-                      <border>5</border>
-                    </object>
-                    <object class="sizeritem">
-                      <object class="wxBoxSizer">
-                        <object class="sizeritem">
-                          <object class="wxRadioButton" name="xrc_cb_eq_range">
-                            <label>Range</label>
-                            <style>wxRB_GROUP</style>
-                          </object>
-                          <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                          <border>2</border>
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>From</label>
                         </object>
-                        <object class="sizeritem">
-                          <object class="wxPanel" name="xrc_pan_range">
-                            <object class="wxBoxSizer">
-                              <orient>wxHORIZONTAL</orient>
-                              <object class="spacer">
-                                <size>20,0</size>
-                              </object>
-                              <object class="sizeritem">
-                                <object class="wxStaticText">
-                                  <label>From</label>
-                                </object>
-                                <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                                <border>2</border>
-                              </object>
-                              <object class="sizeritem">
-                                <object class="wxTextCtrl" name="xrc_txt_eq_range_from">
-                                  <size>70,-1</size>
-                                  <style>wxTE_RIGHT</style>
-                                </object>
-                                <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                                <border>2</border>
-                              </object>
-                              <object class="sizeritem">
-                                <object class="wxStaticText">
-                                  <label>To</label>
-                                </object>
-                                <flag>wxLEFT|wxALIGN_CENTRE_VERTICAL</flag>
-                                <border>10</border>
-                              </object>
-                              <object class="sizeritem">
-                                <object class="wxTextCtrl" name="xrc_txt_eq_range_to">
-                                  <size>70,-1</size>
-                                  <style>wxTE_RIGHT</style>
-                                </object>
-                                <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                                <border>2</border>
-                              </object>
-                              <object class="sizeritem">
-                                <object class="wxStaticText">
-                                  <label># points</label>
-                                </object>
-                                <flag>wxLEFT|wxALIGN_CENTRE_VERTICAL</flag>
-                                <border>10</border>
-                              </object>
-                              <object class="sizeritem">
-                                <object class="wxSpinCtrl" name="xrc_spn_eq_range_pts">
-                                  <size>70,-1</size>
-                                  <value>500</value>
-                                  <min>1</min>
-                                  <max>5000</max>
-                                </object>
-                                <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                                <border>2</border>
-                              </object>
-                            </object>
-                          </object>
-                          <flag>wxALL|wxEXPAND</flag>
-                          <border>2</border>
-                        </object>
-                        <orient>wxHORIZONTAL</orient>
+                        <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>2</border>
                       </object>
-                      <flag>wxALL|wxEXPAND</flag>
-                      <border>5</border>
-                    </object>
-                    <object class="sizeritem">
-                      <object class="wxBoxSizer">
-                        <object class="sizeritem">
-                          <object class="wxRadioButton" name="xrc_cb_eq_fromset">
-                            <label>X-values from </label>
-                            <value>1</value>
-                          </object>
-                          <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
-                          <border>2</border>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="xrc_txt_eq_range_from">
+                          <size>40,-1</size>
+                          <style>wxTE_RIGHT</style>
                         </object>
-                        <object class="sizeritem">
-                          <object class="wxChoice" name="xrc_cmb_eq_fromset">
-                            <content>
-                              <item>s0</item>
-                              <item>s1</item>
-                            </content>
-                          </object>
-                        </object>
-                        <orient>wxHORIZONTAL</orient>
+                        <option>1</option>
+                        <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>2</border>
                       </object>
-                      <flag>wxALL|wxEXPAND</flag>
-                      <border>5</border>
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>To</label>
+                        </object>
+                        <flag>wxLEFT|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>10</border>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="xrc_txt_eq_range_to">
+                          <size>40,-1</size>
+                          <style>wxTE_RIGHT</style>
+                        </object>
+                        <option>1</option>
+                        <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>2</border>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label># points</label>
+                        </object>
+                        <flag>wxLEFT|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>10</border>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxSpinCtrl" name="xrc_spn_eq_range_pts">
+                          <size>40,-1</size>
+                          <value>500</value>
+                          <min>2</min>
+                          <max>25000</max>
+                        </object>
+                        <option>1</option>
+                        <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                        <border>2</border>
+                      </object>
                     </object>
                   </object>
                   <option>1</option>
-                  <flag>wxEXPAND</flag>
+                  <flag>wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+                  <border>2</border>
+                </object>
+                <orient>wxHORIZONTAL</orient>
+              </object>
+              <flag>wxEXPAND</flag>
+            </object>
+            <object class="sizeritem">
+              <object class="wxBoxSizer">
+                <object class="sizeritem">
+                  <object class="wxRadioButton" name="xrc_cb_eq_fromset">
+                    <label>X-values from </label>
+                    <value>1</value>
+                  </object>
+                  <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                  <border>2</border>
                 </object>
                 <object class="sizeritem">
-                  <object class="wxBoxSizer">
-                    <object class="spacer">
-                      <option>1</option>
-                    </object>
-                    <object class="sizeritem">
-                      <object class="wxButton" name="xrc_btn_eq_load">
-                        <label>Create Dataset</label>
-                      </object>
-                      <flag>wxALL|wxEXPAND|wxALIGN_BOTTOM</flag>
-                      <border>5</border>
-                    </object>
-                    <orient>wxVERTICAL</orient>
+                  <object class="wxChoice" name="xrc_cmb_eq_fromset">
+                    <content>
+                      <item>s0</item>
+                      <item>s1</item>
+                    </content>
                   </object>
-                  <flag>wxEXPAND</flag>
                 </object>
                 <orient>wxHORIZONTAL</orient>
               </object>
             </object>
-            <flag>wxEXPAND</flag>
+            <object class="sizeritem">
+              <object class="wxBoxSizer">
+                <object class="spacer">
+                  <option>1</option>
+                </object>
+                <object class="sizeritem">
+                  <object class="wxButton" name="xrc_btn_eq_load">
+                    <label>Create Dataset</label>
+                  </object>
+                  <flag>wxALL|wxALIGN_RIGHT</flag>
+                  <border>2</border>
+                </object>
+                <orient>wxHORIZONTAL</orient>
+              </object>
+              <flag>wxTOP|wxEXPAND</flag>
+              <border>10</border>
+            </object>
+            <label>From expression</label>
+            <orient>wxVERTICAL</orient>
           </object>
         </object>
-        <option>1</option>
+        <option>3</option>
+        <flag>wxALL|wxEXPAND</flag>
+        <border>5</border>
+      </object>
+      <object class="sizeritem">
+        <object class="wxPanel" name="xrc_pan_bez">
+          <object class="wxStaticBoxSizer">
+            <object class="sizeritem">
+              <object class="wxBoxSizer">
+                <object class="sizeritem">
+                  <object class="wxToggleButton" name="xrc_btn_place_handles">
+                    <label>Pick control points</label>
+                  </object>
+                  <flag>wxALL</flag>
+                  <border>2</border>
+                </object>
+                <orient>wxHORIZONTAL</orient>
+              </object>
+              <flag>wxEXPAND</flag>
+            </object>
+            <object class="sizeritem">
+              <object class="wxBoxSizer">
+                <object class="sizeritem">
+                  <object class="wxRadioButton" name="xrc_cb_bez_pts">
+                    <label>Equidistant points</label>
+                    <value>1</value>
+                    <style>wxRB_GROUP</style>
+                  </object>
+                  <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                  <border>2</border>
+                </object>
+                <object class="sizeritem">
+                  <object class="wxSpinCtrl" name="xrc_spn_bez_pts">
+                    <size>70,-1</size>
+                    <value>500</value>
+                    <min>1</min>
+                    <max>5000</max>
+                  </object>
+                  <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                  <border>2</border>
+                </object>
+                <orient>wxHORIZONTAL</orient>
+              </object>
+            </object>
+            <object class="sizeritem">
+              <object class="wxBoxSizer">
+                <object class="sizeritem">
+                  <object class="wxRadioButton" name="xrc_cb_bez_fromset">
+                    <label>X-values from</label>
+                  </object>
+                  <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                  <border>2</border>
+                </object>
+                <object class="sizeritem">
+                  <object class="wxChoice" name="xrc_cmb_bez_fromset">
+                    <content>
+                      <item>s0</item>
+                      <item>s1</item>
+                    </content>
+                  </object>
+                  <flag>wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+                  <border>2</border>
+                </object>
+                <orient>wxHORIZONTAL</orient>
+              </object>
+            </object>
+            
+            
+            <label>From c-spline</label>
+            <orient>wxVERTICAL</orient>
+            <object class="sizeritem">
+              <object class="wxBoxSizer">
+                <object class="spacer">
+                  <option>1</option>
+                </object>
+                <object class="sizeritem">
+                  <object class="wxButton" name="xrc_btn_bez_load">
+                    <label>Create Dataset</label>
+                  </object>
+                  <flag>wxALL</flag>
+                  <border>2</border>
+                </object>
+                <orient>wxHORIZONTAL</orient>
+              </object>
+              <flag>wxTOP|wxEXPAND</flag>
+              <border>10</border>
+            </object>
+          </object>
+        </object>
+        <option>2</option>
         <flag>wxALL|wxEXPAND</flag>
         <border>5</border>
       </object>
