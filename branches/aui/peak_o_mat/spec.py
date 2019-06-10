@@ -86,17 +86,15 @@ name : short description of the data
             self.data = data
         elif len(args) == 1:
             if isinstance(args[0], Spec):
+                #TODO: xyy2 kopieren
                 self.data = args[0].xy.copy()
                 self.mod = copy.deepcopy(args[0].mod)
                 name = 'copy_of_'+args[0].name
             elif type(args[0]) in [str,str]:
                 name = os.path.basename(args[0])
                 base, suf = os.path.splitext(args[0])
-                if suf == '.ms0':
-                    self.data = self.read_ms0(args[0])
-                else:
-                    data = self.read(args[0])
-                    self.data = data
+                data = self.read(args[0])
+                self.data = data
             else:
                 raise TypeError('wrong arguments'+self.__init__.__doc__)
         else:
@@ -154,21 +152,6 @@ path : obviously, the path
         f.close()
         return True
         
-    def read_ms0(self, path):
-        data = []
-        try:
-            f = open(path, "r")
-        except IOError:
-            print(path, 'not found')
-            return 0,0
-        for line in f:
-            if line.find(r'"') != 0:
-                data.append(float(line))
-        l = len(data)/2
-        data = np.transpose(np.resize(np.array(data), (l, 2)))
-
-        return data
-            
     def read(self, path):
         data = []
         self.path = path
@@ -425,7 +408,11 @@ bbox : boundingbox of points to be removed
     def _get_mask(self):
         return self._mask
     mask = property(_get_mask, _set_mask, doc='mask storing deleted points')
-    
+
+    @property
+    def has_second_y(self):
+        return self.data.shape[0] == 3
+
     def _get_data(self, axis, unmasked=False, limited=False):
         ind = ['x','y','y2'].index(axis)
         data = np.copy(self.data)
@@ -582,6 +569,18 @@ bbox : boundingbox of points to be removed
         
     def __len__(self):
         return len(self.x)
+
+    def __or__(self, other):
+        if not isinstance(other, Spec):
+            raise NotImplementedError('| operator used between non-Spec objects')
+        if not np.alltrue(self.x == other.x):
+            a, b = self._overlap(self.x, other.x)
+            interpolate = interp1d(other.x,other.y)
+            interp = interpolate(self.x[a:b])
+            ret = Spec(self.x[a:b], self.y[a:b], interp, '%s|%s'%(self.name,other.name))
+        else:
+            ret = Spec(self.x, self.y, other.y, '%s|%s'%(self.name,other.name))
+        return ret
 
     def __and__(self, other):
         if not isinstance(other, Spec):

@@ -522,7 +522,9 @@ class Component(dict):
         dict.__init__(self)
 
         self.has_x = False
-        
+
+        self._plevel = 0
+
         self.name = tok
         self.op = op
         try:
@@ -558,10 +560,20 @@ class Component(dict):
         self.has_x = True
         return x
 
+    def open(self, p, x):
+        self._plevel += 1
+
+    def close(self, p, x):
+        self._plevel -= 1
+
+    def func_found(self, p, x):
+        self._plevel += 1
+
     def comma_found(self, p, x):
-        if hasattr(self, 'double_func') and self.double_func:
-            raise SyntaxError('more than two functions found')
-        self.double_func = True
+        if self._plevel == 0:
+            if hasattr(self, 'double_func') and self.double_func:
+                raise SyntaxError('more than two functions found')
+            self.double_func = True
 
         return x
 
@@ -570,12 +582,12 @@ class Component(dict):
             (r"(?<![a-z0-9])x(?![a-z0-9(])", self.x_found),
             (r"c_[a-zA-Z0-9_]+", lambda y,x: x),
             (r"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", lambda y,x: x),
-            (r"[A-Za-z_][A-Za-z0-9_]*((\.[A-Za-z_][A-Za-z0-9_]*)|\()+", lambda y,x: x),
+            (r"[A-Za-z_][A-Za-z0-9_]*((\.[A-Za-z_][A-Za-z0-9_]*)|\()+", self.func_found),
             (r"[a-zA-Z_][a-zA-Z0-9_]*", self.var_found),
             (r"\+|-|\*|/", lambda y,x: x),
             (r"\s+", None),
-            (r"\)+", lambda y,x: x),
-            (r"\(+", lambda y,x: x),
+            (r"\)", self.close),
+            (r"\(", self.open),
             (r"<", lambda y,x: x),
             (r">", lambda y,x: x),
             (r",", self.comma_found),
