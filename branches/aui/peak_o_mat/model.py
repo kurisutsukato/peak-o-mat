@@ -557,7 +557,14 @@ class Component(dict):
     def x_found(self, p, x):
         self.has_x = True
         return x
-    
+
+    def comma_found(self, p, x):
+        if hasattr(self, 'double_func') and self.double_func:
+            raise SyntaxError('more than two functions found')
+        self.double_func = True
+
+        return x
+
     def parse(self):
         scanner = Scanner([
             (r"(?<![a-z0-9])x(?![a-z0-9(])", self.x_found),
@@ -571,7 +578,7 @@ class Component(dict):
             (r"\(+", lambda y,x: x),
             (r"<", lambda y,x: x),
             (r">", lambda y,x: x),
-            (r",", lambda y,x: x),
+            (r",", self.comma_found),
             ])
 
         parsed,rubbish = scanner.scan(self.func)
@@ -681,7 +688,7 @@ class curry_var(object):
 class QuickEvaluate(object):
     def __init__(self, model):
         self.model = model
-        #print 'instantiated QuickEvaluate', model.func, model
+        #print('instantiated QuickEvaluate', model.func, model)
         self.pre_fit()
         
     def pre_fit(self):
@@ -740,10 +747,31 @@ def test1():
     m.parse()
     print(m.get_parameter_names())
 
+def qe():
+    m = Model('CB LO1')
+    m.CB.const.value = 3.4
+    m.LO1.amp.value = 3
+    m.LO1.fwhm.value = 2.3
+    m.LO1.pos.value = 45
+    m.parse()
+    QuickEvaluate(m)
+
+def tp():
+    m = Model('LO')
+    a = TokParser(m, 'LO')
+
+def dm():
+    m = Model('a*x,np.sin(x*a)+b')
+    m.parse()
+    m.CUSTOM.a.value = 1
+    m.CUSTOM.b.value = 2
+    print(m.func)
+    import numpy as np
+    print(m.evaluate(np.linspace(0,10,5)))
+
 if __name__ == '__main__':
-    #test1()
-    c = Component('LO1','+',3)
-    c.amp.value= 3.4
-    print(c)
+    dm()
+
+
 
     

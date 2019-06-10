@@ -539,6 +539,17 @@ bbox : boundingbox of points to be removed
         else:
             return self.xy
 
+    def _get_xyy2_limited(self):
+        if self.limits is not None:
+            si = np.argsort(self.x)
+            xs = np.take(self.x, si)
+            low,up = np.searchsorted(xs, self.limits)
+            idx = np.sort(si[low:up])
+            res = np.take(self.xyy2, idx, axis = 1)
+            return res
+        else:
+            return self.xyy2
+
     x = property(_get_x, doc='returns masked x-data including trafos')
     y = property(_get_y, doc='returns masked y-data including trafos')
     y2 = property(_get_y2, doc='returns masked y2-data including trafos')
@@ -549,7 +560,8 @@ bbox : boundingbox of points to be removed
     xy = property(_get_xy, doc='returns masked x-y-data, shape(2,x)')
     xyy2 = property(_get_xyy2, doc='returns masked x-y-y2-data, shape(3,x)')
     xy_limited = property(_get_xy_limited, doc='returns masked x-y-data within limits, shape(2,x)')
-    
+    xyy2_limited = property(_get_xyy2_limited, doc='returns masked x-y-y2-data within limits, shape(2,x)')
+
     def __eq__(self, other):
         if not isinstance(other, Spec):
             return False
