@@ -136,7 +136,8 @@ class Weights(list):
 
         regions: a list of 2-tuples defining adjacent weights regions
         """
-        
+
+        #TODO: einfach neu anlegen ist einfacher
         diff = len(regions)-len(self)
         if diff > 0:
             self += [WeightsRegion()]*diff

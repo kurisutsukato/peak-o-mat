@@ -78,7 +78,7 @@ class FitModel(O.Model):
         O.Model.__init__(self, self.evaluate)
 
     def evaluate(self, a, x):
-        y = self.func(x,a)
+        y = self.func(x, a)
         return y
 
 class FitData(O.Data):
@@ -89,6 +89,24 @@ class FitData(O.Data):
         else:
             weights = None
         O.Data.__init__(self, x, y, we=weights)
+
+class MFitModel(O.Model):
+    def __init__(self, func):
+        self.func = func
+        O.Model.__init__(self, self.evaluate)
+
+    def evaluate(self, a, x):
+        y1,y2 = self.func(x.T[0], a)
+        return np.vstack([y1,y2]).T
+
+class MFitData(O.Data):
+    def __init__(self, spec):
+        x, y, y2 = spec.xyy2_limited
+        if spec.weights is not None:
+            weights = spec.weights.getWeights(spec.xyy2_limited)
+        else:
+            weights = None
+        O.Data.__init__(self, np.vstack((x,x)).T, np.vstack((y,y2)).T, we=weights)
 
 def pprint(result):
     out = []
@@ -110,16 +128,19 @@ class Fit:
         fittype = [0,2][fittype]
         self.ds = copy.deepcopy(ds)
         self.func = QuickEvaluate(copy.deepcopy(model))
-        
-        model = FitModel(self.func)
-        
-        data = FitData(self.ds)
+
+        if ',' in m.func:
+            fitmodel = MFitModel(self.func)
+            data = MFitData(self.ds)
+        else:
+            fitmodel = FitModel(self.func)
+            data = FitData(self.ds)
         guess = list(self.func.par_fit.values())
 
         if not autostep:
-            self.odr = O.ODR(data, model, beta0=guess, maxit=maxiter, stpb=np.ones((len(guess)))*stepsize)
+            self.odr = O.ODR(data, fitmodel, beta0=guess, maxit=maxiter, stpb=np.ones((len(guess)))*stepsize)
         else:
-            self.odr = O.ODR(data, model, beta0=guess, maxit=maxiter)
+            self.odr = O.ODR(data, fitmodel, beta0=guess, maxit=maxiter)
 
         self.odr.set_job(fit_type=fittype)
         #print 'ready to fit'
@@ -149,7 +170,24 @@ def test1():
     print(tab)
 
 if __name__ == '__main__':
-    from .pomio import CSVWriter
+    import numpy as np
+    x = np.vstack((np.linspace(0,5,3),np.linspace(0,5,3))).T
 
-    test1()
+    y = x*3+.5
+    print(x.shape)
+
+    from .model import Model
+    m = Model('a*x+b,a*x-b')
+    m.parse()
+    #m.CUSTOM.a.value = 2
+    #m.CUSTOM.b.value = 1
+    func = QuickEvaluate(m)
+
+    mfm = MFitModel(func)
+    d = O.Data(x,y)
+    o = O.ODR(d, mfm, [1.0,1])
+    out = o.run()
+    print(out.beta)
+
+
 
