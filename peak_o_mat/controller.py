@@ -966,6 +966,9 @@ class Controller(object):
                     continue
                 if sig in sel:
                     lines.append(Line(set.xy, 'red'))
+                    if set.has_second_y:
+                        x,y,y2 = set.xyy2
+                        lines.append(Line(np.vstack((x,y2)), 'pink'))
                     if set.weights is not None:
                         bounds_cb = set.weights.getBounds
                         lines.append(plotcanvas.VSpan(set.xy,bounds_cb,colour=wx.Colour(0,0,255,80)))

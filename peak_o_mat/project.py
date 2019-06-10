@@ -282,7 +282,11 @@ def xmlset2set(element):
     reg = re.compile(r'[\s,]+')
     x = array([Float(q) for q in reg.split(attrs['x'].strip())])
     y = array([Float(q) for q in reg.split(attrs['y'].strip())])
-    s = Spec(x,y,deslash(attrs['name']))
+    if 'y2' in attrs.keys():
+        y2 = array([Float(q) for q in reg.split(attrs['y2'].strip())])
+        s = Spec(x,y,y2,deslash(attrs['name']))
+    else:
+        s = Spec(x,y,deslash(attrs['name']))
     s.hide = attrs.get('hide', False) ==  'True'
 
     for limits_elem in element.findall('limits'):
@@ -548,7 +552,7 @@ class Project(LData):
         self.path = os.path.abspath(path)
         self.name = os.path.basename(path)
 
-        return [None, self.warn][int(len(warn)>0)]
+        return self.warn if len(self.warn) > 0 else None
 
     def save(self, path=None, griddata=[], compress=False):
         if path is not None:
@@ -578,6 +582,8 @@ class Project(LData):
                     set_elem.attrib['hide'] = 'True'
                 set_elem.attrib['x'] = ' '.join(['{:.16g}'.format(q) for q in self[p][s].data[0]])
                 set_elem.attrib['y'] = ' '.join(['{:.16g}'.format(q) for q in self[p][s].data[1]])
+                if self[p][s].has_second_y:
+                    set_elem.attrib['y2'] = ' '.join(['{:.16g}'.format(q) for q in self[p][s].data[2]])
                 set_elem.attrib['name'] = slash(self[p][s].name)
 
                 if self[p][s].limits is not None:
