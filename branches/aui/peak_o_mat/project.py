@@ -276,7 +276,6 @@ class Plot(LData):
                 else:
                     self.add(s)
 
-
 def xmlset2set(element):
     name, attrs = element.tag, element.attrib
     reg = re.compile(r'[\s,]+')
@@ -342,11 +341,8 @@ def xmlmod2mod(element, lastmod=None):
     try:
         model.set_parameters(components)
     except KeyError as err:
-        print('par keyerror')
         warn.append('Unknown parameter encountered: {}'.format(err))
         return None, warn
-    else:
-        print(model.parameters_as_table())
 
     return model, warn
 
