@@ -385,7 +385,7 @@ class FitPanel(wx.Panel):
         self.pan_batch = FitBatchPanel(self.nb_fit)
 
         self.nb_fit.AddPage(self.pan_model, 'Model')
-        self.nb_fit.AddPage(self.pan_pars, 'Paramters')
+        self.nb_fit.AddPage(self.pan_pars, 'Parameters')
         self.nb_fit.AddPage(self.pan_weights, 'Weights')
         self.nb_fit.AddPage(self.pan_options, 'Options')
         self.nb_fit.AddPage(self.pan_batch, 'Batch fit')

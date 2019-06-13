@@ -6,6 +6,7 @@ import wx.grid
 from io import StringIO
 
 from .pomio import CSVReader, PomDialect, asfloat
+from . import config
 
 delimiters = [',',';',':',' ','\t']
 choices = [',',';',':','space','tab']
@@ -27,7 +28,7 @@ class Dialog(wx.Dialog):
         self.grid.SetColLabelSize(0)
         self.grid.SetRowLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTER)
 
-        self.txt_raw = wx.TextCtrl(self, -1, size=(400,200), style=wx.TE_MULTILINE)
+        self.txt_raw = wx.TextCtrl(self, -1, size=(400,200), style=wx.TE_MULTILINE|wx.TE_DONTWRAP)
         self.sp_skip = wx.SpinCtrl(self, -1, '0', size=(50,-1))
         self.sp_skip.SetRange(0,200)
         self.ch_delimiter = wx.Choice(self, -1, choices=choices)
@@ -83,11 +84,6 @@ class Dialog(wx.Dialog):
         self.grid.SetRowLabelSize([0,120][int(rlabs)])
         self.grid.SetColLabelSize([0,20][int(clabs)])
         
-    def update(self):
-        return
-        # this does not work when run from 'ipython -wthread'
-        #wx.CallAfter(self.grid.AutoSizeColumns)
-        
 class Table(wx.grid.GridTableBase):
     def __init__(self):
         wx.grid.GridTableBase.__init__(self)
@@ -102,10 +98,10 @@ class Table(wx.grid.GridTableBase):
     def _get_data(self):
         return self._data
     def _set_data(self, data):
-        try:
-            data[0][0]
-        except IndexError:
-            data = [data]
+        #try:
+        #    data[0][0]
+        #except IndexError:
+        #    data = [[]]
         self._data = data
         self.Update()
     data = property(_get_data, _set_data)
@@ -114,7 +110,10 @@ class Table(wx.grid.GridTableBase):
         return len(self.data)
 
     def GetNumberCols(self):
-        return len(self.data[0])
+        try:
+            return len(self.data[0])
+        except IndexError:
+            return 0
 
     def IsEmptyCell(self, row, col):
         try:
@@ -228,14 +227,25 @@ class CSVWizard:
         del self
 
     def read(self, all=False):
+        class Found(Exception):
+            pass
+
         if not hasattr(self, 'rawdata') or all:
             try:
-                with open(self.path) as f:
-                    if not all:
-                        self.rawdata = '\n'.join([q for q in [f.readline().strip() for q in range(20)] if len(q)>0])
+                for enc in [None] + config.options('encodings'):
+                    try:
+                        with open(self.path, encoding=enc) as f:
+                            if not all:
+                                self.rawdata = '\n'.join([q.rstrip() for q in [f.readline() for q in range(20)] if len(q)>0])
+                            else:
+                                self.rawdata = '\n'.join([q.rstrip() for q in f.readlines()])
+                    except UnicodeDecodeError:
+                        continue
                     else:
-                        self.rawdata = '\n'.join([q.strip() for q in f.readlines()])
-            except UnicodeDecodeError as msg:
+                        raise Found
+            except Found:
+                pass
+            else:
                 msg = 'File with unkown encoding.\nChange the encoding settings in the preferences to force a specific encoding for reading.\n'
                 raise FormatExpection(msg)
 
@@ -243,7 +253,6 @@ class CSVWizard:
 
         csvr = CSVReader(StringIO(self.rawdata), dialect=self.dialect)
         self.preview = self.rawdata
-
         for row in csvr:
             data.append(row)
 
@@ -256,15 +265,18 @@ class CSVWizard:
         data = data[self.dialect.skiplines:]
 
         cl = data[0]
-        rl = [list(x) for x in zip(*data)][0]
+        try:
+            rl = [list(x) for x in zip(*data)][0]
+        except IndexError:
+            rl = ['']*len(data)
 
         if self.dialect.has_cl:
             rl = rl[1:]
             data = data[1:]
         if self.dialect.has_rl:
             cl = cl[1:]
-            data = [list(x) for x in zip(*data)][1:]
-            data = [list(x) for x in zip(*data)]
+            data = [list(x) for x in zip(*data)][1:] #transpose
+            data = [list(x) for x in zip(*data)] # and back
 
         if self.dialect.has_rl is not None and self.strip_indices:
             strip = False
@@ -284,11 +296,11 @@ class CSVWizard:
             if strip:
                 cl = [c[len(str(n)):].strip() for n,c in enumerate(cl)]
 
-        if self.dialect.delimiter != ',':
+        if self.replace_comma and self.dialect.delimiter != ',':
             data = [[q.replace(',','.') for q in row] for row in data]
         
-        rl = [None,rl][self.dialect.has_rl]
-        cl = [None,cl][self.dialect.has_cl]
+        rl = rl if self.dialect.has_rl else None
+        cl = cl if self.dialect.has_cl else None
         return data, rl, cl
 
     def get_data(self):
@@ -296,13 +308,13 @@ class CSVWizard:
         out = []
         for row in data:
             try:
-                if self.replace_comma:
-                    out.append([asfloat(q.replace(',','.')) for q in row])
-                else:
-                    out.append([asfloat(q) for q in row])
+                #if self.replace_comma:
+                #    out.append([asfloat(q.replace(',','.')) for q in row])
+                #else:
+                out.append([asfloat(q) for q in row])
             except ValueError: #catch trailing non-scalar data
                 break
-                
+
         return out, rl, cl
         
     def delimiter(self, n):
@@ -332,12 +344,11 @@ class CSVWizard:
         else:
             self.view.enable_import(True)
 
-        self.table.rowLabels = [None,rl][int(self.dialect.has_rl)]
-        self.table.colLabels = [None,cl][int(self.dialect.has_cl)]
+        self.table.rowLabels = rl
+        self.table.colLabels = cl
 
         self.table.data = data
         self.view.txt_raw.SetValue(self.preview)
-        self.view.update()
         self.view.update_from_dialect(self.dialect)
 
 def mist():
