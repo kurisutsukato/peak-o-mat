@@ -81,10 +81,10 @@ class LineShapes(StripDict):
         out.sort()
         return StripList(out)
 
-    def known_tokens(self, tokens):
+    def known(self, tokens):
         for i in re.split('\s+|\*|\+', tokens.strip()):
             if i not in self:
-                raise KeyError(i)
+                return False
         return True
 
 lineshapes = LineShapes({})
