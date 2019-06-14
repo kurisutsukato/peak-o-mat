@@ -129,7 +129,7 @@ class Fit:
         self.ds = copy.deepcopy(ds)
         self.func = QuickEvaluate(copy.deepcopy(model))
 
-        if ',' in model.func:
+        if model.func is not None and ',' in model.func:
             fitmodel = MFitModel(self.func)
             data = MFitData(self.ds)
         else:

@@ -119,9 +119,7 @@ tokens: a space separated list of valid function symbols
         self.listener = listener
         self.tokens = ''
 
-        if tokens.isupper() or tokens == '':
-            if tokens != '':
-                lineshapebase.lineshapes.known_tokens(tokens)
+        if tokens.isupper() or tokens == '' or lineshapebase.lineshapes.known(tokens):
             self.predefined = True
             self.tokens = tokens
         else:
@@ -230,7 +228,7 @@ tokens: a space separated list of valid function symbols
                         txt = 'No fit parameters found.'
             self.parsed = False
         else:
-            if self.tokens != '' and not lineshapebase.lineshapes.known_tokens(self.tokens):
+            if self.tokens != '' and not lineshapebase.lineshapes.known(self.tokens):
                 txt = 'Unknown tokens.'
             else:
                 txt= 'Model valid.'
