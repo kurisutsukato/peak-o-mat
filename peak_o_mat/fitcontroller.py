@@ -8,6 +8,10 @@ import time
 
 import numpy as np
 
+from threading import Thread, Event
+
+from functools import reduce
+
 from . import misc_ui
 from . import model
 from . import lineshapebase as lb
@@ -15,7 +19,6 @@ from . import fit
 
 from . import weights
 from .spec import Spec
-from functools import reduce
 
 class FitController(object):
     def __init__(self, selection_cb, view, interactor):
@@ -100,7 +103,7 @@ class FitController(object):
         self.view.pan_pars.Enable(self.model is not None and not self.model.is_empty())
 
     def selection_changed(self, plot, dataset):
-        print('fitcontroller selection changed',plot,dataset)
+        #print('fitcontroller selection changed',plot,dataset)
         self._current_ds = None if len(dataset) != 1 else dataset[0]
         plot_changed = self._current_pl != plot
         self._current_pl = plot
@@ -132,13 +135,8 @@ class FitController(object):
 
         wx.CallAfter(self.sync_gui)
 
-
     def update_parameter_panel(self):
-        self.view.loadwhich_choice = ['all']+self.model.tokens.split(' ')
         self.view.pickwhich_choice = ['all']+self.model.tokens.split(' ')
-        self.view.exportwhich_choice = ['all']+self.model.get_parameter_names()+['area']
-        self.view.exportwhich = self.exportwhich
-        self.exportwhich = self.view.exportwhich
 
     def clear_weights(self):
         self.weights = weights.Weights([weights.WeightsRegion(-np.inf,np.inf, 0.1, 0.5, 1)])
@@ -224,7 +222,8 @@ class FitController(object):
         pub.sendMessage((self.view.id, 'fitctrl','loadset'),msg=(self.model,which,xr,pts))
 
     def export_pars(self, which, witherrors):
-        pub.sendMessage((self.view.id, 'fitctrl','parexport'),msg=(self.model.parameters_as_table(which,witherrors)))
+        pub.sendMessage((self.view.id, 'fitctrl','parexport'),
+                        msg=(self.model.parameters_as_table(which,witherrors)))
 
     def start_pick_pars(self):
         self.model = copy.deepcopy(self.model)
@@ -386,7 +385,13 @@ ValueError: invalid literal for int() with base 10: ''
 
         job = (pl, rng, base, initial, order, fitopts)
         #self.view.progress_dialog(len(rng))
-        BatchWorker(self.view, job).start()
+        self._batch_job = BatchWorker(self.view, job)
+        self._batch_job.start()
+
+    def stop_batch_fit(self):
+        if hasattr(self, '_batch_job'):
+            self._batch_job.join()
+            self.message('Batch job canceled.')
 
     def start_fit(self, limit, fitopts):
         pl,ds = self.selection
@@ -397,11 +402,11 @@ ValueError: invalid literal for int() with base 10: ''
         job = (ds, self.model, fitopts)
 
         self.sync_gui(fit_in_progress=True)
-        WorkerThread(self.view, job).run()
+        WorkerThread(self.view, job).start()
 
-        self.message('fitting....', blink=True)
+        self.message('Fitting....', blink=True, forever=True)
 
-    def fit_finished(self, msgs):
+    def fit_finished(self, msg):
         self.message('')
 
         self.sync_gui(fit_in_progress=False)
@@ -414,12 +419,9 @@ ValueError: invalid literal for int() with base 10: ''
 
         pub.sendMessage((self.view.id, 'fitfinished'))
 
-    def message(self, msg, target=1, blink=False):
-        event = misc_ui.ShoutEvent(self.view.GetId(), msg=msg, target=target, blink=blink)
+    def message(self, msg, target=1, blink=False, forever=False):
+        event = misc_ui.ShoutEvent(self.view.GetId(), msg=msg, target=target, blink=blink, forever=forever)
         wx.PostEvent(self.view, event)
-
-from threading import Thread
-import wx
 
 class BatchWorker(Thread):
     threadnum = 0
@@ -428,12 +430,21 @@ class BatchWorker(Thread):
         self._notify = notify
         self._job = job
         BatchWorker.threadnum += 1
+        self.stopreason = Event()
+
+    def join(self):
+        self.stopreason.set()
+        event = misc_ui.ResultEvent(self._notify.GetId(), endbatch='canceled')
+        wx.PostEvent(self._notify, event)
+        super(BatchWorker, self).join()
 
     def run(self):
         msg = []
 
         pl, rng, base, initial, order, fitopts = self._job
         for n,setnum in enumerate(rng):
+            if self.stopreason.is_set():
+                return
             event = misc_ui.ResultEvent(self._notify.GetId(), name=pl[setnum].name)
             wx.PostEvent(self._notify, event)
             # TODO
@@ -448,7 +459,7 @@ class BatchWorker(Thread):
             mod.update_from_fit(res)
             pl[setnum].model = mod.copy()
 
-        event = misc_ui.ResultEvent(self._notify.GetId(), endbatch=True)
+        event = misc_ui.ResultEvent(self._notify.GetId(), endbatch='finished')
         wx.PostEvent(self._notify, event)
 
 class WorkerThread(Thread):
@@ -458,6 +469,11 @@ class WorkerThread(Thread):
         self._notify = notify
         self._job = job
         WorkerThread.threadnum += 1
+        self.stopreason = Event()
+
+    def join(self):
+        self.stopreason.set()
+        super(BatchWorker, self).join()
 
     def run(self):
         ds, mod, fitopts = self._job
@@ -470,3 +486,24 @@ class WorkerThread(Thread):
 
         event = misc_ui.ResultEvent(self._notify.GetId(), end=msg)
         wx.PostEvent(self._notify, event)
+
+if __name__ == '__main__':
+    from .fitinteractor import FitInteractor
+    from .fitpanel import FitPanel
+    from .model import Model
+    from .project import Project
+
+    prj = Project()
+    prj.load('example.lpj')
+
+    app = wx.App()
+    f = wx.Frame(None)
+    p = FitPanel(f)
+    f.Show()
+
+    def selection():
+        return prj[3],[prj[3][2]]
+
+    c = FitController(selection, p, FitInteractor())
+    c.model = selection()[1][0].model
+    app.MainLoop()

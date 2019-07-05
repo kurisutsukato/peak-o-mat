@@ -834,12 +834,14 @@ class Controller(object):
             
     def load_set_from_model(self, model, which, xr, pts):
         x = np.linspace(xr[0],xr[1],pts)
-        if which > 0:
-            y = model.evaluate(x, single=True)[which-1]
-            name = model.tokens.split(' ')[which-1]
-        else:
-            y = model.evaluate(x)
-            name = model.tokens
+
+        #if which > 0:
+        #    y = model.evaluate(x, single=True)[which-1]
+        #    name = model.tokens.split(' ')[which-1]
+        #else:
+        y = model.evaluate(x, restrict=which)
+        name = ' '.join(which)
+
         plot,sel = self.selection
         self.project[plot].add(spec.Spec(x,y,name))
         self.update_tree(plot)
@@ -917,7 +919,8 @@ class Controller(object):
         
         plot,sel = self.selection
         self.datagrid.the_grid.add_par_row(data, self.project[plot][sel[0]].name)
-        self.message('exported parameters to data grid',blink=True)
+        ctrl = 'CMD' if sys.platform == 'darwin' else 'CTRL'
+        self.message('Selected parameters have been appended to the data grid. Press {}-d to show the data grid.'.format(ctrl),blink=False)
         self.project_modified = True
 
     def _set_freeze_canvas(self, state):

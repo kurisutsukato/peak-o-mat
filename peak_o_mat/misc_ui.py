@@ -27,7 +27,7 @@ ShoutEvent, EVT_SHOUT = newevent.NewCommandEvent()
 ParEvent, EVT_GOTPARS = newevent.NewCommandEvent()
 RangeEvent, EVT_RANGE = newevent.NewCommandEvent()
 
-ShoutEvent.forever = False
+#ShoutEvent.forever = False
 
 GOTPARS_MOVE = 1
 GOTPARS_DOWN = 2
