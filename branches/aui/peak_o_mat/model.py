@@ -138,7 +138,7 @@ tokens: a space separated list of valid function symbols
         if self.tokens == 'CUSTOM':
             return self.func
         else:
-            return self.tokens
+            return self[:]
 
     def keys(self):
         return [q.name for q in self]
@@ -263,24 +263,24 @@ tokens: a space separated list of valid function symbols
     def parameters_as_table(self, selection='all', witherrors=False):
         """\
         Export the model parameters as table. The first columns contains the
-        name, the second the value. If the 'selection' is not None, only
+        name, the second the value. If 'selection' is not None, only
         parameters with names given by 'selection' will be exported, e.g. all
         peak positions, when selection = 'pos'
         
         selection: the parameter name as string according to the peak
-        definition
+        definition, can be a list of parameter names, too
         """
         pars = []
         for f in self:
             for name,par in list(f.items()):
                 if par.hidden:
                     continue
-                if name == selection or selection == 'all':
+                if name == selection or selection == 'all' or name in selection:
                     if witherrors:
                         pars.append((f.name,name,par.value,par.error))
                     else:
                         pars.append((f.name,name,par.value))
-            if 'area' == selection or selection == 'all':
+            if 'area' == selection or selection == 'all' or 'area' in selection:
                 if f.area() != np.inf:
                     if witherrors:
                         pars.append((f.name,'area',f.area(),0.0))
@@ -385,7 +385,7 @@ Update the model with the results from a fit.
         if self.listener is not None:
             self.listener()
                     
-    def evaluate(self, x, single=False, addbg=False):
+    def evaluate(self, x, single=False, addbg=False, restrict=None):
         """\
         Evaluate the current model at positions x.
         single: if True, returns a list of all peaks evaluated
@@ -407,6 +407,8 @@ Update the model with the results from a fit.
         locs = {'x':x}
 
         for component in self:
+            if restrict is not None and component.name not in restrict:
+                continue
             for key,val in component.items():
                 locs[key] = val.value
             try:
@@ -776,8 +778,9 @@ def qe():
     QuickEvaluate(m)
 
 def tp():
-    m = Model('LO')
-    a = TokParser(m, 'LO')
+    m = Model('LO GA')
+    m.parse()
+    print([q.name for q in m])
 
 def dm():
     m = Model('a*x,np.sin(x*a)+b')
@@ -789,7 +792,7 @@ def dm():
     print(m.evaluate(np.linspace(0,10,5)))
 
 if __name__ == '__main__':
-    dm()
+    tp()
 
 
 

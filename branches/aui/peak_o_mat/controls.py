@@ -109,7 +109,7 @@ class Status(wx.StatusBar):
             time = evt.time
         except AttributeError:
             time = 5000
-            
+
         if evt.target == 1:
             self.timer.Stop()
             if evt.blink:
@@ -127,7 +127,7 @@ class Status(wx.StatusBar):
             if self.counter < 7 or self.forever:
                 msg = self.GetStatusText(1)
                 self.SetStatusText('', 1)
-                wx.FutureCall(150, self.message, 500, msg, self.forever)
+                wx.CallLater(150,self.message, 500, msg, self.forever)
                 self.counter += 1
             else:
                 self.timer.Stop()
@@ -314,15 +314,14 @@ class InputValidator(wx.Validator):
         self.flag = flag
         self.Bind(wx.EVT_CHAR, self.OnChar)
 
-        self.Bind(wx.EVT_TEXT, self.OnText)
+        #self.Bind(wx.EVT_TEXT, self.OnText)
 
     def OnText(self, evt):
         evt.Skip()
         tc = evt.GetEventObject()
         val = evt.GetEventObject().GetValue()
         try:
-            if val != '':
-                x = float(val)
+            x = float(val)
         except ValueError as e:
             tc.SetBackgroundColour('pink')
             tc.Refresh()
@@ -337,7 +336,7 @@ class InputValidator(wx.Validator):
         tc = self.GetWindow()
         val = tc.GetValue()
 
-        if val == '':
+        if val.strip() == '':
             tc.SetBackgroundColour('pink')
             tc.SetFocus()
             tc.Refresh()
@@ -371,8 +370,8 @@ class InputValidator(wx.Validator):
             event.Skip()
             return
 
-        if not wx.Validator_IsSilent():
-            wx.Bell()
+        #if not wx.Validator_IsSilent():
+        #    wx.Bell()
 
         # Returning without calling even.Skip eats the event before it
         # gets to the text control

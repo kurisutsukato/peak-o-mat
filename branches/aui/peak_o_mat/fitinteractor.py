@@ -1,9 +1,11 @@
 
 import wx
 from wx.lib.pubsub import pub
+import re
 
 from . import misc_ui
 from . import lineshapebase as lb
+from .fitpanel import dlg_set_from_model, dlg_export_parameters
 
 class FitInteractor(object):
     nb_last_sel = 0
@@ -24,9 +26,9 @@ class FitInteractor(object):
         pub.subscribe(self.pubOnFitFinished, (self.view.id, 'fitfinished'))
 
         self.view.Bind(wx.EVT_BUTTON, self.OnPickParameters, self.view.pan_pars.btn_pickpars)
-        self.view.Bind(wx.EVT_BUTTON, self.OnLoadFromPars, self.view.pan_pars.btn_loadpeaks)
-        self.view.Bind(wx.EVT_BUTTON, self.OnExportPars, self.view.pan_pars.btn_parexport)
-        self.view.Bind(wx.EVT_CHOICE, self.OnExportParsChoice, self.view.pan_pars.ch_parexport)
+        self.view.Bind(wx.EVT_BUTTON, self.OnBtnGenerateSetDialog, self.view.pan_pars.btn_generateset)
+        self.view.Bind(wx.EVT_BUTTON, self.OnBtnExportDialog, self.view.pan_pars.btn_parexport)
+
         #self.view.Bind(wx.EVT_BUTTON, self.OnStartFit, self.view.btn_fit)
         self.view.Bind(wx.EVT_BUTTON, self.OnStartFit, self.view.pan_pars.btn_fit_quick)
         self.view.Bind(wx.EVT_CHECKBOX, self.OnLimitFitRange, self.view.pan_options.cb_limitfitrange)
@@ -40,6 +42,7 @@ class FitInteractor(object):
         self.view.Bind(misc_ui.EVT_RESULT, self.OnFitResult)
 
         self.view.pan_batch.btn_run.Bind(wx.EVT_BUTTON, self.OnRunBatchfit)
+        self.view.pan_batch.btn_stop.Bind(wx.EVT_BUTTON, self.OnStopBatchfit)
 
         self.view.pan_batch.btn_generate.Bind(wx.EVT_BUTTON, self.OnGenerateDataset)
         self.view.pan_batch.btn_export.Bind(wx.EVT_BUTTON, self.OnBatchExport)
@@ -82,12 +85,42 @@ class FitInteractor(object):
         if not res:
             print('error')
 
+    def OnBtnExportDialog(self, evt):
+        pars = self.controller.model.get_parameter_names()+['area']
+        self.export_dlg = dlg_export_parameters(self.view, pars)
+        self.export_dlg.btn_export.Bind(wx.EVT_BUTTON, self.OnExportPars)
+        self.export_dlg.Show()
+
+    def OnExportPars(self, evt):
+        if self.export_dlg.p.Validate() and self.export_dlg.p.TransferDataFromWindow():
+            self.controller.export_pars(self.export_dlg.chk_pars.CheckedStrings,
+                                        self.export_dlg.chk_error.IsChecked())
+            self.export_dlg.Close()
+            del self.export_dlg
+
+    def OnBtnGenerateSetDialog(self, evt):
+        tokens =  re.split(r'\s+', self.controller.model.tokens.strip())
+        rng = self.controller.selection[1][0].xrng
+        self.genset_dlg = dlg_set_from_model(self.view, tokens, rng)
+        self.genset_dlg.btn_loadpeaks.Bind(wx.EVT_BUTTON, self.OnLoadFromPars)
+        self.genset_dlg.Show()
+
+    def OnLoadFromPars(self, evt):
+        if self.genset_dlg.p.Validate() and self.genset_dlg.p.TransferDataFromWindow():
+            loadrange = float(self.genset_dlg.txt_from.Value),\
+                        float(self.genset_dlg.txt_to.Value)
+            loadpts = int(self.genset_dlg.txt_pts.Value)
+            self.controller.load_set_from_model(self.genset_dlg.chk_comp.CheckedStrings,
+                                                loadrange, loadpts)
+            self.genset_dlg.Close()
+            del self.genset_dlg
+
     def OnGenerateDataset(self, evt):
         yexpr = self.view.pan_batch.ch_component.GetStringSelection(),self.view.pan_batch.ch_parameter.GetStringSelection()
         target = self.view.pan_batch.ch_target.GetSelection()
         res = self.controller.generate_dataset(self.view.pan_batch.txt_xexpr.Value, yexpr, target)
         if not res:
-            print('error')
+            print('error FITINTERACTOR:ONGERNERATEDATASET')
 
     def OnGenerateDatasetXExpr(self, evt):
         txt = evt.GetEventObject().GetValue()
@@ -96,10 +129,15 @@ class FitInteractor(object):
         self.view.pan_batch.btn_generate.Enable(complete)
         self.view.pan_batch.btn_export.Enable(complete)
 
+    def OnStopBatchfit(self, evt):
+        self.controller.stop_batch_fit()
+
     def OnRunBatchfit(self, evt):
         fitopts = dict([('fittype',self.view.fittype), ('maxiter',self.view.maxiter), \
                         ('stepsize',self.view.stepsize), ('autostep',self.view.autostep)])
 
+
+        self.view.pan_batch.btn_stop.Enable()
         self.controller.batch_fit(self.view.pan_batch.ch_base.GetStringSelection(),
                                   self.view.pan_batch.ch_initial.GetSelection(),
                                   self.view.pan_batch.ch_order.GetSelection(),
@@ -107,7 +145,6 @@ class FitInteractor(object):
 
     def OnFitResult(self, evt):
         evt.Skip()
-        print(evt)
         if hasattr(evt, 'name'):
             #self.view.progress_dialog(step=evt.name)
             # TODO
@@ -116,7 +153,8 @@ class FitInteractor(object):
             self.controller.fit_finished(evt.endbatch)
             # TODO
             #self.view.progress_dialog(step='Finished.')
-            pub.sendMessage((self.view.id,'message'),msg='Batch fit finished.')
+            self.view.pan_batch.btn_stop.Disable()
+            pub.sendMessage((self.view.id,'message'),msg='Batch fit {}.'.format(evt.endbatch))
         elif hasattr(evt, 'end'):
             self.controller.fit_finished(evt.end)
 
@@ -196,16 +234,6 @@ class FitInteractor(object):
         self.controller.start_fit(self.view.limitfitrange, fitopts)
 
         #self.controller.start_fit()
-
-    def OnExportParsChoice(self, evt):
-        self.controller.exportwhich = self.view.exportwhich
-                   
-    def OnExportPars(self, evt):
-        self.controller.export_pars(self.view.exportwhich, self.view.exporterrors)
-
-    def OnLoadFromPars(self, evt):
-        if self.view.pan_pars.Validate():
-            self.controller.load_set_from_model(self.view.loadwhich, self.view.loadrange, self.view.loadpts)
 
     def OnSelectionChanged(self, plot, dataset):
         self.controller.selection_changed(plot, dataset)

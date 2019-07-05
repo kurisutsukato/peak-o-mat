@@ -1,6 +1,7 @@
 
 import wx
 from wx import xrc
+import re
 
 from . import pargrid
 from . import weightsgrid
@@ -25,19 +26,6 @@ class FeatureList(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         for data in items:
             index = self.InsertStringItem(sys.maxsize, data[0])
             self.SetStringItem(index, 1, data[1])
-
-class FitModelPanel(wx.Panel):
-    def __init__(self, parent):
-        super(FitModelPanel, self).__init__(parent)
-        self.setup_controls()
-        self.layout()
-        self.Fit()
-
-    def setup_controls(self):
-        pass
-
-    def layout(self):
-        pass
 
 class FitBatchPanel(wx.Panel):
     def __init__(self, parent):
@@ -87,6 +75,8 @@ class FitBatchPanel(wx.Panel):
         self.ch_initial = wx.Choice(self.pan_pars, choices=['Base model','Last result'])
         self.ch_order = wx.Choice(self.pan_pars, choices=['Towards lower index','Towards higher index'])
 
+        self.btn_stop = wx.Button(self.pan_pars, label='Stop')
+        self.btn_stop.Disable()
         self.btn_run = wx.Button(self.pan_pars, label='Start fit')
 
         ### page 'export'
@@ -122,7 +112,8 @@ class FitBatchPanel(wx.Panel):
 
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(wx.Window(self.pan_pars), 1)
-        row.Add(self.btn_run, 0, wx.ALIGN_RIGHT)
+        row.Add(self.btn_stop, 0, wx.RIGHT, 10)
+        row.Add(self.btn_run, 0)
         outer.Add(row, 0, wx.EXPAND|wx.ALL, 5)
         self.pan_pars.SetSizer(outer)
         self.pan_pars.Fit()
@@ -217,6 +208,109 @@ class FitModelPanel(wx.Panel):
         outer.Add(row, 1, wx.EXPAND|wx.ALL, 5)
         self.SetSizer(outer)
 
+class dlg_set_from_model(wx.Dialog):
+    def __init__(self, parent, components, rng):
+        super(dlg_set_from_model, self).__init__(parent, title='Generate set',
+                                                 style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+
+        self.components = components
+        self.rng = rng
+
+        self.setup_controls()
+        self.layout()
+
+        self.Bind(wx.EVT_BUTTON, self.OnClose, id=wx.ID_CANCEL)
+
+    def OnClose(self, evt):
+        self.Destroy()
+
+    def setup_controls(self):
+        self.p = wx.Panel(self, style=wx.WS_EX_VALIDATE_RECURSIVELY)
+
+        self.chk_comp = wx.CheckListBox(self.p, choices=self.components)
+        for n in range(len(self.components)):
+            self.chk_comp.Check(n, True)
+        self.btn_cancel = wx.Button(self.p, label='Cancel', id=wx.ID_CANCEL)
+        self.btn_loadpeaks = wx.Button(self.p, label='Create')
+        self.txt_from = wx.TextCtrl(self.p, validator=controls.InputValidator(controls.FLOAT_ONLY), style=wx.TE_RIGHT)
+        self.txt_to = wx.TextCtrl(self.p, validator=controls.InputValidator(controls.FLOAT_ONLY), style=wx.TE_RIGHT)
+        self.txt_pts = wx.TextCtrl(self.p, validator=controls.InputValidator(controls.INT_ONLY), style=wx.TE_RIGHT)
+        self.txt_from.Value = '{:.16g}'.format(self.rng[0])
+        self.txt_to.Value = '{:.16g}'.format(self.rng[1])
+        self.txt_pts.Value = '1000'
+
+    def layout(self):
+        box = wx.BoxSizer(wx.VERTICAL)
+        box.Add(self.chk_comp, 1, wx.ALL|wx.EXPAND|wx.ALL, 2)
+
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+
+        gbox = wx.FlexGridSizer(cols=2,hgap=2,vgap=2)
+        st = wx.ALIGN_CENTER_VERTICAL|wx.EXPAND
+        gbox.Add(wx.StaticText(self.p, label='From'), 0, st)
+        gbox.Add(self.txt_from, 0, st)
+        gbox.Add(wx.StaticText(self.p, label='To'), 0, st)
+        gbox.Add(self.txt_to, 0, st)
+        gbox.Add(wx.StaticText(self.p, label='Points'), 0, st)
+        gbox.Add(self.txt_pts, 0, st)
+        hbox.Add(wx.Window(self.p), 1)
+        hbox.Add(gbox)
+        box.Add(hbox, 0, wx.EXPAND|wx.ALL, 2)
+
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(wx.Window(self.p), 1)
+        hbox.Add(self.btn_cancel, 0, wx.ALL, 2)
+        hbox.Add(self.btn_loadpeaks, 0, wx.ALL, 2)
+        box.Add(hbox, 0, wx.EXPAND|wx.TOP, 5)
+        self.p.SetSizer(box)
+        self.p.Layout()
+        fbox = wx.BoxSizer(wx.VERTICAL)
+        fbox.Add(self.p, 1, wx.EXPAND|wx.ALL, 5)
+        self.SetSizer(fbox)
+        self.Fit()
+
+class dlg_export_parameters(wx.Dialog):
+    def __init__(self, parent, parameters):
+        super(dlg_export_parameters, self).__init__(parent, title='Export parameters',
+                                                 style=wx.DEFAULT_DIALOG_STYLE|wx.STAY_ON_TOP)
+
+        self.parameters = parameters
+
+        self.setup_controls()
+        self.layout()
+
+        self.Bind(wx.EVT_BUTTON, self.OnClose, id=wx.ID_CANCEL)
+
+    def OnClose(self, evt):
+        self.Destroy()
+
+    def setup_controls(self):
+        self.p = wx.Panel(self, style=wx.WS_EX_VALIDATE_RECURSIVELY)
+
+        self.chk_pars = wx.CheckListBox(self.p, choices=self.parameters)
+        for n in range(len(self.parameters)):
+            self.chk_pars.Check(n, True)
+        self.btn_cancel = wx.Button(self.p, label='Cancel', id=wx.ID_CANCEL)
+        self.btn_export = wx.Button(self.p, label='Create')
+        self.chk_error = wx.CheckBox(self.p, label='Include errors')
+
+    def layout(self):
+        box = wx.BoxSizer(wx.VERTICAL)
+        box.Add(self.chk_pars, 1, wx.ALL | wx.EXPAND | wx.ALL, 2)
+        box.Add(self.chk_error, 0, wx.ALL | wx.EXPAND | wx.ALL, 2)
+
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(wx.Window(self.p), 1)
+        hbox.Add(self.btn_cancel, 0, wx.ALL, 2)
+        hbox.Add(self.btn_export, 0, wx.ALL, 2)
+        box.Add(hbox, 0, wx.EXPAND|wx.TOP, 5)
+        self.p.SetSizer(box)
+        self.p.Layout()
+        fbox = wx.BoxSizer(wx.VERTICAL)
+        fbox.Add(self.p, 1, wx.EXPAND|wx.ALL, 5)
+        self.SetSizer(fbox)
+        self.Fit()
+
 class FitParsPanel(wx.Panel):
     def __init__(self, parent):
         super(FitParsPanel, self).__init__(parent, name='tab_parameters')
@@ -229,15 +323,12 @@ class FitParsPanel(wx.Panel):
 
         self.btn_pickpars = wx.Button(self, label='Pick', style=wx.BU_EXACTFIT)
         self.ch_pickpars = wx.Choice(self, size=(70,-1))
-        self.btn_loadpeaks = wx.Button(self, label='Create', style=wx.BU_EXACTFIT)
-        self.ch_loadpeaks = wx.Choice(self, size=(70,-1))
-        self.txt_from = wx.TextCtrl(self, size=(70,-1), validator=controls.InputValidator(controls.FLOAT_ONLY))
-        self.txt_to = wx.TextCtrl(self, size=(70,-1), validator=controls.InputValidator(controls.FLOAT_ONLY))
-        self.txt_pts = wx.TextCtrl(self, size=(70,-1), style=wx.TE_RIGHT, value='500', validator=controls.InputValidator(controls.INT_ONLY))
 
-        self.btn_parexport = wx.Button(self, label='Export', style=wx.BU_EXACTFIT)
-        self.ch_parexport = wx.Choice(self, size=(70,-1))
-        self.cb_errors = wx.CheckBox(self, label='with errors')
+        self.btn_generateset = wx.Button(self, label='Generate dataset')
+
+        self.btn_parexport = wx.Button(self, label='Export parameters')
+        #self.ch_parexport = wx.Choice(self, size=(70,-1))
+        #self.cb_errors = wx.CheckBox(self, label='with errors')
 
         self.btn_fit_quick = wx.Button(self, label='Fit')
 
@@ -246,32 +337,14 @@ class FitParsPanel(wx.Panel):
 
         outer = wx.BoxSizer(wx.HORIZONTAL)
         col = wx.BoxSizer(wx.VERTICAL)
-        col.Add(wx.StaticText(self, label='Parameter picking'), 0, wx.BOTTOM, 5)
+        col.Add(wx.StaticText(self, label='Initial guess'), 0, wx.BOTTOM, 5)
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(self.btn_pickpars, 0, rowstyle|wx.RIGHT, 5)
         row.Add(self.ch_pickpars, 0, rowstyle)
-        col.Add(row, 0, wx.EXPAND|wx.BOTTOM, 10)
+        col.Add(row, 0, wx.EXPAND|wx.BOTTOM, 20)
 
-        col.Add(wx.StaticText(self, label='Parameter export'), 0, wx.BOTTOM, 5)
-        row = wx.BoxSizer(wx.HORIZONTAL)
-        row.Add(self.btn_parexport, 0, rowstyle|wx.RIGHT, 5)
-        row.Add(self.ch_parexport, 0, rowstyle|wx.RIGHT, 5)
-        row.Add(self.cb_errors, 0, rowstyle)
-        col.Add(row, 0, wx.EXPAND|wx.BOTTOM, 10)
-
-        col.Add(wx.StaticText(self, label='Create set from model'), 0, wx.BOTTOM, 5)
-        row = wx.BoxSizer(wx.HORIZONTAL)
-        row.Add(self.btn_loadpeaks, 0, rowstyle|wx.RIGHT, 5)
-        row.Add(self.ch_loadpeaks, 0, rowstyle)
-        col.Add(row, 0, wx.EXPAND|wx.BOTTOM, 5)
-        row = wx.BoxSizer(wx.HORIZONTAL)
-        row.Add(wx.StaticText(self, label='XMin'), 0, rowstyle|wx.RIGHT,2)
-        row.Add(self.txt_from, 0, rowstyle|wx.RIGHT, 5)
-        row.Add(wx.StaticText(self, label='XMax'), 0, rowstyle|wx.RIGHT,2)
-        row.Add(self.txt_to, 0, rowstyle|wx.RIGHT, 5)
-        row.Add(wx.StaticText(self, label='Points'), 0, rowstyle|wx.RIGHT,2)
-        row.Add(self.txt_pts, 0, rowstyle|wx.RIGHT, 5)
-        col.Add(row, 0, wx.EXPAND|wx.BOTTOM, 10)
+        col.Add(self.btn_generateset, 0, wx.BOTTOM, 5)
+        col.Add(self.btn_parexport, 0, wx.EXPAND|wx.BOTTOM, 20)
 
         row = wx.BoxSizer(wx.HORIZONTAL)
         #row.Add(wx.Window(self), 1)
@@ -390,31 +463,6 @@ class FitPanel(wx.Panel):
         self.nb_fit.AddPage(self.pan_options, 'Options')
         self.nb_fit.AddPage(self.pan_batch, 'Batch fit')
 
-        parent = self.GetParent()
-        return
-
-
-
-        #self.btn_bf_loadpeaks = wx.FindWindowByName('btn_bf_loadpeaks', self)
-        #self.ch_bf_loadpeaks = wx.FindWindowByName('ch_bf_loadpeaks', self)
-
-
-        #self.pan_batch = wx.FindWindowByName('tab_batchfit', self)
-        #self.ch_bf_base = wx.FindWindowByName('cho_base', self.pan_batch)
-        #self.ch_bf_initial = wx.FindWindowByName('cho_initial', self.pan_batch)
-        #self.ch_bf_order = wx.FindWindowByName('cho_order', self.pan_batch)
-
-
-        #self.btn_fit = wx.FindWindowByName('btn_fit', self)
-        #self.btn_fit_quick = wx.FindWindowByName('btn_fit_quick', self)
-
-
-
-        #self.tab_parameters = wx.FindWindowByName('tab_parameters', self)
-        #self.tab_fit = wx.FindWindowByName('tab_fit', self)
-        #self.tab_weights = wx.FindWindowByName('tab_weights', self)
-
-
     def progress_dialog(self, max=0, step=None):
         if step is not None:
             self.count += 1
@@ -438,40 +486,6 @@ class FitPanel(wx.Panel):
         self.pan_model.txt_model.ChangeValue(value)
         self.pan_model.txt_model.SetInsertionPoint(ins)
     model = property(_get_model, _set_model)
-    
-    def _get_nbpage(self):
-        return self.nb_fit.GetPage()
-    def _set_nbpage(self, num):
-        self.nb_fit.SetSelection(num)
-    nbpage = property(_get_nbpage, _set_nbpage)
-    
-    def _get_nbpages(self):
-        return self.nb_fit.GetPageCount()
-    nbpages = property(_get_nbpages)
-
-    def _get_load_range(self):
-        xmin, xmax = [float(x) for x in [i.GetValue() for i in [self.pan_pars.txt_from,self.pan_pars.txt_to]]]
-        return xmin,xmax
-    def _set_load_range(self, xr):
-        xmin, xmax = xr
-        self.pan_pars.txt_from.SetValue(str(xmin))
-        self.pan_pars.txt_to.SetValue(str(xmax))
-    loadrange = property(_get_load_range,_set_load_range)
-
-    def _set_loadwhich_choice(self, items):
-        self.pan_pars.ch_loadpeaks.Freeze()
-        self.pan_pars.ch_loadpeaks.Clear()
-        for item in items:
-            self.pan_pars.ch_loadpeaks.Append(str(item))
-        self.pan_pars.ch_loadpeaks.SetSelection(0)
-        self.pan_pars.ch_loadpeaks.Thaw()
-    loadwhich_choice = property(fset=_set_loadwhich_choice)
-
-    def _get_loadwhich(self):
-        return self.pan_pars.ch_loadpeaks.GetSelection()
-    def _set_loadwhich(self, sel):
-        self.pan_pars.ch_loadpeaks.SetSelection(sel)
-    loadwhich = property(_get_loadwhich,_set_loadwhich)
 
     def _set_pickwhich_choice(self, items):
         self.pan_pars.ch_pickpars.Freeze()
@@ -488,28 +502,15 @@ class FitPanel(wx.Panel):
         self.pan_pars.ch_pickpars.SetSelection(sel)
     pickwhich = property(_get_pickwhich,_set_pickwhich)
 
-    def _get_loadpts(self):
-        return int(self.pan_pars.txt_pts.Value)
-    loadpts = property(_get_loadpts)
-
-    def _get_exportwhich(self):
-        return self.pan_pars.ch_parexport.GetStringSelection()
-    def _set_exportwhich(self, sel):
-        self.pan_pars.ch_parexport.SetStringSelection(sel)
-    exportwhich = property(_get_exportwhich, _set_exportwhich)
+    def _get_nbpage(self):
+        return self.nb_fit.GetPage()
+    def _set_nbpage(self, num):
+        self.nb_fit.SetSelection(num)
+    nbpage = property(_get_nbpage, _set_nbpage)
     
-    def _set_exportwhich_choice(self, items):
-        self.pan_pars.ch_parexport.Freeze()
-        self.pan_pars.ch_parexport.Clear()
-        for item in items:
-            self.pan_pars.ch_parexport.Append(str(item))
-        self.pan_pars.ch_parexport.SetSelection(0)
-        self.pan_pars.ch_parexport.Thaw()
-    exportwhich_choice = property(fset=_set_exportwhich_choice)
-
-    def _get_exporterrors(self):
-        return self.pan_pars.cb_errors.IsChecked()
-    exporterrors = property(_get_exporterrors)
+    def _get_nbpages(self):
+        return self.nb_fit.GetPageCount()
+    nbpages = property(_get_nbpages)
 
     def _get_fittype(self):
         return self.pan_options.ch_fittype.GetSelection()
@@ -543,9 +544,7 @@ class FitPanel(wx.Panel):
     def enable_fit(self, state):
         #self.btn_fit.Enable(state)
         self.pan_pars.btn_fit_quick.Enable(state)
-        self.pan_pars.ch_loadpeaks.Enable(state)
-        self.pan_pars.btn_loadpeaks.Enable(state)
-        self.pan_pars.ch_parexport.Enable(state)
+        self.pan_pars.btn_generateset.Enable(state)
         self.pan_pars.btn_parexport.Enable(state)
 
     def enable_pick(self, state):
@@ -567,10 +566,12 @@ if __name__ == '__main__':
 
     app = wit.InspectableApp()
 
-    pans = [FitModelPanel, FitParsPanel, FitWeightsPanel, FitPanel]
-    for p in pans:
-        f = wx.Frame(None)
-        p = p(f)
-        f.Show()
+    #pans = [FitModelPanel, FitParsPanel, FitWeightsPanel, FitPanel]
+    #for p in pans:
+    #    f = wx.Frame(None)
+    #    p = p(f)
+    #    f.Show()
 
+    f = dlg_export_parameters(None, ['a', 'b', 'c'])
+    f.Show()
     app.MainLoop()
