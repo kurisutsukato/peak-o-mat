@@ -117,7 +117,7 @@ class Controller(object):
 
         if view is not None:
             self.load_modules()
-            fitview = fitpanel.FitPanel(self.view)
+            fitview = fitpanel.FitPanel(self.view, self.view.canvas)
 
             self.view._mgr.AddPane(fitview, aui.AuiPaneInfo().Name('fit').
                               Caption('Fit').
