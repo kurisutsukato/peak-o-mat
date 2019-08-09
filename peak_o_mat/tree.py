@@ -194,17 +194,17 @@ class TreeCtrl(CustomTreeCtrl):
         
         for id,text,act in self.menumap:
             item = wx.MenuItem(self.menu, id=id, text=text)
-            item = self.menu.AppendItem(item)
+            item = self.menu.Append(item)
             if act is not None:
                 self.Bind(wx.EVT_MENU, act, item)
                 if text.find('Plot') != -1:
                     self.Bind(wx.EVT_UPDATE_UI, self.OnUIMenu, item)
                 
         item = wx.MenuItem(self.minimal_menu, id=-1, text='paste')
-        item = self.minimal_menu.AppendItem(item)
+        item = self.minimal_menu.Append(item)
         self.Bind(wx.EVT_MENU, self.OnPaste, item)
         item = wx.MenuItem(self.minimal_menu, id=-1, text='add_plot')
-        item = self.minimal_menu.AppendItem(item)
+        item = self.minimal_menu.Append(item)
         self.Bind(wx.EVT_MENU, self.OnAddPlot, item)
 
     def OnUIMenu(self, evt):

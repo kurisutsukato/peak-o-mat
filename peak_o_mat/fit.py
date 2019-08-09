@@ -124,8 +124,8 @@ def pprint(result):
     return out
 
 class Fit:
-    def __init__(self, ds, model, fittype=1, maxiter=50, stepsize=-1, autostep=True):
-        fittype = [0,2][fittype]
+    def __init__(self, ds, model, fittype=0, maxiter=50, stepsize=-1, autostep=True):
+        fittype = [2,0][fittype]
         self.ds = copy.deepcopy(ds)
         self.func = QuickEvaluate(copy.deepcopy(model))
 

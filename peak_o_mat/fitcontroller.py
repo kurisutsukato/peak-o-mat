@@ -104,6 +104,7 @@ class FitController(object):
 
     def selection_changed(self, plot, dataset):
         #print('fitcontroller selection changed',plot,dataset)
+
         self._current_ds = None if len(dataset) != 1 else dataset[0]
         plot_changed = self._current_pl != plot
         self._current_pl = plot

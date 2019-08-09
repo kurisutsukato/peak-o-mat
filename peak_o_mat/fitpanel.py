@@ -352,7 +352,7 @@ class FitParsPanel(wx.Panel):
         col.Add(row, 0, wx.EXPAND)
         outer.Add(col, 0, wx.EXPAND|wx.ALL, 5)
 
-        outer.Add(self.pargrid, 1, wx.EXPAND|wx.ALL, 5)
+        outer.Add(self.pargrid, 1, wx.EXPAND|wx.ALL|wx.FIXED_MINSIZE, 5)
         self.SetSizer(outer)
         self.Fit()
 
@@ -400,6 +400,7 @@ class FitOptionsPanel(wx.Panel):
         self.txt_maxiter = wx.TextCtrl(self, value='200', validator=controls.InputValidator(controls.INT_ONLY), size=(70,-1), style=wx.TE_RIGHT)
         self.txt_fitlog = wx.TextCtrl(self, style=wx.TE_MULTILINE|wx.TE_READONLY)
         self.ch_fittype  = wx.Choice(self, choices=['LeastSQ', 'ODR'])
+        self.ch_fittype.Select(0)
 
     def layout(self):
         rowstyle = wx.ALIGN_CENTER_VERTICAL
@@ -431,12 +432,10 @@ class FitOptionsPanel(wx.Panel):
         self.Fit()
 
 class FitPanel(wx.Panel):
-    def __init__(self, parent):
+    def __init__(self, parent, canvas):
+        self.canvas = canvas
         self.parent = parent
         super(FitPanel, self).__init__(parent)
-
-        #TODO: kann man das auch anders machen?
-        self.canvas = wx.FindWindowByName('canvas')
 
         self.setup_controls()
         self.layout()
