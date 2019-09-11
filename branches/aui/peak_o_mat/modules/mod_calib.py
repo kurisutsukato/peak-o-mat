@@ -1,10 +1,9 @@
 import wx
-from wx.lib.pubsub import pub as Publisher
+from pubsub import pub
 import wx.dataview as dv
 import wx.aui as aui
 
 import numpy as np
-from wx.lib.pubsub import pub
 from wx.lib.scrolledpanel import ScrolledPanel
 
 from peak_o_mat import module, spec, calib, controls, misc_ui, menu
@@ -30,23 +29,24 @@ class Panel(ScrolledPanel):
         self.xrc_btn_dispersion = wx.Button(self, label='Plot dispersion')
         self.xrc_btn_store = wx.Button(self, label='Save')
         self.xrc_btn_applystored = wx.Button(self, label='Restore')
+        self.xrc_chk_applytogroup = wx.CheckBox(self, label='Apply yo group')
         self.xrc_btn_apply = wx.Button(self, label='Apply')
 
     def layout(self):
-        outer = wx.BoxSizer(wx.HORIZONTAL)
+        outer = wx.BoxSizer(wx.VERTICAL)
+        inner = wx.BoxSizer(wx.HORIZONTAL)
         left = wx.BoxSizer(wx.VERTICAL)
         left.Add(self.xrc_grid, 1, flag=wx.ALL|wx.EXPAND, border=5)
 
         row = wx.BoxSizer(wx.HORIZONTAL)
+
         row.Add(wx.StaticText(self, label='Tolerance '), 0, wx.RIGHT|wx.EXPAND, 5)
-        row.Add(self.xrc_txt_tol, 1, wx.RIGHT|wx.EXPAND, 30)
+        row.Add(self.xrc_txt_tol, 1, wx.RIGHT|wx.EXPAND, 10)
         row.Add(wx.StaticText(self, label='Offset'), 0, wx.RIGHT|wx.EXPAND, 5)
         row.Add(self.xrc_txt_offset, 1, wx.ALL|wx.EXPAND)
         left.Add(row, 0, wx.EXPAND|wx.ALL, 5)
 
-        outer.Add(left,1,wx.EXPAND)
-
-        right = wx.BoxSizer(wx.VERTICAL)
+        inner.Add(left, 1, wx.EXPAND)
 
         col = wx.BoxSizer(wx.VERTICAL)
         grd = wx.FlexGridSizer(cols=2, hgap=15,vgap=5)
@@ -59,25 +59,29 @@ class Panel(ScrolledPanel):
         col.Add(grd, 1, wx.EXPAND|wx.ALL, 5)
 
         row = wx.BoxSizer(wx.HORIZONTAL)
-        row.Add(wx.StaticText(self, label='Order of regression'), 1, wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5)
-        row.Add(self.xrc_spin_order, 0, wx.FIXED_MINSIZE|wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5)
-        row.Add(self.xrc_btn_dispersion, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
-        col.Add(row, 0, wx.EXPAND|wx.ALL, 5)
-
-        row = wx.BoxSizer(wx.HORIZONTAL)
-        row.Add(wx.StaticText(self, label='Search pattern'), 1, wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTRE_VERTICAL, 5)
-        row.Add(self.xrc_btn_store, 0, wx.RIGHT|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.BU_EXACTFIT, 5)
-        row.Add(self.xrc_btn_applystored, 0, wx.EXPAND|wx.ALIGN_CENTRE_VERTICAL|wx.BU_EXACTFIT)
-        col.Add(row, 0, wx.ALL|wx.EXPAND, 5)
+        row.Add(wx.StaticText(self, label='Order of regression'), 1, flag=wx.ALL|wx.EXPAND, border=5)
+        row.Add(self.xrc_spin_order, 1, flag=wx.ALL|wx.EXPAND, border=5)
+        col.Add(row, 0, wx.EXPAND)
 
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(wx.Window(self), 1)
+        row.Add(self.xrc_btn_dispersion, 0, flag=wx.ALL|wx.EXPAND)
+        col.Add(row, 0, wx.EXPAND|wx.ALL, 5)
+
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        row.Add(wx.StaticText(self, label='Search pattern'), 1, flag=wx.ALL|wx.EXPAND, border=5)
+        row.Add(self.xrc_btn_store, 1, flag=wx.ALL|wx.EXPAND, border=5)
+        row.Add(self.xrc_btn_applystored, 1, flag=wx.ALL|wx.EXPAND, border=5)
+        col.Add(row, 0, wx.EXPAND)
+
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        row.Add(wx.Window(self), 1)
+        row.Add(self.xrc_chk_applytogroup, 1, flag=wx.ALL|wx.EXPAND, border=5)
         row.Add(self.xrc_btn_apply, 1, flag=wx.ALL|wx.EXPAND, border=5)
         col.Add(row, 0, wx.EXPAND)
-        right.Add(col, 0, wx.EXPAND)
-        outer.Add(right, 0, wx.EXPAND)
+        inner.Add(col, 0, wx.EXPAND)
+        outer.Add(inner, 1, wx.EXPAND)
         self.SetSizer(outer)
-        outer.SetSizeHints(self)#.GetParent())
         self.Fit()
 
         #fsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -134,7 +138,7 @@ class Module(module.BaseModule):
         self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApply, self.view.xrc_btn_dispersion)
         self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApplyStored, self.view.xrc_btn_applystored)
         
-        Publisher.subscribe(self.OnUpdate, (self.view_id, 'setattrchanged'))
+        pub.subscribe(self.OnUpdate, (self.view_id, 'setattrchanged'))
 
         super(Module, self).init()
 

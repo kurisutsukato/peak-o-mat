@@ -19,6 +19,10 @@ from . import fit
 
 from . import weights
 from .spec import Spec
+from functools import reduce
+
+from .findpeaks import indexes
+from .lineshapebase import lineshapes as ls
 
 class FitController(object):
     def __init__(self, selection_cb, view, interactor):
@@ -173,6 +177,35 @@ class FitController(object):
     
     def weights_changed(self):
         pub.sendMessage((self.view.id, 'fitctrl','plot'), msg=None)
+
+    def find_peaks(self):
+        p, s = self.selection
+        if len(s) == 1 and self.model is not None:
+            dset = s[0]
+            width = (dset.x[-1]-dset.x[0])/200.0
+
+            idx = indexes(dset.y)
+
+            numpeaks = len([True for f in self.model if str(f) in ls.peak])
+            if numpeaks == len(idx):
+
+                pos = np.take(dset.x, idx)
+                amp = np.take(dset.y, idx)
+
+                n = 0
+                for f in self.model:
+                    if str(f) in ls.peak:
+                        f.pos.value = pos[n]
+                        f.amp.value = amp[n]
+                        f.fwhm.value = width
+                        n += 1
+                    for k,v in f.items():
+                        if not np.isfinite(v.value):
+                            v.value = 0.0
+                self.got_pars()
+                pub.sendMessage((self.view.id, 'fitctrl','editpars'), msg=None)
+            else:
+                self.message('Found {} peaks but model has {} peak-like features'.format(len(idx), numpeaks))
 
     def analyze_model(self):
         if self.model is not None:
@@ -403,22 +436,28 @@ ValueError: invalid literal for int() with base 10: ''
         job = (ds, self.model, fitopts)
 
         self.sync_gui(fit_in_progress=True)
-        WorkerThread(self.view, job).start()
+        self.message('fitting....', blink=True, forever=True)
 
-        self.message('Fitting....', blink=True, forever=True)
+        self.worker = WorkerThread(self.view, job)
+        self.worker.start()
 
-    def fit_finished(self, msg):
-        self.message('')
+    def fit_finished(self, msgs):
+        self.message('%s: fit finshed'%self._current_ds.name)
+        self.worker.join()
 
-        self.sync_gui(fit_in_progress=False)
+        if self._current_ds is not None:
+            self.model.update_from_fit(self.worker.res)
+            self._current_ds.model = self.model.copy()
 
-        pub.sendMessage((self.view.id, 'updateview'))
+            self.sync_gui(fit_in_progress=False)
 
-        #self.message('%s: fit finshed'%ds.name)
-        #self.log(u'\'{}\' fit to {}\n'.format(ds.model,ds.name))
-        #self.log(u'\n'.join(msgs))
+            pub.sendMessage((self.view.id, 'updateview'))
 
-        pub.sendMessage((self.view.id, 'fitfinished'))
+            #self.message('%s: fit finshed'%ds.name)
+            #self.log(u'\'{}\' fit to {}\n'.format(ds.model,ds.name))
+            #self.log(u'\n'.join(msgs))
+            self.view.pan_options.txt_fitlog.SetValue('\n'.join(msgs))
+            pub.sendMessage((self.view.id, 'fitfinished'))
 
     def message(self, msg, target=1, blink=False, forever=False):
         event = misc_ui.ShoutEvent(self.view.GetId(), msg=msg, target=target, blink=blink, forever=forever)
@@ -457,9 +496,10 @@ class BatchWorker(Thread):
             pl[setnum].limits = pl[base].limits
             f = fit.Fit(pl[setnum], mod, **fitopts)
             res = f.run()
-            mod.update_from_fit(res)
-            pl[setnum].model = mod.copy()
-
+            #mod.update_from_fit(res)
+            #pl[setnum].model = mod.copy()
+            #TODO: das geht nicht, falscher thread
+			
         event = misc_ui.ResultEvent(self._notify.GetId(), endbatch='finished')
         wx.PostEvent(self._notify, event)
 
@@ -470,20 +510,15 @@ class WorkerThread(Thread):
         self._notify = notify
         self._job = job
         WorkerThread.threadnum += 1
-        self.stopreason = Event()
-
-    def join(self):
-        self.stopreason.set()
-        super(BatchWorker, self).join()
 
     def run(self):
         ds, mod, fitopts = self._job
         f = fit.Fit(ds, mod, **fitopts)
-        res = f.run()
-        mod.update_from_fit(res)
-        ds.model = mod.copy()
+        self.res = f.run()
+        #mod.update_from_fit(res)
+        #ds.model = mod.copy()
 
-        pars,errors,msg = res
+        pars,errors,msg = self.res
 
         event = misc_ui.ResultEvent(self._notify.GetId(), end=msg)
         wx.PostEvent(self._notify, event)

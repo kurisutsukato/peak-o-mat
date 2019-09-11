@@ -390,6 +390,7 @@ Update the model with the results from a fit.
         Evaluate the current model at positions x.
         single: if True, returns a list of all peaks evaluated
                 separately
+		restrict: list of tokens to be evaluated or None
         """
         
         x = np.atleast_1d(x)
@@ -544,8 +545,9 @@ class Component(dict):
         self.parse()
 
     def __str__(self):
-        pars = ', '.join(['{}={:.4g}'.format(q,p.value) for q,p in self.items()])
-        return '{}: {}'.format(self.name,pars)
+        #pars = ', '.join(['{}={:.4g}'.format(q,p.value) for q,p in self.items()])
+        #return '{}: {}'.format(self.name,pars)
+        return self.name
 
     def clear(self):
         for k in self.keys():
