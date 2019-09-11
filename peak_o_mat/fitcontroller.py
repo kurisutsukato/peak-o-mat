@@ -1,5 +1,5 @@
 import wx
-from wx.lib.pubsub import pub
+from pubsub import pub
 
 from operator import add
 import copy
@@ -72,7 +72,7 @@ class FitController(object):
     model = property(_get_model,_set_model)
 
     def refresh_pargrid(self):
-        print('fitcontroller:refresh_pragrid')
+        #print('fitcontroller:refresh_pragrid')
         self.view.pan_pars.pargrid.refresh()
     
     def set_limit_fitrange(self, state):
@@ -481,6 +481,7 @@ class BatchWorker(Thread):
     def run(self):
         msg = []
 
+        #TODO ist __job eine Kopie?
         pl, rng, base, initial, order, fitopts = self._job
         for n,setnum in enumerate(rng):
             if self.stopreason.is_set():
@@ -499,6 +500,8 @@ class BatchWorker(Thread):
             #mod.update_from_fit(res)
             #pl[setnum].model = mod.copy()
             #TODO: das geht nicht, falscher thread
+            event = misc_ui.ResultEvent(self._notify.GetId(), batchstep=res)
+            wx.PostEvent(self._notify, event)
 			
         event = misc_ui.ResultEvent(self._notify.GetId(), endbatch='finished')
         wx.PostEvent(self._notify, event)
