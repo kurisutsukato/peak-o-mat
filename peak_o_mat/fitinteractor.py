@@ -27,6 +27,7 @@ class FitInteractor(object):
 
         self.view.Bind(wx.EVT_BUTTON, self.OnPickParameters, self.view.pan_pars.btn_pickpars)
         self.view.Bind(wx.EVT_BUTTON, self.OnBtnGenerateSetDialog, self.view.pan_pars.btn_generateset)
+        self.view.Bind(wx.EVT_BUTTON, self.OnGuessParameters, self.view.pan_pars.btn_guesspars)
         self.view.Bind(wx.EVT_BUTTON, self.OnBtnExportDialog, self.view.pan_pars.btn_parexport)
 
         #self.view.Bind(wx.EVT_BUTTON, self.OnStartFit, self.view.btn_fit)
@@ -238,6 +239,9 @@ class FitInteractor(object):
 
     def OnSelectionChanged(self, plot, dataset):
         self.controller.selection_changed(plot, dataset)
+
+    def OnGuessParameters(self, evt):
+        self.controller.find_peaks()
 
     def OnPickParameters(self, evt):
         self.controller.start_pick_pars()

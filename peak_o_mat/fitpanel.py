@@ -323,7 +323,7 @@ class FitParsPanel(wx.Panel):
 
         self.btn_pickpars = wx.Button(self, label='Pick', style=wx.BU_EXACTFIT)
         self.ch_pickpars = wx.Choice(self, size=(70,-1))
-
+        self.btn_guesspars = wx.Button(self, label='Guess', style=wx.BU_EXACTFIT)
         self.btn_generateset = wx.Button(self, label='Generate dataset')
 
         self.btn_parexport = wx.Button(self, label='Export parameters')
@@ -341,6 +341,7 @@ class FitParsPanel(wx.Panel):
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(self.btn_pickpars, 0, rowstyle|wx.RIGHT, 5)
         row.Add(self.ch_pickpars, 0, rowstyle)
+        row.Add(self.btn_guesspars, 0, rowstyle|wx.LEFT, 15)
         col.Add(row, 0, wx.EXPAND|wx.BOTTOM, 20)
 
         col.Add(self.btn_generateset, 0, wx.BOTTOM, 5)

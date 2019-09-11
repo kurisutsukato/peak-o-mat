@@ -31,7 +31,7 @@ from scipy.integrate import simps
 eps = np.finfo(float).eps
 
 
-def indexes(y, thres=0.4, min_dist=1, thres_abs=False):
+def indexes(y, thres=0.3, min_dist=1, thres_abs=False):
     """Peak detection routine.
 
     Finds the numeric index of the peaks in *y* by taking its first order difference. By using
@@ -126,7 +126,7 @@ def indexes(y, thres=0.4, min_dist=1, thres_abs=False):
     return peaks
 
 
-def centroid(x, y):
+def _centroid(x, y):
     """Computes the centroid for the specified data.
     Refer to centroid2 for a more complete, albeit slower version.
 
@@ -145,7 +145,7 @@ def centroid(x, y):
     return np.sum(x * y) / np.sum(y)
 
 
-def centroid2(y, x=None, dx=1.0):
+def _centroid2(y, x=None, dx=1.0):
     """Computes the centroid for the specified data.
     Not intended to be used
 
@@ -171,7 +171,7 @@ def centroid2(y, x=None, dx=1.0):
     return centroid, np.sqrt(var)
 
 
-def gaussian(x, ampl, center, dev):
+def _gaussian(x, ampl, center, dev):
     """Computes the Gaussian function.
 
     Parameters
@@ -193,7 +193,7 @@ def gaussian(x, ampl, center, dev):
     return ampl * np.exp(-(x - float(center)) ** 2 / (2.0 * dev ** 2 + eps))
 
 
-def gaussian_fit(x, y, center_only=True):
+def _gaussian_fit(x, y, center_only=True):
     """Performs a Gaussian fitting of the specified data.
 
     Parameters
@@ -216,7 +216,7 @@ def gaussian_fit(x, y, center_only=True):
         raise RuntimeError("At least 3 points required for Gaussian fitting")
 
     initial = [np.max(y), x[0], (x[1] - x[0]) * 5]
-    params, pcov = optimize.curve_fit(gaussian, x, y, initial)
+    params, pcov = optimize.curve_fit(_gaussian, x, y, initial)
 
     if center_only:
         return params[1]
@@ -224,7 +224,7 @@ def gaussian_fit(x, y, center_only=True):
         return params
 
 
-def interpolate(x, y, ind=None, width=10, func=gaussian_fit):
+def _interpolate(x, y, ind=None, width=10, func=_gaussian_fit):
     """Tries to enhance the resolution of the peak detection by using
     Gaussian fitting, centroid computation or an arbitrary function on the
     neighborhood of each previously detected peak index.

@@ -267,7 +267,7 @@ avg : number of points to average
         for i in range(avg):
             newy = np.concatenate((newy,np.reshape(self.y[i:l-avg+i], (1,l-avg))))
         newy = sum(newy)/avg
-        s = avg/2
+        s = int(avg/2)
         e = avg-s
         newx = self.x[s:-e]
         if cp:
@@ -583,7 +583,7 @@ bbox : boundingbox of points to be removed
         res = self.join(other)
         return res
     
-    def __div__(self, other):
+    def __truediv__(self, other):
         if not isinstance(other, Spec):
             return Spec(self.x, self.y/other, '%s/%s'%(self.name,other))
         if not np.alltrue(self.x == other.x):
@@ -594,8 +594,6 @@ bbox : boundingbox of points to be removed
         else:
             ret =  Spec(self.x, np.divide(self.y,other.y), '%s/%s'%(self.name,other.name))
         return ret
-
-    __truediv__ = __div__
 
     def __mul__(self, other):
         if not isinstance(other, Spec):

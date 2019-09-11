@@ -17,7 +17,7 @@ import numpy as np
 np.seterr(over='ignore')
 
 import wx
-from wx.lib.pubsub import pub
+from pubsub import pub
 import wx.aui as aui
 
 import os
@@ -37,6 +37,8 @@ from . import misc
 from . import misc_ui
 
 from . import plotcanvas
+from . import config
+
 from . import fitpanel
 from . import fitcontroller
 from . import fitinteractor
@@ -299,7 +301,10 @@ class Controller(object):
                 if data.shape[1] > 2:
                     plotname = os.path.basename(p)
                     if not self._multicolumn_config:
-                        res = self.view.multicolumn_import_dialog(p, labels, len(path) > 1)
+                        if labels is not None:
+                            res = self.view.multicolumn_import_dialog(p, collabels=labels, multiple=len(path) > 1)
+                        else:
+                            res = self.view.multicolumn_import_dialog(p, multiple=len(path) > 1, numcols=data.shape[1])
                         if res is not None:
                             ordering, custom, apply_to_all = res
                             if apply_to_all:
@@ -982,7 +987,7 @@ class Controller(object):
                         x = set.x_limited
                         if len(x) > 0:
                             y = fit.evaluate(x)
-                            print('check y', y is False, y is None)
+                            #print('check y', y is False, y is None)
                             if y is not None:
                                 try:
                                     y1,y2 = y
@@ -998,7 +1003,7 @@ class Controller(object):
                         x = set.x_limited
                         if len(x) > 0:
                             y = set.mod.evaluate(x)
-                            print('check y', y is False, y is None)
+                            #print('check y', y is False, y is None)
                             if y is not None:
                                 try:
                                     y,y2 = y
@@ -1018,12 +1023,11 @@ class Controller(object):
                             for i in set.loadpeaks(set.mod, addbg=True):
                                 lines.append(plotcanvas.Line(i, colour='blue', skipbb=True))
                 else:
-                    #TODO: obsolete fast-display
-                    # if config.fast_display:
-                    #     skip = max(1,int(len(set.x)/config.fast_max_pts+.5))
-                    # else:
-                    #     skip = 1
-                    lines.append(Line(set.xy, colour='black'))
+                    if config.getboolean('general','fast_display'):
+                        skip = max(1,int(len(set.x)/config.getint('display', 'fast_max_pts')+.5))
+                    else:
+                        skip = 1
+                    lines.append(Line(set.xy[:,::skip], colour='black'))
             xr, yr = self.project[plot].rng
         for ptype, spec in self._modules.get_plot_objects():
             lines.append(getattr(plotcanvas,ptype)([spec.x,spec.y], colour=wx.Colour(0,0,250,180), width=1))
