@@ -41,9 +41,10 @@ class FitInteractor(object):
         #TODO: ist das in Ordnung so?
         wx.GetTopLevelParent(self.view).Bind(misc_ui.EVT_GOTPARS, self.OnGotPars)
         self.view.Bind(misc_ui.EVT_RESULT, self.OnFitResult)
+        self.view.Bind(misc_ui.EVT_BATCH_STEP, self.OnBatchfitStep)
 
-        self.view.pan_batch.btn_run.Bind(wx.EVT_BUTTON, self.OnRunBatchfit)
-        self.view.pan_batch.btn_stop.Bind(wx.EVT_BUTTON, self.OnStopBatchfit)
+        self.view.pan_batch.btn_run.Bind(wx.EVT_BUTTON, self.OnBatchfitStart)
+        self.view.pan_batch.btn_stop.Bind(wx.EVT_BUTTON, self.OnBatchfitStop)
 
         self.view.pan_batch.btn_generate.Bind(wx.EVT_BUTTON, self.OnGenerateDataset)
         self.view.pan_batch.btn_export.Bind(wx.EVT_BUTTON, self.OnBatchExport)
@@ -56,6 +57,7 @@ class FitInteractor(object):
         self.view.pan_weights.weightsgrid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.OnWeightsChanged)
 
         pub.subscribe(self.pubOnPlotAdded, (self.view.id, 'plot_added'))
+        pub.subscribe(self.pubDelmod, (self.view.id, 'delmod'))
 
     def listen_to_handles(self, listen=True):
         if listen:
@@ -67,6 +69,9 @@ class FitInteractor(object):
                 #em.eventManager.DeregisterListener(self.OnHandles)
             except KeyError:
                 pass
+
+    def pubDelmod(self):
+        self.controller.sync_gui(batch=True)
 
     def pubOnPlotAdded(self, plotlist):
         sel = self.view.pan_batch.ch_target.GetStringSelection()
@@ -131,10 +136,14 @@ class FitInteractor(object):
         self.view.pan_batch.btn_generate.Enable(complete)
         self.view.pan_batch.btn_export.Enable(complete)
 
-    def OnStopBatchfit(self, evt):
+    def OnBatchfitStep(self, evt):
+        _,_,msg = evt.result
+        self.controller.batch_step_result(evt.ds, evt.result)
+
+    def OnBatchfitStop(self, evt):
         self.controller.stop_batch_fit()
 
-    def OnRunBatchfit(self, evt):
+    def OnBatchfitStart(self, evt):
         fitopts = dict([('fittype',self.view.fittype), ('maxiter',self.view.maxiter), \
                         ('stepsize',self.view.stepsize), ('autostep',self.view.autostep)])
 
@@ -152,11 +161,11 @@ class FitInteractor(object):
             # TODO
             pub.sendMessage((self.view.id,'message'),msg='Fitting {}'.format(evt.name))
         elif hasattr(evt, 'endbatch'):
-            self.controller.fit_finished(evt.endbatch)
-            # TODO
-            #self.view.progress_dialog(step='Finished.')
+            self.controller.sync_gui(fit_in_progress=False, batch=True)
             self.view.pan_batch.btn_stop.Disable()
-            pub.sendMessage((self.view.id,'message'),msg='Batch fit {}.'.format(evt.endbatch))
+            pub.sendMessage((self.view.id,'message'),msg='Batch fit finished.')
+            pub.sendMessage((self.view.id, 'updateview'))
+
         elif hasattr(evt, 'end'):
             self.controller.fit_finished(evt.end)
 

@@ -1023,8 +1023,8 @@ class Controller(object):
                             for i in set.loadpeaks(set.mod, addbg=True):
                                 lines.append(plotcanvas.Line(i, colour='blue', skipbb=True))
                 else:
-                    if config.getboolean('general','fast_display'):
-                        skip = max(1,int(len(set.x)/config.getint('display', 'fast_max_pts')+.5))
+                    if config.getboolean('display','fast_display', fallback=False):
+                        skip = max(1,int(len(set.x)/config.getint('display', 'fast_max_pts', fallback=200)+.5))
                     else:
                         skip = 1
                     lines.append(Line(set.xy[:,::skip], colour='black'))
