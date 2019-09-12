@@ -117,8 +117,12 @@ class LData(list):
             out = []
             for i in item:
                 out.append(copy.deepcopy(self[i]))
+                if type(out[-1]) == PlotItem:
+                    out[-1].uuid = UUID.uuid4().hex
         else:
             out = copy.deepcopy(self[item])
+            if type(out) == PlotItem:
+                out.uuid = UUID.uuid4().hex
         return out
 
     def delete(self, item):
@@ -173,7 +177,17 @@ class LData(list):
                     self.append(item)
                 else:
                     raise
-        
+
+class Dataset(object):
+    type = 'dataset'
+    def __init__(self):
+        self.uuid = UUID.uuid4().hex
+
+class PlotItem(Spec, Dataset):
+    def __init__(self, *args):
+        Dataset.__init__(self)
+        Spec.__init__(self, *args)
+
 class Plot(LData):
     type = 'plot'
     def __init__(self, uuid=None, name=None):
@@ -192,6 +206,14 @@ class Plot(LData):
         dict['uuid'] = UUID.uuid4().hex
         dict['_references'] = []
         return dict
+
+    def __getitem__(self, item):
+        if type(item) in [int,slice]:
+            return super(Plot, self).__getitem__(item)
+        for p in self:
+            if p.uuid == item:
+                return p
+        raise KeyError('no dataset with uuid "{}"'.format(item))
 
     def _get_range(self):
         if type(self.xrng) == ndarray:
@@ -238,7 +260,7 @@ class Plot(LData):
                     lab = basename
                 else:
                     lab = '{} - col {}'.format(basename, n)
-                s = Spec(data[:,0], data[:,n], lab)
+                s = PlotItem(data[:,0], data[:,n], lab)
                 self.add(s)
         elif order == 'xyxy':
             for n in range(0,data.shape[1],2):
@@ -252,7 +274,7 @@ class Plot(LData):
                 else:
                     lab = '{} - col {}'.format(basename, n+1)
                 try:
-                    s = Spec(data[:,n], data[:,n+1], lab)
+                    s = PlotItem(data[:,n], data[:,n+1], lab)
                     self.add(s)
                 except IndexError: # impair number of columns
                     print('impair number of columns - skipped last column')
@@ -269,7 +291,7 @@ class Plot(LData):
                 else:
                     lab = '{} - col {}'.format(basename, y)
                 try:
-                    s = Spec(data[:,x], data[:,y], lab)
+                    s = PlotItem(data[:,x], data[:,y], lab)
                 except IndexError:
                     raise PomError('Column indices {},{} exceed available number of columns'.format(x,y))
                     continue
@@ -283,9 +305,9 @@ def xmlset2set(element):
     y = array([Float(q) for q in reg.split(attrs['y'].strip())])
     if 'y2' in attrs.keys():
         y2 = array([Float(q) for q in reg.split(attrs['y2'].strip())])
-        s = Spec(x,y,y2,deslash(attrs['name']))
+        s = PlotItem(x,y,y2,deslash(attrs['name']))
     else:
-        s = Spec(x,y,deslash(attrs['name']))
+        s = PlotItem(x,y,deslash(attrs['name']))
     s.hide = attrs.get('hide', False) ==  'True'
 
     for limits_elem in element.findall('limits'):
@@ -363,6 +385,13 @@ class Project(LData):
         self._figure_uuid = None
         self._figure_settings = None
         self._settings_element = None
+
+    def find_by_uuid(self, uuid):
+        for p in self:
+            for s in p:
+                if s.uuid == uuid:
+                    return s
+        return None
 
     def append_plot(self, name=None):
         return self.add(Plot(name=name))

@@ -115,12 +115,10 @@ def pprint(result):
 
     if hasattr(result, 'info'):
         out.append('Residual Variance: {}'.format(result.res_var))
-        out.append('Inverse Condition #: {}'.format(result.inv_condnum))
+        #out.append('Inverse Condition #: {}'.format(result.inv_condnum))
         if len(result.stopreason) > 0:
-            out.append('Reason(s) for Halting:')
-            for r in result.stopreason:
-                out.append('  {}'.format(r))
-    out.append('_'*60+'\n')
+            out.append('Reason(s) for Halting: ({})'.format(', '.join(result.stopreason)))
+
     return out
 
 class Fit:
@@ -149,7 +147,6 @@ class Fit:
         out = self.odr.run()
         pars, errors = self.func.fill(out.beta,out.sd_beta)
         msg = pprint(out)
-        print(msg)
 
         return pars,errors,msg
 

@@ -266,29 +266,7 @@ Just friends, lovers no more!
 
 ahora con m&#225;s razon me pregunto:
 &#191;que carajo estoy haciendo ac&#225;?
-</annotations><code name="new">from peak_o_mat.fit import Fit
-
-base_model = project[2][4].model
-limits = project[2][4].limits
-print base_model
-
-for s in project[2][-1::-1]:
-    mod = base_model.copy()
-    print s.name
-    s.limits = limits
-    f = Fit(s, mod)
-    res = f.run()
-    mod.update_from_fit(res)
-    s.model = mod#.copy()
-sync()</code><code name="new">for p in project:
-for p in project:
-for p in project:
-for p in project:
-for p in project:
-for p in project:
-
-				p.name = ''
-
-
-
-sync()</code></root>
+</annotations><code name="new">print(repr(aset),aset.uuid)
+import copy
+cp = copy.deepcopy(aset)
+print(repr(cp),cp.uuid)</code></root>

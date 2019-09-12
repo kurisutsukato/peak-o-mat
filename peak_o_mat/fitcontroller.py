@@ -96,7 +96,7 @@ class FitController(object):
         if self._last_page == 'tab_weights':
             self.stop_select_weights()
         self._last_page = name
-        wx.CallAfter(self.sync_gui)
+        self.sync_gui(batch=True)
 
     def sync_gui(self, **kwargs):
         if 'fit_in_progress' in kwargs:
@@ -106,39 +106,36 @@ class FitController(object):
         self.view.enable_pick(not self._fit_in_progress and self.model is not None and self._current_ds is not None and self.model.is_autopickable())
         self.view.pan_pars.Enable(self.model is not None and not self.model.is_empty())
 
-    def selection_changed(self, plot, dataset):
+        if 'batch' in kwargs and kwargs['batch']:
+            self.view.pan_batch.bf_update(self._current_pl, keep_selection=False)
+
+    def selection_changed(self, plot, ds):
         #print('fitcontroller selection changed',plot,dataset)
 
-        self._current_ds = None if len(dataset) != 1 else dataset[0]
+        self._current_ds = None if len(ds) != 1 else ds[0]
         plot_changed = self._current_pl != plot
         self._current_pl = plot
 
         if self._current_ds is not None:
-            dataset = self._current_ds
-            if dataset.weights is not None:
-                self.weights = dataset.weights
+            ds = self._current_ds
+            if ds.weights is not None:
+                self.weights = ds.weights
                 if self._current_page == 'tab_weights':
                     self.view.canvas.set_handles(self._weights.getBorders())
             else:
                 self.weights = copy.deepcopy(self._weights)
-            if dataset.mod is not None:
+            if ds.mod is not None:
                 old_model = self.model
-                self.model = copy.deepcopy(dataset.mod)
+                self.model = copy.deepcopy(ds.mod)
                 self.view.silent = True
-                self.view.model = dataset.mod.get_model_unicode()
-                if old_model != dataset.mod:
+                self.view.model = ds.mod.get_model_unicode()
+                if old_model != ds.mod:
                     self.update_parameter_panel()
                 self.view.silent = False
-            self.view.loadrange = dataset.xrng
-            self.view.limitfitrange = (dataset.limits is not None or dataset.mod is None)
+            self.view.loadrange = ds.xrng
+            self.view.limitfitrange = (ds.limits is not None or ds.mod is None)
 
-        if plot_changed:
-            # TODO
-            # gibt es einen grund zu updaten, wenn nur ein anderes ds angewahlt wird?
-
-            self.view.pan_batch.bf_update(self._current_pl, keep_selection=True)
-
-        wx.CallAfter(self.sync_gui)
+        self.sync_gui(batch=plot_changed)
 
     def update_parameter_panel(self):
         self.view.pickwhich_choice = ['all']+self.model.tokens.split(' ')
@@ -334,10 +331,7 @@ class FitController(object):
         return x,withmodel==len(x)
 
     def generate_dataset(self, xexpr, yexpr, target):
-        print(xexpr, yexpr)
-
         data = self._batch_parameters(xexpr, yexpr)
-        print(data)
         try:
             spec = [data.as_spec(c) for c in sorted(data.keys())]
         except IndexError:
@@ -410,21 +404,33 @@ class FitController(object):
 ValueError: invalid literal for int() with base 10: ''
 '''
 
-        self._base_ds = base = int(baseds_name[1:])
+        base = int(baseds_name[1:])
+        self._batchfit_plot = pl
+        self._batchfit_basemodel = copy.deepcopy(pl[base].model)
 
         if order == 0:
             rng = list(range(base-1,-1,-1))
         else:
             rng = list(range(base+1, len(pl)))
 
-        job = (pl, rng, base, initial, order, fitopts)
+        datasets = [copy.deepcopy(pl[q]) for q in rng]
+
+        job = (datasets, copy.deepcopy(pl[base]), initial, order, fitopts)
         #self.view.progress_dialog(len(rng))
-        self._batch_job = BatchWorker(self.view, job)
-        self._batch_job.start()
+        self._worker = BatchWorker(self.view, job)
+        self._worker.start()
+
+    def batch_step_result(self, dsuuid, result):
+        ds = self._batchfit_plot[dsuuid]
+        self._batchfit_basemodel.update_from_fit(result)
+        ds.model = copy.deepcopy(self._batchfit_basemodel)
+        self.view.pan_batch.txt_log.AppendText(ds.name+'\n')
+        self.view.pan_batch.txt_log.AppendText('\n'.join(result[-1]))
+        self.view.pan_batch.txt_log.AppendText('\n\n')
 
     def stop_batch_fit(self):
-        if hasattr(self, '_batch_job'):
-            self._batch_job.join()
+        if hasattr(self, '_worker'):
+            self._worker.join()
             self.message('Batch job canceled.')
 
     def start_fit(self, limit, fitopts):
@@ -438,18 +444,18 @@ ValueError: invalid literal for int() with base 10: ''
         self.sync_gui(fit_in_progress=True)
         self.message('fitting....', blink=True, forever=True)
 
-        self.worker = WorkerThread(self.view, job)
-        self.worker.start()
+        self._worker = WorkerThread(self.view, job)
+        self._worker.start()
 
     def fit_finished(self, msgs):
         self.message('%s: fit finshed'%self._current_ds.name)
-        self.worker.join()
+        self._worker.join()
 
         if self._current_ds is not None:
-            self.model.update_from_fit(self.worker.res)
+            self.model.update_from_fit(self._worker.res)
             self._current_ds.model = self.model.copy()
 
-            self.sync_gui(fit_in_progress=False)
+            self.sync_gui(fit_in_progress=False, batch=True)
 
             pub.sendMessage((self.view.id, 'updateview'))
 
@@ -482,25 +488,25 @@ class BatchWorker(Thread):
         msg = []
 
         #TODO ist __job eine Kopie?
-        pl, rng, base, initial, order, fitopts = self._job
-        for n,setnum in enumerate(rng):
+        datasets, base, initial, order, fitopts = self._job
+        for n,ds in enumerate(datasets):
             if self.stopreason.is_set():
                 return
-            event = misc_ui.ResultEvent(self._notify.GetId(), name=pl[setnum].name)
+            event = misc_ui.ResultEvent(self._notify.GetId(), name=ds.name)
             wx.PostEvent(self._notify, event)
             # TODO
             #
             time.sleep(0.01)
 
             if initial == 0 or n == 0:
-                mod = pl[base].mod.copy()
-            pl[setnum].limits = pl[base].limits
-            f = fit.Fit(pl[setnum], mod, **fitopts)
+                model = base.model
+            ds.limits = base.limits
+            f = fit.Fit(ds, model, **fitopts)
             res = f.run()
             #mod.update_from_fit(res)
             #pl[setnum].model = mod.copy()
             #TODO: das geht nicht, falscher thread
-            event = misc_ui.ResultEvent(self._notify.GetId(), batchstep=res)
+            event = misc_ui.BatchStepEvent(self._notify.GetId(), ds=ds.uuid, result=res)
             wx.PostEvent(self._notify, event)
 			
         event = misc_ui.ResultEvent(self._notify.GetId(), endbatch='finished')

@@ -22,6 +22,8 @@ import os
 from . import misc
 
 ResultEvent, EVT_RESULT = newevent.NewCommandEvent()
+BatchStepEvent, EVT_BATCH_STEP = newevent.NewCommandEvent()
+#ResultEvent, EVT_RESULT = newevent.NewCommandEvent()
 HandlesChangedEvent, EVT_HANDLES_CHANGED = newevent.NewCommandEvent()
 ShoutEvent, EVT_SHOUT = newevent.NewCommandEvent()
 ParEvent, EVT_GOTPARS = newevent.NewCommandEvent()

@@ -35,6 +35,8 @@ class FitBatchPanel(wx.Panel):
         self.Fit()
 
     def bf_update(self, plot, keep_selection=False):
+        if plot is None:
+            return
         sel_item = self.ch_base.GetSelection()
 
         self.ch_base.Clear()
@@ -71,9 +73,13 @@ class FitBatchPanel(wx.Panel):
         self.pan_pars = wx.Panel(self.nb_batch)
         self.nb_batch.AddPage(self.pan_pars, 'Fit')
 
-        self.ch_base = wx.Choice(self.pan_pars, choices=['s0'])
+        self.ch_base = wx.Choice(self.pan_pars, choices=[])
         self.ch_initial = wx.Choice(self.pan_pars, choices=['Base model','Last result'])
+        self.ch_initial.SetSelection(0)
         self.ch_order = wx.Choice(self.pan_pars, choices=['Towards lower index','Towards higher index'])
+        self.ch_order.SetSelection(0)
+
+        self.txt_log = wx.TextCtrl(self.pan_pars, style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_DONTWRAP)
 
         self.btn_stop = wx.Button(self.pan_pars, label='Stop')
         self.btn_stop.Disable()
@@ -101,6 +107,7 @@ class FitBatchPanel(wx.Panel):
 
         # fit
         outer = wx.BoxSizer(wx.VERTICAL)
+        inner = wx.BoxSizer(wx.HORIZONTAL)
         grid = wx.FlexGridSizer(cols=2, hgap=5, vgap=5)
         grid.Add(wx.StaticText(self.pan_pars, label='Base:'), 0, ACV)
         grid.Add(self.ch_base, 0, ACV|wx.ALIGN_RIGHT)
@@ -108,7 +115,10 @@ class FitBatchPanel(wx.Panel):
         grid.Add(self.ch_initial, 0, ACV|wx.ALIGN_RIGHT)
         grid.Add(wx.StaticText(self.pan_pars, label='Fit order:'), 0, ACV)
         grid.Add(self.ch_order, 0, ACV|wx.ALIGN_RIGHT)
-        outer.Add(grid, 0, wx.ALL, 5)
+        inner.Add(grid,0, wx.ALL, 5)
+        inner.Add(self.txt_log, 1, wx.ALL|wx.EXPAND, 5)
+
+        outer.Add(inner, 1, wx.ALL|wx.EXPAND, 5)
 
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(wx.Window(self.pan_pars), 1)
@@ -171,7 +181,7 @@ class FitBatchPanel(wx.Panel):
         # nb_batch
 
         box = wx.BoxSizer(wx.VERTICAL)
-        box.Add(self.nb_batch, 0, wx.EXPAND)
+        box.Add(self.nb_batch, 1, wx.EXPAND)
         self.SetSizer(box)
 
 class FitModelPanel(wx.Panel):

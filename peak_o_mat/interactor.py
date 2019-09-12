@@ -203,7 +203,7 @@ class Interactor(object):
             if self.controller.virgin:
                 self.controller.open_project(path)
             else:
-                pub.sendMessage(('new'),path=path)
+                pub.sendMessage((self.view_id, 'new'),path=path)
         else:
             self.view.msg_dialog('File not found: \'{}\''.format(path), 'Error')
 
@@ -239,6 +239,7 @@ class Interactor(object):
 
     def OnTreeRemFit(self, msg):
         self.controller.rem_attr('mod', only_sel=True)
+        pub.sendMessage((self.view_id,'delmod'))
 
     def OnTreeRemTrafo(self, msg):
         self.controller.rem_attr('trafo', only_sel=True)
@@ -403,7 +404,7 @@ class Interactor(object):
         self.controller.notes_close()
         
     def OnNew(self, evt):
-        pub.sendMessage(('new'))
+        pub.sendMessage((self.view_id, 'new'))
 
     def OnOpen(self, evt):
         path = self.view.load_file_dialog(misc.cwd())
@@ -413,7 +414,7 @@ class Interactor(object):
                 if self.controller.virgin:
                     self.controller.open_project(path)
                 else:
-                    pub.sendMessage(('new'),path=path)
+                    pub.sendMessage((self.view_id, 'new'),path=path)
             else:
                 self.view.msg_dialog('File not found: \'{}\''.format(path), 'Error')
 
