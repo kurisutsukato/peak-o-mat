@@ -317,8 +317,11 @@ class Module(module.BaseModule):
             ### TODO: remplace by message
             trafo = self.calib.trafo(self.calib.selection, int(self.view.xrc_spin_order.Value))
             plot,sets = self.parent_controller.selection
-            for set in sets:
-                self.parent_controller.project[plot][set].trafo.append(('x',trafo,'calib, %d lines'%len(self.calib.selection)))
+            if self.view.xrc_chk_applytogroup.IsChecked():
+                for ds in self.parent_controller.project[plot]:
+                    ds.trafo.append(('x',trafo,'calib, %d lines'%len(self.calib.selection)))
+            else:
+                self.parent_controller.project[plot][sets[0]].trafo.append(('x',trafo,'calib, %d lines'%len(self.calib.selection)))
             pub.sendMessage((self.view_id, 'updateplot'))
 
     def OnStore(self, evt):
