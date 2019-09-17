@@ -50,15 +50,14 @@ class XRCModule(module.XRCModule):
 
     def calc_background(self, dataset):
         x,y = dataset.xy
-        off = min(0,y.min())
-        y = y-off
 
         v = np.log(np.log(np.sqrt(y+1)+1)+1)
+        l = v.shape[0]
 
         for p in range(1,self.niter+1):
-            v = np.vstack((v, (roll(v,-p)+roll(v,+p))/2)).min(axis=0)
+            v[p:l-p] = np.minimum(v[p:l-p], (roll(v,-p)[p:l-p]+roll(v,+p)[p:l-p])/2)
         v = np.power(np.exp(np.exp(v)-1)-1,2)-1
-        return x,v+off
+        return x,v
 
     def update_background(self):
         self.niter = self.xrc_sl_iteration.Value
