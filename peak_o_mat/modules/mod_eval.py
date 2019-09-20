@@ -21,7 +21,7 @@ Eval Module
 import sys
 
 import wx
-from wx.lib.pubsub import pub
+from pubsub import pub
 
 import numpy as np
 from scipy.misc import comb as nOk

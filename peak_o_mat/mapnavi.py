@@ -3,7 +3,7 @@
 import wx
 import numpy as np
 from scipy import ndimage, misc
-from wx.lib.pubsub import pub
+from pubsub import pub
 
 from . import plotcanvas
 

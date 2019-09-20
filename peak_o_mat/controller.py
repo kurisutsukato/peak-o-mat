@@ -54,12 +54,14 @@ from .controls import FigureListController
 
 from .main import new_controller
 
-try:
-    from .plotserver import PlotServer
-    PLOTSERVER = True
-except ImportError:
-    print('plotserver not started, pyzmq was not found')
-    PLOTSERVER = False
+#TODO:
+#try:
+#    from .plotserver import PlotServer
+#    PLOTSERVER = True
+#except ImportError:
+#    print('plotserver not started, pyzmq was not found')
+#    PLOTSERVER = False
+PLOTSERVER = False
 
 from .appdata import configdir, logfile
 

@@ -1,6 +1,6 @@
 __author__ = 'ck'
 
-#from wx.lib.pubsub import pub as Publisher
+#from pubsub import pub as Publisher
 
 import numpy as np
 from wx import Bitmap

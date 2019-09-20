@@ -20,7 +20,7 @@ import wx
 import wx.aui as aui
 
 from wx import xrc
-from wx.lib.pubsub import pub
+from pubsub import pub
 import os, sys
 
 from . import misc

@@ -5,7 +5,7 @@ import wx.aui as aui
 #import wx.lib.platebtn as platebtn
 
 import  wx.lib.buttons  as  buttons
-from wx.lib.pubsub import pub
+from pubsub import pub
 from wx.lib import layoutf
 import wx.stc as stc
 

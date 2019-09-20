@@ -113,7 +113,6 @@ API-MS-Win-Security-Base-L1-1-0.dll
                                                 "dll_excludes": dll_excludes,
                                                 "bundle_files": 1,
                                                 "dist_dir": "dist",
-                                                'packages':['wx.lib.pubsub']
                                                 }}
             pom = {'name' : 'peak-o-mat',
                    'script' : 'peak-o-mat.py',

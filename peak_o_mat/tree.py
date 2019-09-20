@@ -21,7 +21,7 @@ import re
 import pickle
 import os
 
-from wx.lib.pubsub import pub
+from pubsub import pub
 from wx.lib.agw.customtreectrl import CustomTreeCtrl
 
 from . import spec, project, images

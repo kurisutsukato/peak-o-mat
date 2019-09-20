@@ -1,6 +1,6 @@
 
 import  wx
-from wx.lib.pubsub import pub
+from pubsub import pub
 
 import numpy as np
 from scipy.interpolate import interp1d

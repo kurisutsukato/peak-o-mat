@@ -17,7 +17,7 @@
 """New implementation based on SNIP algorithm"""
 
 import wx
-from wx.lib.pubsub import pub
+from pubsub import pub
 
 from peak_o_mat import module,spec,misc
 

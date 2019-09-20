@@ -20,7 +20,7 @@ etc.
 """
 
 import wx
-from wx.lib.pubsub import pub
+from pubsub import pub
 import wx.dataview as dv
 
 import re

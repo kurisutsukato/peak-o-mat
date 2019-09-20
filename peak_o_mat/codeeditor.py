@@ -2,7 +2,7 @@
 import wx
 
 from wx import stc
-from wx.lib.pubsub import pub
+from pubsub import pub
 import wx.lib.agw.flatnotebook as fnb
 
 import imp

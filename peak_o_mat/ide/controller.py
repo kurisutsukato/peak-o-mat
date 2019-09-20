@@ -1,7 +1,7 @@
 __author__ = 'kristukat'
 
 import wx.dataview as dv
-from wx.lib.pubsub import pub
+from pubsub import pub
 
 class AutoSortList(list):
     def append(self, item):

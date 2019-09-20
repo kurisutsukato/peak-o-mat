@@ -6,7 +6,7 @@ import argparse
 #os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 
-from wx.lib.pubsub import pub
+from pubsub import pub
 import wx
 
 import numpy as np

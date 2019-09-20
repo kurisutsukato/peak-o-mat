@@ -57,6 +57,7 @@ def create(plotserver=False):
     mb.Append(file_menu, 'File')
     mb.Append(data_menu, 'Data')
     mb.Append(view_menu, 'View')
+
     if plotserver:
         tools_menu = wx.Menu()
         append(tools_menu,'Start plot server')

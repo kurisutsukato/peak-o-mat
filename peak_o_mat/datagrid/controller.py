@@ -22,7 +22,7 @@ except ImportError:
     WIN32 = False
 
 import wx
-from wx.lib.pubsub import pub as Publisher
+from pubsub import pub as Publisher
 
 import numpy as np
     
