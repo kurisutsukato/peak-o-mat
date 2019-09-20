@@ -1,6 +1,6 @@
 
 import wx
-from wx.lib.pubsub import pub
+from pubsub import pub
 import re
 
 from . import misc_ui

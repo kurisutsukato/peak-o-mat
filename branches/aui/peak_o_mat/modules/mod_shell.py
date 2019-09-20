@@ -52,7 +52,7 @@ dataset
 
 from wx.py import shell
 import wx
-from wx.lib.pubsub import pub as Publisher
+from pubsub import pub as Publisher
 
 from tempfile import mkstemp
 from os import unlink, fdopen

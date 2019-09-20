@@ -21,7 +21,7 @@ Setinfo module
 import sys
 import wx
 import  wx.lib.mixins.listctrl  as  listmix
-from wx.lib.pubsub import pub
+from pubsub import pub
 
 import numpy as np
 

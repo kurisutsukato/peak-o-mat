@@ -1,5 +1,5 @@
-#from wx.lib.pubsub import setupkwargs
-from wx.lib.pubsub import pub
+#from pubsub import setupkwargs
+from pubsub import pub
 
 import wx
 import wx.aui as aui
@@ -38,7 +38,10 @@ class Interactor(object):
         self.view.Bind(wx.EVT_MENU, self.OnShowCodeeditor, id=menu_ids['Code Editor'])
         self.view.Bind(wx.EVT_MENU, self.OnShowDatagrid, id=menu_ids['Data Grid'])
         self.view.Bind(wx.EVT_MENU, self.OnShowNotes, id=menu_ids['Notepad'])
-        self.view.Bind(wx.EVT_MENU, self.OnStartServer, id=menu_ids['Start plot server'])
+        try:
+            self.view.Bind(wx.EVT_MENU, self.OnStartServer, id=menu_ids['Start plot server'])
+        except KeyError: #'no plotserver available'
+            pass
 
         self.view.Bind(wx.EVT_MENU, self.OnAbout, id=menu_ids['About'])
 

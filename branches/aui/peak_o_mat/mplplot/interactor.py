@@ -2,7 +2,7 @@ __author__ = 'ck'
 
 import wx
 import wx.dataview as dv
-from wx.lib.pubsub import pub as Publisher
+from pubsub import pub as Publisher
 from random import sample
 import os
 import textwrap

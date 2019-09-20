@@ -1,7 +1,7 @@
 import wx
 import wx.grid
 
-from wx.lib.pubsub import pub
+from pubsub import pub
 
 from wx.lib.agw import flatnotebook as fnb
 

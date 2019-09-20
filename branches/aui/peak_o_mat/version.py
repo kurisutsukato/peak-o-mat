@@ -70,7 +70,7 @@ if rev is not None:
 elif exists(svnrevfile):
     __version__ = open(svnrevfile).read()
 else:
-    __version__ = '1.2'
+    __version__ = '2.0a1'
 
 
 
