@@ -23,7 +23,6 @@ from wx.lib.splitter import MultiSplitterWindow
 
 from .. import images
 from .. import controls
-from ..menu import menu_ids
 
 ID_LOAD = wx.NewId()
 ID_SAVE = wx.NewId()
@@ -145,7 +144,7 @@ class GridContainer(wx.Frame):
         self.Show(False)
 
     def Show(self, state=True):
-        self.parent.menubar.FindItemById(menu_ids['Data Grid']).Check(state)
+        self.parent.menubar.FindItemById(self.parent.menu_factory.menu_ids['Data Grid']).Check(state)
         super(GridContainer, self).Show(state)
 
     def export_excel_dialog(self, choices):

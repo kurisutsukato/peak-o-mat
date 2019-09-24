@@ -107,7 +107,8 @@ class Module(module.BaseModule):
                                       Float().Dockable(True).Hide().
                                       Caption(self.title).Name(self.title))
         self.parent_view._mgr.Update()
-        menu.add_module(self.parent_controller.view.menubar, self.title)
+        self.parent_controller.view.menu_factory.add_module(self.parent_controller.view.menubar, self.title)
+        #menu.add_module(self.parent_controller.view.menubar, self.title)
 
         pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
 

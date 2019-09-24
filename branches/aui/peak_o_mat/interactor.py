@@ -8,7 +8,6 @@ from wx import xrc
 import os
 
 from . import misc_ui
-from .menu import menu_ids, module_menu_ids
 
 from . import misc
 
@@ -21,6 +20,9 @@ class Interactor(object):
     def Install(self, controller, view):
         self.controller = controller
         self.view = view
+
+        menu_ids = self.view.menu_factory.menu_ids
+        module_menu_ids = self.view.menu_factory.module_menu_ids
 
         def menuitem(name):
             return self.view.GetMenuBar().FindItemById(xrc.XRCID(name))
@@ -206,7 +208,7 @@ class Interactor(object):
             if self.controller.virgin:
                 self.controller.open_project(path)
             else:
-                pub.sendMessage((self.view_id, 'new'),path=path)
+                pub.sendMessage(('new'),path=path)
         else:
             self.view.msg_dialog('File not found: \'{}\''.format(path), 'Error')
 
@@ -407,7 +409,7 @@ class Interactor(object):
         self.controller.notes_close()
         
     def OnNew(self, evt):
-        pub.sendMessage((self.view_id, 'new'))
+        pub.sendMessage(('new'))
 
     def OnOpen(self, evt):
         path = self.view.load_file_dialog(misc.cwd())
@@ -417,7 +419,8 @@ class Interactor(object):
                 if self.controller.virgin:
                     self.controller.open_project(path)
                 else:
-                    pub.sendMessage((self.view_id, 'new'),path=path)
+                    pub.sendMessage(('new'),path=path)
+                    print('send new message')
             else:
                 self.view.msg_dialog('File not found: \'{}\''.format(path), 'Error')
 
