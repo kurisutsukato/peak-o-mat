@@ -48,6 +48,7 @@ def run():
     new_controller(lpj_path, silent, startapp=True)
 
 def new_controller(path=None, silent=True, startapp=False):
+    print('new controller')
     if startapp:
         app = wx.App()
         app.locale = wx.Locale(wx.LANGUAGE_ENGLISH)

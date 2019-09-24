@@ -134,7 +134,8 @@ class MyModule(module.Module):
             print('registering module \'%s\''%(self.name))
             #self.notebook.AddPage(self.panel, self.title, select=False)
             #pub.subscribe(self.OnPageChanged, (self.view_id, 'notebook','pagechanged'))
-            menu.add_module(controller.view.menubar, self.title)
+            #menu.add_module(controller.view.menubar, self.title)
+            controller.view.menu_factory.add_module(controller.view.menubar, self.title)
             pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
             pub.subscribe(self.focus_changed, (self.view_id, 'module', 'focuschanged'))
 

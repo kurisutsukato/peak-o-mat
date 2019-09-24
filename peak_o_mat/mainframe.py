@@ -166,12 +166,13 @@ class MainFrame(wx.Frame):
         self.frame_annotations.SetIcon(ico)
 
     def create_menus(self, plotserver=False):
-        mb = menu.create(plotserver=plotserver)
+        self.menu_factory = menu.MenuFactory()
+        mb = self.menu_factory.create(plotserver=plotserver)
         self.menubar = mb
         self.SetMenuBar(mb)
 
     def check_menu(self, item, state):
-        self.menubar.Check(menu.menu_ids[item], state)
+        self.menubar.Check(self.menu_factory.menu_ids[item], state)
         
     def get_filehistory(self):
         return [self.filehistory.GetHistoryFile(n) for n in reversed(list(range(self.filehistory.GetCount())))]
