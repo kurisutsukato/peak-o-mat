@@ -59,18 +59,12 @@ def guess_format(path):
                 try:
                     line = text[row].rstrip()
                 except IndexError:
-                    raise
                     break
-                print(_, line)
                 # try to guess the delimiter
                 for skipcol in range(2):
                     for delimiter in delimiters:
                         #print(row, '-{}-'.format(delimiter))
-                        try:
-                            line = line.rstrip(delimiter)
-                        except AttributeError:
-                            print(line)
-                            raise
+                        line = line.rstrip(delimiter)
                         try:
                             assert len([float(x.strip()) for x in re.split(delimiter,line)[skipcol:]]) >= 2
                         except AssertionError:
@@ -88,9 +82,9 @@ def guess_format(path):
                             tmp = []
                             mat = re.compile(delimiter)
                             try:
-                                for line in text[row:-1]:
-                                    line = mat.split(line.rstrip())
-                                    tmp.append([float(q) for q in line[skipcol:]])
+                                for _line in text[row:-1]:
+                                    _line = mat.split(line.rstrip())
+                                    tmp.append([float(q) for q in _line[skipcol:]])
                             except ValueError:
                                 pass
                             else:
