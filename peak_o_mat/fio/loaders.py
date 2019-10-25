@@ -87,6 +87,34 @@ def PPMLoader(path):
     data = np.loadtxt(path)
     return ['ang','counts'],data.take([2,0],axis=1).T
 
+import struct
+import array
+import numpy as np
+
+def spa_loader(path):
+    with open(path, 'rb') as f:
+        f.seek(30)
+        cmt = f.read(255).strip(b'\x00').decode('utf-8')
+
+        f.seek(564)
+        num_points = struct.unpack('<I', f.read(4))[0]
+
+        f.seek(576)
+        wmin, wmax = struct.unpack('<ff', f.read(8))
+
+        f.seek(288)
+
+        flag = 0
+        while flag != 3:
+            flag, offset = struct.unpack('<HH', f.read(4))
+
+        f.seek(offset)
+        intensities = array.array('f')
+        intensities.fromfile(f, num_points)
+
+        intensities = np.array(intensities)
+        wl = np.linspace(wmin, wmax, num_points)
+        return None, np.asarray([wl,intensities]).T
 
 def TXTLoader(path):
     """\
@@ -109,17 +137,23 @@ guess the columns delimiter and ignoring comments.
             for k in range(datastart - int(cl)):
                 datafile.readline()
             if cl:
-                collabels = datafile.readline().rstrip('\n').split(delimiter)[int(rl):]
+                collabels = mat.split(datafile.readline().rstrip().rstrip(delimiter))[int(rl):]
             for line in datafile:
+                line = line.rstrip().rstrip(delimiter)
                 if fpc:
                     line = line.replace(',', '.')
-                line = mat.split(line.rstrip('\n'))
+                line = mat.split(line.rstrip())
                 if rl:
                     rowlabels.append(line[0])
                 try:
                     data.append([float(q) for q in line[int(rl):]])
                 except ValueError:
-                    continue
+                    break
+
+        data = np.asarray(data)
+        r,c = data.shape
+        if r < 5 and c>r*2:
+            data = data.T
 
         return collabels if len(collabels) == len(data[0]) else None, np.asarray(data)
                #rowlabels if rowlabels != [] else None, \
@@ -135,7 +169,7 @@ class Loaders(OrderedDict):
 
 all = Loaders([
     ('.txt',{'wildcard':'Text files (*.txt)|*.txt', 'loader':TXTLoader}),
-    #('.dat',{'wildcard':'Geotherm Ergebnis files (*.dat)|*.dat', 'loader':DATLoader}),
+    ('.spa',{'wildcard':'Thermo Fisher (*.spa)|*.spa', 'loader':spa_loader}),
     #('.xml',{'wildcard':'Profilometer XML (*.xml)|*.xml', 'loader':XMLLoader}),
     #('.spc',{'wildcard':'Thermo Scientific (*.spc)|*.spc', 'loader':SPCLoader}),
     #('.pp',{'wildcard':'PPM XRR code (*.pp?)|*.pp?', 'loader':PPMLoader}),

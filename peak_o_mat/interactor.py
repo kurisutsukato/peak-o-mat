@@ -161,8 +161,8 @@ class Interactor(object):
         self.controller._modules[m].hide()
 
     def OnMenuShowHideModule(self, evt, mid):
-        self.view._mgr.GetPane(module_menu_ids[mid]).Show()
-        m = self.controller._modules[module_menu_ids[mid]]
+        self.view._mgr.GetPane(self.view.menu_factory.module_menu_ids[mid]).Show()
+        m = self.controller._modules[self.view.menu_factory.module_menu_ids[mid]]
         m.show()
         self.view._mgr.Update()
 

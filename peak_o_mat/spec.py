@@ -663,10 +663,10 @@ bbox : boundingbox of points to be removed
                 name = 'array'
             self._rawdata[1] -= other
             return self
-        if not np.alltrue(self.x == other.x):
+        if not np.alltrue(self._x == other._x):
             raise NotImplementedError('infix operation not possible between datasets with non equal x-axis')
         else:
-            self._rawdata[1] -= other.y
+            self._rawdata[1] -= other._y
             return self
 
     def __sub__(self, other):
