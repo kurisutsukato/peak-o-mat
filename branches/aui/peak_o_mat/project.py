@@ -254,10 +254,10 @@ class Plot(LData):
 
         if order == 'xyyy':
             for n in range(1,data.shape[1]):
-                if collabels is not None:
-                    lab = collabels[n]
-                elif data.shape[1] == 2:
+                if data.shape[1] == 2:
                     lab = basename
+                elif collabels is not None:
+                    lab = collabels[n]
                 else:
                     lab = '{} - col {}'.format(basename, n)
                 s = PlotItem(data[:,0], data[:,n], lab)

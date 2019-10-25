@@ -81,6 +81,7 @@ class XRCModule(module.XRCModule):
                 dataset = self.controller.project[p][s]
                 x,y = self.calc_background(dataset)
                 if evt.GetEventObject() == self.xrc_btn_substract:
+                    #TODO: das hatte mal nicht funktioniert im trunk
                     dataset -= y
                     pub.sendMessage((self.view_id, 'updateplot'))
                 else:

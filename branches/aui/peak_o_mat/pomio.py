@@ -231,7 +231,8 @@ def read_csv(path):
     
     return data, rlab, clab
 
-def __write_txt(path, data):
+def write_txt(path, data):
+    """used by datagrid"""
     np.savetxt(path, data, encoding='utf-8')
 
 def write_csv(path, data, rlab=None, clab=None, encoding=None):

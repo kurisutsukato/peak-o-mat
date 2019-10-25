@@ -379,7 +379,10 @@ class TreeCtrl(CustomTreeCtrl):
             wx.TheClipboard.Close()
             if success:
                 data = do.GetData()
-                data = pickle.loads(data)
+                try:
+                    data = pickle.loads(data)
+                except AttributeError:
+                    return False
                 return type(data) == spec.Spec or type(data) == project.Plot or type(data) == list
         return False
     
