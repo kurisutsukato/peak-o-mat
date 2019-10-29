@@ -146,7 +146,7 @@ guess the columns delimiter and ignoring comments.
                 if rl:
                     rowlabels.append(line[0])
                 try:
-                    data.append([float(q) for q in line[int(rl):]])
+                    data.append([float(q) for q in line[int(rl):] if q.strip() != ''])
                 except ValueError:
                     break
 

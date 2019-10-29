@@ -66,7 +66,7 @@ def guess_format(path):
                         #print(row, '-{}-'.format(delimiter))
                         line = line.rstrip(delimiter)
                         try:
-                            assert len([float(x.strip()) for x in re.split(delimiter,line)[skipcol:]]) >= 2
+                            assert len([float(x) for x in re.split(delimiter,line)[skipcol:] if x.strip() != '']) >= 2
                         except AssertionError:
                             #print('asert')
                             pass
@@ -83,8 +83,8 @@ def guess_format(path):
                             mat = re.compile(delimiter)
                             try:
                                 for _line in text[row:-1]:
-                                    _line = mat.split(line.rstrip())
-                                    tmp.append([float(q) for q in _line[skipcol:]])
+                                    _line = mat.split(_line.rstrip())
+                                    tmp.append([float(q) for q in _line[skipcol:] if q.strip() != ''])
                             except ValueError:
                                 pass
                             else:
@@ -106,7 +106,7 @@ def guess_format(path):
     mat = re.compile(delimiter)
 
     try:
-        data = [[float(x) for x in mat.split(line.rstrip())[skipcol:]] for line in text[datastart:-1]]
+        data = [[float(x) for x in mat.split(line.rstrip())[skipcol:] if x.strip() != ''] for line in text[datastart:-1]]
     except ValueError: # could happen if data is followed be rubbish
         data = []
         for line in text[datastart:-1]:
@@ -173,8 +173,8 @@ scan_nr_064_monot.tsv
 
 
 def test2():
-    guess_format(r'D:\proyectos\qubic\process\ti\xrr\P1_borde.csv')
-    guess_format(r'C:\Users\Christian\Dropbox (Personal)\docencia\TPs\analysis\TP2\datos parteIII\MEDIDA 1.txt')
+    #guess_format(r'D:\proyectos\qubic\process\ti\xrr\P1_borde.csv')
+    guess_format('led.txt.csv')
 
 if __name__ == '__main__':
     test2()
