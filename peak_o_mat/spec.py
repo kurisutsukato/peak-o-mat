@@ -81,13 +81,8 @@ name : short description of the data
             x,y,name = args
             data = np.asarray([x,y])
             self.data = data
-        elif len(args) == 4:
-            x,y,y2,name = args
-            data = np.asarray([x,y,y2])
-            self.data = data
         elif len(args) == 1:
             if isinstance(args[0], Spec):
-                #TODO: xyy2 kopieren
                 self.data = args[0].xy.copy()
                 self.mod = copy.deepcopy(args[0].mod)
                 name = 'copy_of_'+args[0].name
@@ -410,18 +405,15 @@ bbox : boundingbox of points to be removed
         return self.data.shape[0] == 3
 
     def _get_data(self, axis, unmasked=False, limited=False):
-        ind = ['x','y','y2'].index(axis)
+        ind = ['x','y'].index(axis)
         data = np.copy(self.data)
 
-        try:
-            locs = {'x': data[0], 'y': data[1], 'y2': data[2]}
-        except IndexError:
-            locs = {'x': data[0], 'y': data[1]}
+        locs = {'x': data[0], 'y': data[1]}
 
         for type,tr,comment,skip in self.trafo:
             if skip:
                 continue
-            data[['x','y','y2'].index(type),:] = eval(tr, pom_globals, locs)
+            data[['x','y'].index(type),:] = eval(tr, pom_globals, locs)
 
         if unmasked:
             if self._inverse:
@@ -479,17 +471,11 @@ bbox : boundingbox of points to be removed
     def _get_y_unmasked(self):
         return self._get_data('y', True)
 
-    def _get_y2(self):
-        return self._get_data('y2')
-
-    def _get_y2_unmasked(self):
-        return self._get_data('y2', True)
-
     def _get_xy(self):
         return np.array([self.x,self.y])
 
-    def _get_xyy2(self):
-        return np.array([self.x,self.y,self.y2])
+    def _get_xy(self):
+        return np.array([self.x,self.y])
 
     def _get_x_limited(self):
         if self.limits is not None:
@@ -522,28 +508,14 @@ bbox : boundingbox of points to be removed
         else:
             return self.xy
 
-    def _get_xyy2_limited(self):
-        if self.limits is not None:
-            si = np.argsort(self.x)
-            xs = np.take(self.x, si)
-            low,up = np.searchsorted(xs, self.limits)
-            idx = np.sort(si[low:up])
-            res = np.take(self.xyy2, idx, axis = 1)
-            return res
-        else:
-            return self.xyy2
-
     x = property(_get_x, doc='returns masked x-data including trafos')
     y = property(_get_y, doc='returns masked y-data including trafos')
-    y2 = property(_get_y2, doc='returns masked y2-data including trafos')
     _x = property(_get_x_unmasked, doc='returns unmasked x-data including trafos')
     _y = property(_get_y_unmasked, doc='returns unmasked y-data including trafos')
     x_limited = property(_get_x_limited, doc='returns masked x-data including trafos within limits')
     y_limited = property(_get_y_limited, doc='returns masked y-data including trafos within limits')
     xy = property(_get_xy, doc='returns masked x-y-data, shape(2,x)')
-    xyy2 = property(_get_xyy2, doc='returns masked x-y-y2-data, shape(3,x)')
     xy_limited = property(_get_xy_limited, doc='returns masked x-y-data within limits, shape(2,x)')
-    xyy2_limited = property(_get_xyy2_limited, doc='returns masked x-y-y2-data within limits, shape(2,x)')
 
     def __eq__(self, other):
         if not isinstance(other, Spec):
@@ -565,18 +537,6 @@ bbox : boundingbox of points to be removed
         
     def __len__(self):
         return len(self.x)
-
-    def __or__(self, other):
-        if not isinstance(other, Spec):
-            raise NotImplementedError('| operator used between non-Spec objects')
-        if not np.alltrue(self.x == other.x):
-            a, b = self._overlap(self.x, other.x)
-            interpolate = interp1d(other.x,other.y)
-            interp = interpolate(self.x[a:b])
-            ret = Spec(self.x[a:b], self.y[a:b], interp, '%s|%s'%(self.name,other.name))
-        else:
-            ret = Spec(self.x, self.y, other.y, '%s|%s'%(self.name,other.name))
-        return ret
 
     def __and__(self, other):
         if not isinstance(other, Spec):
@@ -757,12 +717,6 @@ class SpecTests(unittest.TestCase):
         self.s.trafo.append(('x','1/x','inverse'))
         self.assertEqual(self.s.x.tolist(),[0.125,0.1])
         self.assertEqual(self.s._get_x_unmasked().tolist(),[0.5,0.2,0.125,0.1])
-
-    def test_y2(self):
-        x = np.array([2,5,8,10],dtype=float)
-        y = np.sin(x)
-        y2 = np.cos(x)
-        s = Spec(x,y,y2,'unittest')
 
 if __name__ == '__main__':
     unittest.main()
