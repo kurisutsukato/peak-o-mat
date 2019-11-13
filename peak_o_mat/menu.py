@@ -26,7 +26,6 @@ class MenuFactory(object):
     def add_module(self, mb, name):
         menu = mb.GetMenu(2)
         count = menu.GetMenuItemCount()
-        print(count)
         if count > 9:
             count = 'SHIFT-{}'.format(count-10)
         self.module_menu_ids[menu.Append(wx.ID_ANY, '{}\tCTRL-{}'.format(name,count)).GetId()] = name
