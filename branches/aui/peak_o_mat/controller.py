@@ -24,7 +24,8 @@ import os
 import glob
 import re
 import imp
-import traceback
+from importlib import import_module
+import logging
 import codecs
 import inspect
 
@@ -399,14 +400,13 @@ class Controller(object):
                             self._modules.append(m)
 
         else:
-            for mod in modules.__all__:
+            for mod in modules.__all__+['er6']:
                 try:
-                    __import__('modules',globals(),locals(),[mod],1)
-                except:
+                    mod = import_module('.'+mod,'peak_o_mat.modules')
+                except Exception as _e:
                     print('unable to load module \'{}\''.format(mod))
+                    logging.error(logging.traceback.format_exc())
                 else:
-                    mod = getattr(modules, mod)
-
                     for name, obj in inspect.getmembers(mod):
                         if inspect.isclass(obj):
                             if hasattr(obj, '__base__') and obj.__base__ == module.XRCModule:
@@ -423,19 +423,23 @@ class Controller(object):
 
         for name in mods:
             try:
-                f,fname,descr = imp.find_module(name)
-                mod = imp.load_module(name, f, fname, descr)
-            except Exception as msg:
-                print('user module %s import error: %s'%(name, msg))
+                #f,fname,descr = imp.find_module(name)
+                #mod = imp.load_module(name, f, fname, descr)
+                mod = import_module(name)
+            except Exception as _e:
+                logging.error('unable to load module \'{}\''.format(name))
+                logging.error(logging.traceback.format_exc())
             else:
-                try:
-                    if mod.Module.__base__ == module.XRCModule:
-                        self._modules.append(mod.Module(self, mod.__doc__))
-                    elif mod.Module.__base__ == module.BaseModule:
-                        self._modules.append(mod.Module(self, self.view.nb_modules))
-                except Exception as msg:
-                    print('user module %s import error: %s'%(name, msg))
-        #print self._modules
+                for name, obj in inspect.getmembers(mod):
+                    if inspect.isclass(obj):
+                        if hasattr(obj, '__base__') and obj.__base__ == module.XRCModule:
+                            m = obj(self, mod.__doc__)
+                            self._modules.append(m)
+                        elif hasattr(obj, '__base__') and obj.__base__ == module.BaseModule:
+                            m = obj(self, self.view)
+                            self._modules.append(m)
+
+        #print(self._modules)
 
     def annotations_changed(self, txt):
         self.project.annotations = txt
@@ -836,7 +840,7 @@ class Controller(object):
             else:
                 self.pp_notify[0][1] -= 1
         if action == 'end':
-            self.active_set.mod = self.fit_controller.model
+            self.active_set.model = self.fit_controller.model
             self.freeze_canvas = False
             
     def load_set_from_model(self, model, which, xr, pts):
@@ -945,7 +949,7 @@ class Controller(object):
         self.view.canvas.SetYSpec('min')
 
         lines = []
-        set = None
+        ds = None
 
         def Line(data, colour, skipbb=False):
             if self.app_state.line_style == 0:
@@ -956,12 +960,12 @@ class Controller(object):
         if self.freeze_canvas and fit is not None:
             xr = self.view.canvas.GetXCurrentRange()
             yr = self.view.canvas.GetYCurrentRange()
-            set = self.active_set
+            ds = self.active_set
             lines = []
-            y = fit.evaluate(set.x)
+            y = fit.evaluate(ds.x)
             if y is not False:
-                lines.append(Line(set.xy,colour='red'))
-                lines.append(plotcanvas.Line([set.x,y], colour=wx.Colour(0,200,50), width=2, skipbb=True))
+                lines.append(Line(ds.xy,colour='red'))
+                lines.append(plotcanvas.Line([ds.x,y], colour=wx.Colour(0,200,50), width=2, skipbb=True))
                 self.view.canvas.Draw(plotcanvas.Graphics(lines),xr,yr)
             return
         else:
@@ -971,65 +975,57 @@ class Controller(object):
             plot,sel = self.selection
             if floating is not None:
                 lines.append(plotcanvas.Line([floating.x,floating.y], colour=wx.Colour(0,0,255,130), width=1, skipbb=True))
-            for sig,set in enumerate(self.project[plot]):
-                if set.hide and sig not in sel:
+            for sig,ds in enumerate(self.project[plot]):
+                if ds.hide and sig not in sel:
                     continue
                 if sig in sel:
-                    lines.append(Line(set.xy, 'red'))
-                    if set.has_second_y:
-                        x,y,y2 = set.xyy2
-                        lines.append(Line(np.vstack((x,y2)), 'pink'))
-                    if set.weights is not None:
-                        bounds_cb = set.weights.getBounds
-                        lines.append(plotcanvas.VSpan(set.xy,bounds_cb,colour=wx.Colour(0,0,255,80)))
+                    lines.append(Line(ds.xy, 'red'))
+                    if ds.weights is not None:
+                        bounds_cb = ds.weights.getBounds
+                        lines.append(plotcanvas.VSpan(ds.xy,bounds_cb,colour=wx.Colour(0,0,255,80)))
                     elif self.fit_controller.weights is not None:
                         bounds_cb = self.fit_controller.weights.getBounds
-                        lines.append(plotcanvas.VSpan(set.xy,bounds_cb,colour=wx.Colour(0,0,255,30)))
-                    if fit is not None:
-                        x = set.x_limited
-                        if len(x) > 0:
-                            y = fit.evaluate(x)
-                            #print('check y', y is False, y is None)
-                            if y is not None:
-                                try:
-                                    y1,y2 = y
-                                except ValueError:
+                        lines.append(plotcanvas.VSpan(ds.xy,bounds_cb,colour=wx.Colour(0,0,255,30)))
+                    if len(sel) == len(self.project[plot]) and len(self.project[plot]) > 1 and self.project[plot].model is not None:
+                        y = self.project[plot].model.evaluate(ds.x)[sig]
+                        if y is not None:
+                            lines.append(plotcanvas.Line([ds.x, y], colour=wx.Colour(0, 50, 200, 200), width=2,
+                                                         skipbb=True))
+
+                    else:
+                        if fit is not None:
+                            x = ds.x_limited
+                            if len(x) > 0:
+                                y = fit.evaluate(x)
+                                #print('check y', y is False, y is None)
+                                if y is not None:
+                                    if len(sel) == len(self.project[plot]) and len(self.project[plot]) > 1:
+                                        y = y[sig]
                                     lines.append(plotcanvas.Line([x, y], colour=wx.Colour(0, 200, 50, 200), width=2,
                                                                  skipbb=True))
-                                else:
-                                    lines.append(plotcanvas.Line([x, y1], colour=wx.Colour(0, 200, 50, 200), width=2,
-                                                                 skipbb=True))
-                                    lines.append(plotcanvas.Line([x, y2], colour=wx.Colour(0, 200, 50, 200), width=2,
-                                                                 skipbb=True))
-                    elif set.mod is not None:
-                        x = set.x_limited
-                        if len(x) > 0:
-                            y = set.mod.evaluate(x)
-                            #print('check y', y is False, y is None)
-                            if y is not None:
-                                try:
-                                    y,y2 = y
-                                except ValueError:
+                        elif ds.model is not None:
+                            x = ds.x_limited
+                            if len(x) > 0:
+                                y = ds.mod.evaluate(x)
+                                #print('check y', y is False, y is None)
+                                if y is not None:
+                                    if self.project[plot].model is not None and len(sel) == len(self.project[plot]) and len(self.project[plot]) > 1:
+                                        y = y[sig]
                                     lines.append(plotcanvas.Line([x, y], colour=wx.Colour(0, 200, 50, 200), width=2,
-                                                                 skipbb=True))
-                                else:
-                                    lines.append(plotcanvas.Line([x, y], colour=wx.Colour(0, 200, 50, 200), width=2,
-                                                                 skipbb=True))
-                                    lines.append(plotcanvas.Line([x, y2], colour=wx.Colour(0, 200, 50, 200), width=2,
                                                                  skipbb=True))
                     if self.app_state.show_peaks:
                         if fit is not None:
-                            for i in set.loadpeaks(fit, addbg=True):
+                            for i in ds.loadpeaks(fit, addbg=True):
                                 lines.append(plotcanvas.Line(i, colour='blue', skipbb=True))
-                        elif set.mod is not None:
-                            for i in set.loadpeaks(set.mod, addbg=True):
+                        elif ds.model is not None:
+                            for i in ds.loadpeaks(ds.model, addbg=True):
                                 lines.append(plotcanvas.Line(i, colour='blue', skipbb=True))
                 else:
                     if config.getboolean('display','fast_display', fallback=False):
-                        skip = max(1,int(len(set.x)/config.getint('display', 'fast_max_pts', fallback=200)+.5))
+                        skip = max(1,int(len(ds.x)/config.getint('display', 'fast_max_pts', fallback=200)+.5))
                     else:
                         skip = 1
-                    lines.append(Line(set.xy[:,::skip], colour='black'))
+                    lines.append(Line(ds.xy[:,::skip], colour='black'))
             xr, yr = self.project[plot].rng
         for ptype, spec in self._modules.get_plot_objects():
             lines.append(getattr(plotcanvas,ptype)([spec.x,spec.y], colour=wx.Colour(0,0,250,180), width=1))

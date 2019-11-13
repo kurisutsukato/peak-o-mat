@@ -33,7 +33,7 @@ class FitController(object):
         self.exportwhich = 'all'
         self._last_page = None
         self._current_page = None
-        self._current_ds = None
+        self._current_fititem = None
         self._current_pl = None
         self._fit_in_progress = False
 
@@ -102,8 +102,8 @@ class FitController(object):
         if 'fit_in_progress' in kwargs:
             self._fit_in_progress = kwargs['fit_in_progress']
 
-        self.view.enable_fit(not self._fit_in_progress and self.model is not None and self.model.is_filled() and self._current_ds is not None)
-        self.view.enable_pick(not self._fit_in_progress and self.model is not None and self._current_ds is not None and self.model.is_autopickable())
+        self.view.enable_fit(not self._fit_in_progress and self.model is not None and self.model.is_filled() and self._current_fititem is not None)
+        self.view.enable_pick(not self._fit_in_progress and self.model is not None and self._current_fititem is not None and self.model.is_autopickable())
         self.view.pan_pars.Enable(self.model is not None and not self.model.is_empty())
 
         if 'batch' in kwargs and kwargs['batch']:
@@ -112,28 +112,28 @@ class FitController(object):
     def selection_changed(self, plot, ds):
         #print('fitcontroller selection changed',plot,dataset)
 
-        self._current_ds = None if len(ds) != 1 else ds[0]
+        self._current_fititem = plot if len(ds) == len(plot) and len(plot) > 1 else (None if len(ds) > 1 or len(ds) == 0 else ds[0])
         plot_changed = self._current_pl != plot
         self._current_pl = plot
-
-        if self._current_ds is not None:
-            ds = self._current_ds
+        print('fc:selection changed',self._current_fititem)
+        if self._current_fititem is not None:
+            ds = self._current_fititem
             if ds.weights is not None:
                 self.weights = ds.weights
                 if self._current_page == 'tab_weights':
                     self.view.canvas.set_handles(self._weights.getBorders())
             else:
                 self.weights = copy.deepcopy(self._weights)
-            if ds.mod is not None:
+            if ds.model is not None:
                 old_model = self.model
-                self.model = copy.deepcopy(ds.mod)
+                self.model = copy.deepcopy(ds.model)
                 self.view.silent = True
-                self.view.model = ds.mod.get_model_unicode()
-                if old_model != ds.mod:
+                self.view.model = ds.model.get_model_unicode()
+                if old_model != ds.model:
                     self.update_parameter_panel()
                 self.view.silent = False
             self.view.loadrange = ds.xrng
-            self.view.limitfitrange = (ds.limits is not None or ds.mod is None)
+            self.view.limitfitrange = (ds.limits is not None or ds.model is None)
 
         self.sync_gui(batch=plot_changed)
 
@@ -435,11 +435,19 @@ ValueError: invalid literal for int() with base 10: ''
 
     def start_fit(self, limit, fitopts):
         pl,ds = self.selection
-        ds = ds[0]
-        if limit:
-            xr = self.view.canvas.GetXCurrentRange()
-            ds.limits = xr
-        job = (ds, self.model, fitopts)
+        if len(pl) == len(ds) and len(pl) > 1:
+            # multi spectra fit
+            if limit:
+                xr = self.view.canvas.GetXCurrentRange()
+                for dataset in ds:
+                    dataset.limits = xr
+            job = (pl, self.model, fitopts)
+        else:
+            ds = ds[0]
+            if limit:
+                xr = self.view.canvas.GetXCurrentRange()
+                ds.limits = xr
+            job = (ds, self.model, fitopts)
 
         self.sync_gui(fit_in_progress=True)
         self.message('fitting....', blink=True, forever=True)
@@ -448,12 +456,12 @@ ValueError: invalid literal for int() with base 10: ''
         self._worker.start()
 
     def fit_finished(self, msgs):
-        self.message('%s: fit finshed'%self._current_ds.name)
+        self.message('%s: fit finshed' % self._current_fititem.name)
         self._worker.join()
 
-        if self._current_ds is not None:
+        if self._current_fititem is not None:
             self.model.update_from_fit(self._worker.res)
-            self._current_ds.model = self.model.copy()
+            self._current_fititem.model = self.model.copy()
 
             self.sync_gui(fit_in_progress=False, batch=True)
 

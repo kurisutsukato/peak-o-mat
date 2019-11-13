@@ -198,6 +198,13 @@ class Plot(LData):
         if name is not None:
             self.name = name
 
+        #TODO ueberdenken, sind alles attribute der datasets
+
+        self.weights = None
+        self.xrng = None
+        self.limits = None
+        self.model = None
+
     def __repr__(self):
         return 'plot \'{}\' with {} set(s)'.format(self.name,len(self))
 
@@ -303,11 +310,7 @@ def xmlset2set(element):
     reg = re.compile(r'[\s,]+')
     x = array([Float(q) for q in reg.split(attrs['x'].strip())])
     y = array([Float(q) for q in reg.split(attrs['y'].strip())])
-    if 'y2' in attrs.keys():
-        y2 = array([Float(q) for q in reg.split(attrs['y2'].strip())])
-        s = PlotItem(x,y,y2,deslash(attrs['name']))
-    else:
-        s = PlotItem(x,y,deslash(attrs['name']))
+    s = PlotItem(x,y,deslash(attrs['name']))
     s.hide = attrs.get('hide', False) ==  'True'
 
     for limits_elem in element.findall('limits'):
@@ -484,6 +487,15 @@ class Project(LData):
                     for set_elem in elem.findall('set'):
                         self.lastset = self[self.lastplot].add(xmlset2set(set_elem))
 
+                    for mod_elem in elem.findall('mod'):
+                        mod, warn = xmlmod2mod(mod_elem, self.lastmod)
+                        if mod is None:
+                            for w in warn:
+                                self.warn.append(w)
+                        else:
+                            self.lastmod = mod
+                            self[self.lastplot].model = mod
+
                         for trafo_elem in set_elem.findall('trafo'):
                             name, attrs = trafo_elem.tag, trafo_elem.attrib
                             cmt = deslash(attrs.get('comment',''))
@@ -509,7 +521,7 @@ class Project(LData):
                                     self.warn.append(w)
                             else:
                                 self.lastmod = mod
-                                self[self.lastplot][self.lastset].mod = mod
+                                self[self.lastplot][self.lastset].model = mod
 
             for mpm_elem in tree.findall('mpmodel'):
                 sett_elem = mpm_elem.find('settings')
@@ -601,25 +613,43 @@ class Project(LData):
             plot_elem.attrib['uuid'] = self[p].uuid
             plot_elem.attrib['name'] = self[p].name
 
+            if self[p].model is not None:
+                mod_elem = ET.SubElement(plot_elem, 'mod')
+                mod_elem.attrib['tokens'] = self[p].model.tokens
+                if self[p].model.tokens == 'CUSTOM':
+                    mod_elem.attrib['func'] = self[p].model.func
+                for feat in self[p].model:
+                    token_elem = ET.SubElement(mod_elem, 'token')
+                    token_elem.attrib['name'] = feat.name
+                    for par in feat.keys():
+                        par_elem = ET.SubElement(token_elem, 'var')
+                        tmp = {'name': par, 'value': str(feat[par].value), 'error': str(feat[par].error)}
+                        if feat[par].constr == 2:
+                            if feat[par].amin is not None:
+                                tmp['amin'] = str(feat[par].amin)
+                            if feat[par].amax is not None:
+                                tmp['amax'] = str(feat[par].amax)
+                        elif feat[par].constr == 1:
+                            tmp['fix'] = 'True'
+                        par_elem.attrib.update(tmp)
+
             for s in range(len(self[p])):
                 set_elem = ET.SubElement(plot_elem, 'set')
                 if self[p][s].hide:
                     set_elem.attrib['hide'] = 'True'
                 set_elem.attrib['x'] = ' '.join(['{:.16g}'.format(q) for q in self[p][s].data[0]])
                 set_elem.attrib['y'] = ' '.join(['{:.16g}'.format(q) for q in self[p][s].data[1]])
-                if self[p][s].has_second_y:
-                    set_elem.attrib['y2'] = ' '.join(['{:.16g}'.format(q) for q in self[p][s].data[2]])
                 set_elem.attrib['name'] = slash(self[p][s].name)
 
                 if self[p][s].limits is not None:
                     set_elem.attrib['limits'] = ' '.join(['{:.16g}'.format(q) for q in self[p][s].limits])
 
-                if self[p][s].mod is not None:
+                if self[p][s].model is not None:
                     mod_elem = ET.SubElement(set_elem, 'mod')
-                    mod_elem.attrib['tokens'] = self[p][s].mod.tokens
-                    if self[p][s].mod.tokens == 'CUSTOM':
-                        mod_elem.attrib['func'] = self[p][s].mod.func
-                    for feat in self[p][s].mod:
+                    mod_elem.attrib['tokens'] = self[p][s].model.tokens
+                    if self[p][s].model.tokens == 'CUSTOM':
+                        mod_elem.attrib['func'] = self[p][s].model.func
+                    for feat in self[p][s].model:
                         token_elem = ET.SubElement(mod_elem, 'token')
                         token_elem.attrib['name'] = feat.name
                         for par in feat.keys():

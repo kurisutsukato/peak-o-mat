@@ -138,7 +138,7 @@ tokens: a space separated list of valid function symbols
         if self.tokens == 'CUSTOM':
             return self.func
         else:
-            return self[:]
+            return ' '.join([str(q) for q in self])
 
     def keys(self):
         return [q.name for q in self]
@@ -165,7 +165,7 @@ tokens: a space separated list of valid function symbols
             raise AttributeError('%s has no Attribute \'%s\''%(repr(self),attr))
 
     def __getitem__(self, item):
-        if type(item) == int:
+        if type(item) in (int,slice):
             return list.__getitem__(self, item)
         else:
             return getattr(self,item)
@@ -187,6 +187,10 @@ tokens: a space separated list of valid function symbols
             return True
         else:
             return False
+
+    @property
+    def coupled_model(self):
+        return [1 for q in self if q.coupled_model] != []
 
     def analyze(self):
         names = []
@@ -531,6 +535,7 @@ class Component(dict):
         self.has_x = False
 
         self._plevel = 0
+        self.num_coupled_models = 0
 
         self.name = tok
         self.op = op
@@ -548,6 +553,10 @@ class Component(dict):
         #pars = ', '.join(['{}={:.4g}'.format(q,p.value) for q,p in self.items()])
         #return '{}: {}'.format(self.name,pars)
         return self.name
+
+    @property
+    def coupled_model(self):
+        return self.num_coupled_models > 0
 
     def clear(self):
         for k in self.keys():
@@ -582,9 +591,7 @@ class Component(dict):
 
     def comma_found(self, p, x):
         if self._plevel == 0:
-            if hasattr(self, 'double_func') and self.double_func:
-                raise SyntaxError('more than two functions found')
-            self.double_func = True
+            self.num_coupled_models += 1
 
         return x
 

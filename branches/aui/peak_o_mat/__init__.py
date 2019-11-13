@@ -3,18 +3,11 @@
 
 __version__ = '1.1.9'
     
-from os import path, chdir
 import sys
 import types
 import numpy as np
 from numbers import Number
-import logging as log
-import subprocess
-import traceback as tb
-import re
-import traceback
 import configparser
-import io
 import os
 
 from .appdata import configdir

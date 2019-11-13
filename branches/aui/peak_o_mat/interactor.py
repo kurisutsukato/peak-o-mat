@@ -257,11 +257,10 @@ class Interactor(object):
         self.controller.load_set_from_model(model, which, xr, pts)
 
     def OnGotPars(self, evt):
-        mapping = {misc_ui.GOTPARS_MOVE: 'edit',
+        mapping = {misc_ui.GOTPARS_MOVE: 'edit', # edit scheints nicht zu geben
                    misc_ui.GOTPARS_MOVE: 'move',
                    misc_ui.GOTPARS_DOWN: 'down',
                    misc_ui.GOTPARS_END: 'end'}
-        
         self.controller.model_updated(action = mapping[evt.cmd])
         evt.Skip()
 

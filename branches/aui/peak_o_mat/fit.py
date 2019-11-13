@@ -91,22 +91,29 @@ class FitData(O.Data):
         O.Data.__init__(self, x, y, we=weights)
 
 class MFitModel(O.Model):
-    def __init__(self, func):
+    def __init__(self, func, ds_lengths):
         self.func = func
+        tmp = np.cumsum([0]+ds_lengths)
+        self.slices = [(tmp[q],tmp[q+1],1) for q in range(len(tmp)-1)]
+        print(self.slices)
         O.Model.__init__(self, self.evaluate)
 
     def evaluate(self, a, x):
-        y1,y2 = self.func(x[:len(x)//2], a)
-        return np.hstack([y1,y2])
+        out = self.func(x, a)
+        return np.hstack([out[n][slice(*self.slices[n])] for n in range(len(out))])
 
 class MFitData(O.Data):
-    def __init__(self, spec):
-        x, y, y2 = spec.xyy2_limited
-        if spec.weights is not None:
-            weights = spec.weights.getWeights(spec.xyy2_limited)
-        else:
-            weights = None
-        O.Data.__init__(self, np.hstack((x,x)), np.hstack((y,y2)), we=weights)
+    def __init__(self, pl):
+        #x, y, y2 = spec.xyy2_limited
+        #if spec.weights is not None:
+        #    weights = spec.weights.getWeights(spec.xyy2_limited)
+        #else:
+        #    weights = None
+        O.Data.__init__(self,
+                        np.hstack([ds.x for ds in pl]),
+                        np.hstack([ds.y for ds in pl]),
+                        #we=weights
+                        )
 
 def pprint(result):
     out = []
@@ -127,18 +134,26 @@ class Fit:
         self.ds = copy.deepcopy(ds)
         self.func = QuickEvaluate(copy.deepcopy(model))
 
-        if model.func is not None and ',' in model.func:
-            fitmodel = MFitModel(self.func)
+        if model.coupled_model:
+            ds_lengths = [len(q) for q in ds]
+            fitmodel = MFitModel(self.func, ds_lengths)
             data = MFitData(self.ds)
         else:
             fitmodel = FitModel(self.func)
             data = FitData(self.ds)
         guess = list(self.func.par_fit.values())
 
+        kwargs = {'maxit':maxiter}
         if not autostep:
-            self.odr = O.ODR(data, fitmodel, beta0=guess, maxit=maxiter, stpb=np.ones((len(guess)))*stepsize)
-        else:
-            self.odr = O.ODR(data, fitmodel, beta0=guess, maxit=maxiter)
+            kwargs.update({'stpb':np.ones((len(guess)))*stepsize})
+
+        try:
+            self.odr = O.ODR(data, fitmodel, guess, **kwargs)
+        except O.OdrError:
+            print(data)
+            print(model)
+            raise
+
 
         self.odr.set_job(fit_type=fittype)
         #print 'ready to fit'
@@ -147,7 +162,7 @@ class Fit:
         out = self.odr.run()
         pars, errors = self.func.fill(out.beta,out.sd_beta)
         msg = pprint(out)
-
+        print(pars,errors,msg)
         return pars,errors,msg
 
 def test1():
@@ -168,21 +183,26 @@ def test1():
 
 if __name__ == '__main__':
     import numpy as np
-    x = np.hstack((np.linspace(0,5,10),np.linspace(0,5,10)))
 
-    y = x*3+.5+np.random.randn(*x.shape)
+    ds = []
+    for n in range(2):
+        x = np.linspace(0,5,50)
+        y = x*3+.5+np.random.randn(*x.shape)
+        ds.append(Spec(x,y,'bla'))
 
     from .model import Model
     from .spec import Spec
     m = Model('a*x,a*x+b*x**2+c')
+    m = Model('a*x+b,a*x')
     m.parse()
     m.CUSTOM.a.value = 5.0
     m.CUSTOM.b.value = 5.0
-    m.CUSTOM.c.value = 5.0
+    #m.CUSTOM.c.value = 5.0
 
-    ds = Spec(x[:len(x)//2],y[:len(x)//2],y[len(x)//2:],'lala')
     f = Fit(ds, m)
-    print(f.run())
+    res = f.run()
+    m.update_from_fit(res)
+    print(m.parameters_as_table())
     #o = O.ODR(d, mfm, [1.0])
     #out = o.run()
     #print(out.beta)
