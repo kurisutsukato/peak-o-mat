@@ -95,7 +95,6 @@ class MFitModel(O.Model):
         self.func = func
         tmp = np.cumsum([0]+ds_lengths)
         self.slices = [(tmp[q],tmp[q+1],1) for q in range(len(tmp)-1)]
-        print(self.slices)
         O.Model.__init__(self, self.evaluate)
 
     def evaluate(self, a, x):
@@ -162,7 +161,6 @@ class Fit:
         out = self.odr.run()
         pars, errors = self.func.fill(out.beta,out.sd_beta)
         msg = pprint(out)
-        print(pars,errors,msg)
         return pars,errors,msg
 
 def test1():

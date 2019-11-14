@@ -60,7 +60,6 @@ x : array/list holding the x-values
 y : array/list holding the y-values
 name : short description of the data
 """
-        print('sepc init')
         self.hide = False
         # TODO:
         # 1) accept lists as x- and y-input .... war glaube ich ein Irrtum

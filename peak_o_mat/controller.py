@@ -730,7 +730,7 @@ class Controller(object):
     selection = property(_get_selection, _set_selection, doc="the current tree selection")
 
     def update_plot(self, *args, **kwargs):
-        print('update plot')
+        #print('update plot')
         if not self._updating:
             self.view.Bind(wx.EVT_IDLE, lambda x: self._update(x, *args, **kwargs))
             self._updating = True

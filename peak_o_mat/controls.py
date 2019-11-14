@@ -629,56 +629,6 @@ class ListModel(dv.DataViewIndexListModel):
     def get_selected(self, dataviewitem):
         return self.data[self.GetRow(dataviewitem)]
 
-class _ListModel(dv.PyDataViewModel):
-    def __init__(self, data):
-        dv.PyDataViewModel.__init__(self)
-        self.data = data
-
-    def update(self, obj, value):
-        idx = self._data.index(obj)
-        self._data[idx] = value
-        #TODO: next line releases the plot references, oj is a multiplotmodel
-        obj.release()
-        self.Cleared()
-
-    @property
-    def data(self):
-        return self._data
-    @data.setter
-    def data(self, data):
-        self._data = data
-        self.Cleared()
-
-    def GetChildren(self, parent, children):
-        if not parent:
-            for line in self._data:
-                children.append(self.ObjectToItem(line))
-            return len(self._data)
-
-    def IsContainer(self, item):
-        if not item:
-            return True
-        else:
-            return False
-
-    def GetColumnCount(self):
-        return 1
-
-    def GetCount(self):
-        return len(self.data)
-
-    def GetColumnType(self, col):
-        return 'string'
-
-    def GetParent(self, item):
-        return dv.NullDataViewItem
-
-    def GetValue(self, item, col):
-        return self.ItemToObject(item).identifier
-
-    def SetValue(self, value, item, col):
-        self.ItemToObject(item).identifier = value
-
 class FigureListController:
     def __init__(self, parent_view, data):
         self.parent_view = parent_view
