@@ -267,8 +267,8 @@ class MainFrame(wx.Frame):
             dlg.Destroy()
             return False
 
-    def multicolumn_import_dialog(self, name=None, collabels=None, multiple=False):
-        d = ColumnDialog(self, name, collabels, multiple)
+    def multicolumn_import_dialog(self, name=None, collabels=None, multiple=False, numcols=None):
+        d = ColumnDialog(self, name, collabels, multiple, numcols)
         if d.ShowModal() == wx.ID_OK:
             return d.results()
         else:
