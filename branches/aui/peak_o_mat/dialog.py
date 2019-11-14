@@ -61,12 +61,12 @@ class PairValidator(wx.Validator):
         return True
 
 class ColumnDialog(wx.Dialog):
-    def __init__(self, parent, name=None, collabels=None, multifile=False):
+    def __init__(self, parent, name=None, collabels=None, multifile=False, numcols=None):
         wx.Dialog.__init__(self, parent, title='Multicolumn file')
         self.multifile = multifile
         self.name = name
 
-        self.controls(collabels)
+        self.controls(collabels,numcols)
         self.layout()
 
         self.ch.Bind(wx.EVT_CHOICE, self.OnChoice)
@@ -92,12 +92,13 @@ class ColumnDialog(wx.Dialog):
             #self.txt_custom.SetInsertionPointEnd()
             self.txt_custom.SetFocus()
 
-    def controls(self, collabels=None):
+    def controls(self, collabels=None, numcols=None):
         if self.name is None:
             self.lab_name = wx.StaticText(self, label='')
             self.lab_name.Hide()
         else:
             self.lab_name = wx.StaticText(self, label=self.name)
+
         self.ch = wx.Choice(self, choices=['XYYY..', 'XYXY..','Custom'])
         self.ch.SetSelection(0)
         self.txt_collabels = wx.TextCtrl(self, value='', style=wx.TE_READONLY|wx.TE_MULTILINE)
@@ -105,19 +106,20 @@ class ColumnDialog(wx.Dialog):
         self.txt_custom.Disable()
         self.txt_custom.SetHint('e.g. (0,1) (0,3) (0,6) ...')
 
+        if collabels is not None:
+            self.txt_collabels.SetValue('\n'.join(['{}:{}'.format(q,p) for q,p in zip(range(len(collabels)),collabels)]))
+            self.txt_collabels.SetMinSize((-1,min(len(collabels)*12,400)))
+            self.lab_collab = wx.StaticText(self, label='Column labels:')
+        else:
+            self.lab_collab = wx.StaticText(self, label='Found {} columns without labels.'.format(numcols))
+            self.txt_collabels.Hide()
+
         self.chk = wx.CheckBox(self, label='Apply to all files with equally shaped data.')
         if not self.multifile:
             self.chk.Hide()
 
-        if collabels is not None:
-            self.txt_collabels.SetValue('\n'.join(['{}:{}'.format(q,p) for q,p in zip(range(len(collabels)),collabels)]))
-            self.txt_collabels.SetMinSize((-1,min(len(collabels)*12,400)))
-        else:
-            self.txt_collabels.SetValue('no column labels')
-            self.txt_collabels.Disable()
 
     def layout(self):
-        lab_collab = wx.StaticText(self, label='Column labels:')
         lab = wx.StaticText(self, label='Select column ordering:')
         self.lab_custom = wx.StaticText(self, label='XY pairs')
         self.lab_custom.Disable()
@@ -128,7 +130,7 @@ class ColumnDialog(wx.Dialog):
             box.Add(self.lab_name, 0, wx.ALL, 10)
             box.Add(wx.StaticLine(self, style=wx.HORIZONTAL),0,wx.EXPAND|wx.BOTTOM|wx.RIGHT|wx.LEFT,5)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(lab_collab, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+        hbox.Add(self.lab_collab, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
         hbox.Add(self.txt_collabels, 1, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
         box.Add(hbox, 1, wx.EXPAND|wx.LEFT|wx.RIGHT, 5)
 
