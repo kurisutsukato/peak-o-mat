@@ -115,7 +115,7 @@ class FitController(object):
         self._current_fititem = plot if len(ds) == len(plot) and len(plot) > 1 else (None if len(ds) > 1 or len(ds) == 0 else ds[0])
         plot_changed = self._current_pl != plot
         self._current_pl = plot
-        print('fc:selection changed',self._current_fititem)
+        #print('fc:selection changed',self._current_fititem)
         if self._current_fititem is not None:
             ds = self._current_fititem
             if ds.weights is not None:

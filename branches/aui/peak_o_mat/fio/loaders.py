@@ -146,11 +146,19 @@ guess the columns delimiter and ignoring comments.
                 if rl:
                     rowlabels.append(line[0])
                 try:
-                    data.append([float(q) for q in line[int(rl):] if q.strip() != ''])
+                    tmp = [float(q) for q in line[int(rl):] if q.strip() != '']
+                    if len(tmp) == 0 or (len(data) > 0 and len(tmp) != len(data[-1])):
+                        break
+                    else:
+                        data.append(tmp)
                 except ValueError:
                     break
 
-        data = np.asarray(data)
+        try:
+            data = np.asarray(data, dtype=float)
+        except ValueError:
+            raise PomError('Unable to read file. Unaligned data found.')
+
         r,c = data.shape
         if r < 5 and c>r*2:
             data = data.T
