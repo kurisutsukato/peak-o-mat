@@ -82,7 +82,7 @@ class FitInteractor(object):
             self.view.pan_batch.ch_target.SetSelection(ind)
 
     def pubOnFitFinished(self):
-        print('fitinteractor: fit finished')
+        #print('fitinteractor: fit finished')
         self.view.pan_batch.bf_update(self.controller._current_pl)
 
     def OnBatchExport(self, evt):
