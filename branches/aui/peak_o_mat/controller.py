@@ -829,6 +829,7 @@ class Controller(object):
         #msg=self.active_set)
 
     def model_updated(self, action=None):
+        print('modleupdated:calling plot',self.fit_controller.model)
         self.plot(fit=self.fit_controller.model)
         if action != 'move' and len(self.pp_notify) > 0:
             name,count = self.pp_notify[0]
@@ -986,8 +987,14 @@ class Controller(object):
                     elif self.fit_controller.weights is not None:
                         bounds_cb = self.fit_controller.weights.getBounds
                         lines.append(plotcanvas.VSpan(ds.xy,bounds_cb,colour=wx.Colour(0,0,255,30)))
-                    if len(sel) == len(self.project[plot]) and len(self.project[plot]) > 1 and self.project[plot].model is not None:
-                        y = self.project[plot].model.evaluate(ds.x)[sig]
+
+                    # coupled model
+                    if len(sel) == len(self.project[plot]) and len(self.project[plot]) > 1:
+                        y = None
+                        if fit is not None:
+                            y = fit.evaluate(ds.x)[sig]
+                        elif self.project[plot].model is not None:
+                            y = self.project[plot].model.evaluate(ds.x)[sig]
                         if y is not None:
                             lines.append(plotcanvas.Line([ds.x, y], colour=wx.Colour(0, 50, 200, 200), width=2,
                                                          skipbb=True))

@@ -484,10 +484,10 @@ class Project(LData):
                         self[self.lastplot].yrng = array(list(map(Float,attrs['yrng'].split(','))))
                     if 'name' in list(attrs.keys()):
                         self[self.lastplot].name = deslash(attrs['name'])
-                    for set_elem in elem.findall('set'):
-                        self.lastset = self[self.lastplot].add(xmlset2set(set_elem))
 
                     for mod_elem in elem.findall('mod'):
+                        #TODO
+                        # wieso ne Schleife? Kann eh nur ein modell geben
                         mod, warn = xmlmod2mod(mod_elem, self.lastmod)
                         if mod is None:
                             for w in warn:
@@ -495,6 +495,10 @@ class Project(LData):
                         else:
                             self.lastmod = mod
                             self[self.lastplot].model = mod
+
+                    for set_elem in elem.findall('set'):
+                        self.lastset = self[self.lastplot].add(xmlset2set(set_elem))
+
 
                         for trafo_elem in set_elem.findall('trafo'):
                             name, attrs = trafo_elem.tag, trafo_elem.attrib
