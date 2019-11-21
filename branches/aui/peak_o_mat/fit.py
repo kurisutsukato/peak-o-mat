@@ -142,7 +142,8 @@ class Fit:
             data = FitData(self.ds)
         guess = list(self.func.par_fit.values())
 
-        kwargs = {'maxit':maxiter}
+        kwargs = {'maxit':1}
+        self.maxiter = maxiter
         if not autostep:
             kwargs.update({'stpb':np.ones((len(guess)))*stepsize})
 
@@ -159,6 +160,11 @@ class Fit:
 
     def run(self):
         out = self.odr.run()
+        for k in range(self.maxiter):
+            print(out.info,out.res_var)
+            if out.info != 4:
+                break
+            out = self.odr.restart(1)
         pars, errors = self.func.fill(out.beta,out.sd_beta)
         msg = pprint(out)
         return pars,errors,msg
