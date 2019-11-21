@@ -73,13 +73,12 @@ class BaseModule(Module):
     def selection_changed(self):
         pass
 
-    def show(self):
-        self.visible = True
+    def show(self, state=True):
+        self.visible = state
         self.focus_changed(self)
 
     def hide(self):
-        self.visible = False
-        self.focus_changed()
+        self.show(False)
 
 class XRCModule(Module):
 
@@ -191,11 +190,10 @@ class MyModule(module.Module):
         print('page_changed deprecated in module',self.title)
         pass
 
-    def show(self):
-        self.visible = True
+    def show(self, state=True):
+        self.visible = state
         self.focus_changed(self)
 
     def hide(self):
-        self.visible = False
-        self.focus_changed()
+        self.show(False)
 

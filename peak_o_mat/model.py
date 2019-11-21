@@ -396,7 +396,7 @@ Update the model with the results from a fit.
                 separately
 		restrict: list of tokens to be evaluated or None
         """
-        
+
         x = np.atleast_1d(x)
 
         background = None

@@ -25,6 +25,7 @@ from pubsub import pub
 
 import numpy as np
 from scipy.misc import comb as nOk
+from scipy.interpolate import Akima1DInterpolator
 
 from peak_o_mat import module,spec,controls,misc_ui
 
@@ -158,7 +159,18 @@ class XRCModule(module.XRCModule):
             self.xrc_btn_bez_load.Enable()
 
             #handles = handles.take(np.argsort(handles[:,0]),0)
-            #x,y = np.transpose(handles)
+            #xh,yh = np.transpose(handles)
+            #evx = np.linspace(xh[0], xh[-1], 100)
+            #if len(xh) > 2:
+            #    aki = Akima1DInterpolator(xh,yh)
+            #    evy = aki(evx)
+            #else:
+            #    a = (yh[1]-yh[0])/(xh[1]-xh[0])
+            #    b = yh[1]-a*xh[1]
+            #    evy = evx*a+b
+            #self.controller.plot(floating=spec.Spec(evx,evy,'{:d} pt. bezier'.format(len(handles))))
+            #self.xrc_btn_bez_load.Enable()
+
             #m = len(x)
             #sp = splrep(x, y, k=min(handles.shape[0]-1,3), s=m+np.sqrt(2*m))
             #evx = np.linspace(x[0],x[-1],100)

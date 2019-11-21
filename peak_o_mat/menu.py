@@ -26,7 +26,7 @@ class MenuFactory(object):
     def add_module(self, mb, name):
         menu = mb.GetMenu(2)
         count = menu.GetMenuItemCount()-4
-        self.module_menu_ids[menu.Append(wx.ID_ANY, '{}\tCTRL-{}'.format(name,count)).GetId()] = name
+        self.module_menu_ids[menu.Append(wx.ID_ANY, '{}\tCTRL-{}'.format(name,count), kind=wx.ITEM_CHECK).GetId()] = name
 
     def create(self, plotserver=False):
         mb = wx.MenuBar()

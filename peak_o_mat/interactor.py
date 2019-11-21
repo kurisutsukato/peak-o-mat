@@ -161,9 +161,10 @@ class Interactor(object):
         self.controller._modules[m].hide()
 
     def OnMenuShowHideModule(self, evt, mid):
-        self.view._mgr.GetPane(self.view.menu_factory.module_menu_ids[mid]).Show()
+        self.view._mgr.GetPane(self.view.menu_factory.module_menu_ids[mid]).Show(evt.IsChecked())
         m = self.controller._modules[self.view.menu_factory.module_menu_ids[mid]]
-        m.show()
+        #print('show',evt.IsChecked())
+        m.show(evt.IsChecked())
         self.view._mgr.Update()
 
     def OnStartServer(self, evt):
