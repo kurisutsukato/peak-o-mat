@@ -110,14 +110,19 @@ class Status(wx.StatusBar):
         except AttributeError:
             time = 5000
 
+        try:
+            self.forever = evt.forever
+        except AttributeError:
+            self.forever = False
+
         if evt.target == 1:
             self.timer.Stop()
             if evt.blink:
                 self.blink = 1
-                self.message(500, evt.msg, forever=evt.forever)
+                self.message(500, evt.msg, forever=self.forever)
             else:
                 self.blink = 0
-                self.message(time, evt.msg, forever=evt.forever)
+                self.message(time, evt.msg, forever=self.forever)
         else:
             self.shortmessage(evt.msg)
         evt.Skip()
