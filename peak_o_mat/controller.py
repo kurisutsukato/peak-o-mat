@@ -400,7 +400,7 @@ class Controller(object):
                             self._modules.append(m)
 
         else:
-            for mod in modules.__all__+['er6']:
+            for mod in modules.__all__:
                 try:
                     mod = import_module('.'+mod,'peak_o_mat.modules')
                 except Exception as _e:

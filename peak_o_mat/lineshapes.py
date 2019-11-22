@@ -180,7 +180,7 @@ add('FERMI',
     ptype='STEP')
     
 add('CTLMRF',
-    func='Rs/(np.pi*2)*(np.log((50.0+x*3)/50)+Lt*(1.0/(50+x*3)+0.02))',
+    func='Rs/(np.pi*2)*(np.log((50.0+3*x)/50)+Lt*(1.0/(50+x*3)+0.02))',
     info='Model for circular TLM pattern. The inner radius is constant \n'
          'r = 50um, the outer increases in steps of 3um, smallest gap 3um',
     ptype='MISC')

@@ -223,7 +223,7 @@ class XRCModule(module.XRCModule):
             #pub.sendMessage((self.view_id, 'changed'))
             return True
         else:
-            self.xrc_op.SetMark(0,-1)
+            self.xrc_op.SetTextSelection(0,-1)
             return False
 
     def do_op(self, trafo):
@@ -269,8 +269,9 @@ class XRCModule(module.XRCModule):
             plot,sel = self.controller.selection
 
             for s in sel:
+                ds = self.controller.project[plot][s]
                 try:
-                    res = eval(trafo,{'x':np.arange(3),'y':np.arange(3)},pom_globals)
+                    res = eval(trafo,{'x':np.zeros(ds.x.shape),'y':np.zeros(ds.x.shape)},pom_globals)
                     if type(res) != np.ndarray:
                         raise TypeError('result is not a ndarray')
                 except:
