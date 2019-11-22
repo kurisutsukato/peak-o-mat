@@ -531,13 +531,15 @@ class WorkerThread(Thread):
     def run(self):
         ds, mod, fitopts = self._job
         f = fit.Fit(ds, mod, **fitopts)
-        self.res = f.run()
+        self.res = f.run(self.send_message)
         #mod.update_from_fit(res)
         #ds.model = mod.copy()
 
         pars,errors,msg = self.res
+        self.send_message(end=msg)
 
-        event = misc_ui.ResultEvent(self._notify.GetId(), end=msg)
+    def send_message(self, **kwargs):
+        event = misc_ui.ResultEvent(self._notify.GetId(), **kwargs)
         wx.PostEvent(self._notify, event)
 
 if __name__ == '__main__':

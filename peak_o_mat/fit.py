@@ -158,9 +158,11 @@ class Fit:
         self.odr.set_job(fit_type=fittype)
         #print 'ready to fit'
 
-    def run(self):
+    def run(self, callback=None):
         out = self.odr.run()
         for k in range(self.maxiter):
+            if callback is not None:
+                callback(iteration=(k, out.info, out.res_var))
             print(out.info,out.res_var)
             if out.info != 4:
                 break

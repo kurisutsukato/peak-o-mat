@@ -179,10 +179,24 @@ add('FERMI',
     picker=pickers.FERMIPicker,
     ptype='STEP')
     
-add('CTLM',
-    func='Rs/(np.pi*2)*(np.log(100.0/(100-x))+Lt*(1.0/(100-x)+0.01))',
-    info='model for circular TLM pattern',
+add('CTLMRF',
+    func='Rs/(np.pi*2)*(np.log((50.0+x*3)/50)+Lt*(1.0/(50+x*3)+0.02))',
+    info='Model for circular TLM pattern. The inner radius is constant \n'
+         'r = 50um, the outer increases in steps of 3um, smallest gap 3um',
     ptype='MISC')
-    
-    
+
+add('CTLMPD',
+    func='Rs/(np.pi*2)*(np.log(100/(91-x*3))+Lt*(1.0/(91-x*3)+0.01))',
+    info = 'Model for circular TLM pattern. TLM mask.\n'
+           'The outer radius is constant r = 100um\n'
+           'the inner decreases in steps of 3um, smallest gap 12um',
+    ptype='MISC')
+
+add('CTLM',
+    func='Rs/(np.pi*2)*(np.log(100/(91-x*3))+Lt*(1.0/(91-x*3)+0.01))',
+    info = 'Model for circular TLM pattern. TLM mask.\n'
+           'The outer radius is constant r = 100um\n'
+           'the inner decreases in steps of 3um, smallest gap 12um',
+    ptype='MISC')
+
 

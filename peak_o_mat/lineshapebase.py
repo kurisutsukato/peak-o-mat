@@ -2,6 +2,7 @@ __author__ = 'ck'
 
 from .pickers import DummyPicker
 import re
+import sys
 
 class StripDict(dict):
     """\

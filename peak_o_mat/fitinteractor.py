@@ -168,6 +168,10 @@ class FitInteractor(object):
 
         elif hasattr(evt, 'end'):
             self.controller.fit_finished(evt.end)
+        elif hasattr(evt, 'iteration'):
+            it, info, res_var = evt.iteration
+            pub.sendMessage((self.view.id,'message'), msg='Iteration {}'.format(it))
+
 
     def OnFeatureKeyDown(self, evt):
         evt.Skip()

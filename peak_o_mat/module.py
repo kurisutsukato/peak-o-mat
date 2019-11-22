@@ -164,7 +164,7 @@ class MyModule(module.Module):
             self.show()
 
     def message(self, msg, target=1, blink=False):
-        event = misc_ui.ShoutEvent(-1, msg=msg, target=target, blink=blink)
+        event = misc_ui.ShoutEvent(-1, msg=msg, target=target, blink=blink, forever=False)
         wx.PostEvent(self.view, event)
 
     def OnHelp(self, evt):
