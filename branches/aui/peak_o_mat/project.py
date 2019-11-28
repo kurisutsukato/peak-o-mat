@@ -40,7 +40,7 @@ import textwrap as tw
 from numpy import array, sometrue, inf, nan, ndarray, take, searchsorted
 
 from .spec import Spec
-from .model import Model,Var
+from .model import Model,Var,UnknownToken
 from .weights import Weights,WeightsRegion
 
 from .mplplot.model import MultiPlotModel, PlotData
@@ -79,9 +79,11 @@ class Queue(BytesIO):
 
 class Message(list):
     def append(self, data, type='warn'):
-        print('msg appended: {}'.format(data))
+        #print('msg appended: {}'.format(data))
         lead = {'warn':'Warning','error':'Error'}
-        super(Message, self).append('{}: {}'.format(lead[type],data))
+        msg = '{}: {}'.format(lead[type],data)
+        if msg not in self:
+            super(Message, self).append(msg)
 
 from .misc import PomError
 
@@ -356,8 +358,8 @@ def xmlmod2mod(element, lastmod=None):
             model = Model(tokens)
             model.parse()
             model.evaluate([-1,1])
-        except (KeyError, NameError) as err:
-            warn.append('Unknown symbol encountered: {}'.format(err))
+        except (KeyError, NameError, UnknownToken) as err:
+            warn.append(err)
             model = None
             return model, warn
     else:
@@ -366,7 +368,7 @@ def xmlmod2mod(element, lastmod=None):
     try:
         model.set_parameters(components)
     except KeyError as err:
-        warn.append('Unknown parameter encountered: {}'.format(err))
+        warn.append('unknown parameter encountered: {}'.format(err))
         return None, warn
 
     return model, warn

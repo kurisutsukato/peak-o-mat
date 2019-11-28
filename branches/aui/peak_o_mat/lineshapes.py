@@ -120,7 +120,7 @@ add('GA',
     picker=pickers.LOPicker,
     ptype='PEAK')
 
-add('LO',
+add('LA',
     func='amp/(1+np.power((x-pos)/(fwhm/2.0),2))',
     info='Symmetric lorentzian lineshape',
     picker=pickers.LOPicker, 
