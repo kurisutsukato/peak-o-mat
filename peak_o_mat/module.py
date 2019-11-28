@@ -53,11 +53,15 @@ class BaseModule(Module):
     def init(self):
         assert hasattr(self, 'title')
         self.view.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
+        self.view.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClose)
         pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
         pub.subscribe(self.focus_changed, (self.view_id, 'module', 'focuschanged'))
 
     def focus_changed(self, newfocus):
         pass
+
+    def OnClose(self, evt):
+        print(evt)
 
     def OnEnter(self, evt):
         if(self.view.HitTest(evt.Position) == wx.HT_WINDOW_INSIDE) and Module.last_focus != self:
@@ -138,14 +142,17 @@ class MyModule(module.Module):
             pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
             pub.subscribe(self.focus_changed, (self.view_id, 'module', 'focuschanged'))
 
+            controller.view.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClose)
             self.view.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
-
             wx.CallAfter(self.init)
             wx.CallAfter(self.view.Layout)
         else:
             raise IOError(xrcfile+' not found')
 
         self.view.Bind(wx.EVT_BUTTON, self.OnHelp)
+
+    def OnClose(self, evt):
+        print(evt)
 
     def __getattr__(self, name):
         if name.find('xrc_') == 0:

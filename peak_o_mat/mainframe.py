@@ -73,6 +73,7 @@ class MainFrame(wx.Frame):
         self.layout_controls()
 
     def OnClosePane(self, evt):
+        print('hallo?')
         evt.Veto()
         evt.GetPane().Hide()
         self._mgr.Update()

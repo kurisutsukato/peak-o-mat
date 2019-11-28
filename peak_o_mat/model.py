@@ -14,6 +14,11 @@ from .pickers import DummyPicker
 
 from .symbols import pom_globals
 
+class UnknownToken(Exception):
+    pass
+
+tokre = re.compile(r"([+*\s]*)([A-Z]+[0-9]*)")
+
 def ireduce(func, iterable, init=None):
     iterable = iter(iterable)
     if init is None:
@@ -417,6 +422,7 @@ Update the model with the results from a fit.
             for key,val in component.items():
                 locs[key] = val.value
             try:
+                print(self.func, component.func)
                 if self.func is not None:
                     newy = eval(self.func,pom_globals,locs)
                 else:
@@ -487,8 +493,6 @@ Update the model with the results from a fit.
         return lines
 
 class TokParser(object):
-    tokre = re.compile(r"([+*\s]*)([A-Z]+[0-9]*)")
-    
     def __init__(self, model, pstr, fstr=None):
         self.model = model
         self.pstr = pstr
@@ -498,7 +502,7 @@ class TokParser(object):
         self.parsed = True
         
     def funcstr(self, scanner, name):
-        mat = self.tokre.match(name)
+        mat = tokre.match(name)
         op,tok = mat.groups()
         if op in ['',' ']:
             op = '+'
@@ -542,6 +546,10 @@ class Component(dict):
         try:
             self.func = lineshapebase.lineshapes[tok].func
         except KeyError:
+            mat = tokre.match(tok)
+            if mat is not None:
+                sym = re.match(r'([A-Z]+)\d*', mat.groups()[1]).groups()[0]
+                raise UnknownToken('unknown model string found: {}'.format(sym))
             self.func = tok
             self.name = 'CUSTOM'
         self.dummy = []
