@@ -767,9 +767,6 @@ class Controller(object):
             return self.project[p]
     active_plot = property(_get_active_plot)
 
-    def set_logscale(self, xlog, ylog):
-        self.view.canvas.setLogScale([xlog, ylog])
-
     def set_canvas_mode(self, mode):
         #if mode is None:
         #    self.view.canvas.RestoreLastMode()
@@ -829,7 +826,6 @@ class Controller(object):
         #msg=self.active_set)
 
     def model_updated(self, action=None):
-        print('modleupdated:calling plot',self.fit_controller.model)
         self.plot(fit=self.fit_controller.model)
         if action != 'move' and len(self.pp_notify) > 0:
             name,count = self.pp_notify[0]

@@ -16,11 +16,14 @@
 
 import numpy as np
 import copy
+import queue
 
 import scipy.odr.odrpack as O
     
 from .model import QuickEvaluate
 from .spec import Spec
+from . import misc_ui
+import wx
 
 class BatchComponent(object):
     def __init__(self):
@@ -128,10 +131,11 @@ def pprint(result):
     return out
 
 class Fit:
-    def __init__(self, ds, model, fittype=0, maxiter=50, stepsize=-1, autostep=True):
+    def __init__(self, ds, model, fittype=0, maxiter=50, stepsize=-1, autostep=True, msgqueue=None):
         fittype = [2,0][fittype]
         self.ds = copy.deepcopy(ds)
         self.func = QuickEvaluate(copy.deepcopy(model))
+        self._queue = msgqueue
 
         if model.coupled_model:
             ds_lengths = [len(q) for q in ds]
@@ -154,19 +158,27 @@ class Fit:
             print(model)
             raise
 
-
         self.odr.set_job(fit_type=fittype)
         #print 'ready to fit'
 
-    def run(self, callback=None):
+    def run(self, notify=None):
+        def message(**kwargs):
+            event = misc_ui.ResultEvent(notify.GetId(), **kwargs)
+            wx.PostEvent(notify, event)
+
         out = self.odr.run()
-        for k in range(self.maxiter):
-            if callback is not None:
-                callback(iteration=(k, out.info, out.res_var))
-            print(out.info,out.res_var)
-            if out.info != 4:
-                break
-            out = self.odr.restart(1)
+        if True:
+            for k in range(self.maxiter):
+                try:
+                    if self._queue.get(False):
+                        return None,None,['Fit cancelled by user']
+                except queue.Empty:
+                    pass
+                if notify is not None:
+                    message(iteration=(k + 2, out.info, out.res_var))
+                if out.info != 4:
+                    break
+                out = self.odr.restart(1)
         pars, errors = self.func.fill(out.beta,out.sd_beta)
         msg = pprint(out)
         return pars,errors,msg

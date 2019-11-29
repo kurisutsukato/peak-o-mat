@@ -422,7 +422,6 @@ Update the model with the results from a fit.
             for key,val in component.items():
                 locs[key] = val.value
             try:
-                print(self.func, component.func)
                 if self.func is not None:
                     newy = eval(self.func,pom_globals,locs)
                 else:

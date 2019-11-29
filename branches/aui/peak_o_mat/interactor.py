@@ -149,8 +149,8 @@ class Interactor(object):
         self.controller.update_plot()
         self.controller.update_tree()
 
-    def pubOnMessage(self, msg):
-        event = misc_ui.ShoutEvent(self.view.GetId(), msg=msg, target=1, blink=0, forever=False)
+    def pubOnMessage(self, msg, blink=None):
+        event = misc_ui.ShoutEvent(self.view.GetId(), msg=msg, target=1, blink=blink, forever=False)
         wx.PostEvent(self.view, event)
 
     def pubOnAddSet(self, spec):
@@ -258,7 +258,6 @@ class Interactor(object):
         self.controller.load_set_from_model(model, which, xr, pts)
 
     def OnGotPars(self, evt):
-        print('ongotpars',evt)
         mapping = {misc_ui.GOTPARS_MOVE: 'edit', # edit scheints nicht zu geben
                    misc_ui.GOTPARS_MOVE: 'move',
                    misc_ui.GOTPARS_DOWN: 'down',
@@ -346,13 +345,13 @@ class Interactor(object):
     def OnCanvasButtonLogY(self, tb, id):
         state = tb.GetValue()
         self.controller.autoscale()
-        self.controller.set_logscale(None,state)
+        self.view.canvas.setLogScale([None, state])
         self.controller.update_plot()
         
     def OnCanvasButtonLogX(self, tb, id):
         state = tb.GetValue()
         self.controller.autoscale()
-        self.controller.set_logscale(state, None)
+        self.view.canvas.setLogScale([state, None])
         self.controller.update_plot()
         
     def OnCanvasButtonStyle(self, tb, id):
