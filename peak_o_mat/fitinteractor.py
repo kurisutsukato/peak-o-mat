@@ -164,13 +164,14 @@ class FitInteractor(object):
             self.controller.sync_gui(fit_in_progress=False, batch=True)
             self.view.pan_batch.btn_stop.Disable()
             pub.sendMessage((self.view.id,'message'),msg='Batch fit finished.')
-            pub.sendMessage((self.view.id, 'updateview'))
-
+            pub.sendMessage((self.view.id,'updateview'))
         elif hasattr(evt, 'end'):
             self.controller.fit_finished(evt.end)
+        elif hasattr(evt, 'cancel'):
+            self.controller.fit_cancelled(evt.cancel)
         elif hasattr(evt, 'iteration'):
             it, info, res_var = evt.iteration
-            pub.sendMessage((self.view.id,'message'), msg='Iteration {}'.format(it))
+            pub.sendMessage((self.view.id,'message'), msg='Fit in progress: iteration {}'.format(it))
 
 
     def OnFeatureKeyDown(self, evt):
@@ -243,12 +244,13 @@ class FitInteractor(object):
         evt.Skip()
 
     def OnStartFit(self, evt):
-        fitopts = dict([('fittype',self.view.fittype), ('maxiter',self.view.maxiter), \
-                        ('stepsize',self.view.stepsize), ('autostep',self.view.autostep)])
+        if self.controller._fit_in_progress:
+            self.controller.cancel_fit()
+        else:
+            fitopts = dict([('fittype',self.view.fittype), ('maxiter',self.view.maxiter), \
+                            ('stepsize',self.view.stepsize), ('autostep',self.view.autostep)])
 
-        self.controller.start_fit(self.view.limitfitrange, fitopts)
-
-        #self.controller.start_fit()
+            self.controller.start_fit(self.view.limitfitrange, fitopts)
 
     def OnSelectionChanged(self, plot, dataset):
         self.controller.selection_changed(plot, dataset)

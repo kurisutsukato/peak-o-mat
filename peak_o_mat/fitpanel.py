@@ -551,9 +551,12 @@ class FitPanel(wx.Panel):
         self.txt_fitlog.AppendText(txt+'\n')
     log = property(fset=_set_fitlog)
 
+    def enable_stop(self, state):
+        self.pan_pars.btn_fit_quick.SetLabel(['Fit','Stop'][int(state)])
+
     def enable_fit(self, state):
         #self.btn_fit.Enable(state)
-        self.pan_pars.btn_fit_quick.Enable(state)
+        #self.pan_pars.btn_fit_quick.Enable(state)
         self.pan_pars.btn_generateset.Enable(state)
         self.pan_pars.btn_parexport.Enable(state)
 

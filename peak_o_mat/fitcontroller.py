@@ -9,6 +9,7 @@ import time
 import numpy as np
 
 from threading import Thread, Event
+from queue import Queue
 
 from functools import reduce
 
@@ -101,8 +102,8 @@ class FitController(object):
     def sync_gui(self, **kwargs):
         if 'fit_in_progress' in kwargs:
             self._fit_in_progress = kwargs['fit_in_progress']
-
-        self.view.enable_fit(not self._fit_in_progress and self.model is not None and self.model.is_filled() and self._current_fititem is not None)
+        self.view.enable_stop(self._fit_in_progress)
+        #self.view.enable_fit(not self._fit_in_progress and self.model is not None and self.model.is_filled() and self._current_fititem is not None)
         self.view.enable_pick(not self._fit_in_progress and self.model is not None and self._current_fititem is not None and self.model.is_autopickable())
         self.view.pan_pars.Enable(self.model is not None and not self.model.is_empty())
 
@@ -430,8 +431,13 @@ ValueError: invalid literal for int() with base 10: ''
 
     def stop_batch_fit(self):
         if hasattr(self, '_worker'):
-            self._worker.join()
-            self.message('Batch job canceled.')
+            self._worker.cancel()
+            #self.message('Batch job canceled.')
+
+    def cancel_fit(self):
+        if hasattr(self, '_worker'):
+            self._worker.cancel()
+            #self.message('Fit canceled.')
 
     def start_fit(self, limit, fitopts):
         pl,ds = self.selection
@@ -450,14 +456,22 @@ ValueError: invalid literal for int() with base 10: ''
             job = (ds, self.model, fitopts)
 
         self.sync_gui(fit_in_progress=True)
-        self.message('fitting....', blink=True, forever=True)
+        self.message('Fit in progress: iteration 1', forever=True)
 
         self._worker = WorkerThread(self.view, job)
         self._worker.start()
 
+    def fit_cancelled(self, msgs):
+        self.message('%s: fit cancelled' % self._current_fititem.name)
+        if self._current_fititem is not None:
+            self.sync_gui(fit_in_progress=False, batch=True)
+            pub.sendMessage((self.view.id, 'updateview'))
+
+            self.view.pan_options.txt_fitlog.SetValue('\n'.join(msgs))
+            pub.sendMessage((self.view.id, 'fitfinished'))
+
     def fit_finished(self, msgs):
         self.message('%s: fit finshed' % self._current_fititem.name)
-        self._worker.join()
 
         if self._current_fititem is not None:
             self.model.update_from_fit(self._worker.res)
@@ -526,17 +540,21 @@ class WorkerThread(Thread):
         Thread.__init__(self)
         self._notify = notify
         self._job = job
+        self._queue = Queue()
         WorkerThread.threadnum += 1
+
+    def cancel(self):
+        self._queue.put(True)
+        self.join()
 
     def run(self):
         ds, mod, fitopts = self._job
-        f = fit.Fit(ds, mod, **fitopts)
-        self.res = f.run(self.send_message)
-        #mod.update_from_fit(res)
-        #ds.model = mod.copy()
-
-        pars,errors,msg = self.res
-        self.send_message(end=msg)
+        f = fit.Fit(ds, mod, **fitopts, msgqueue=self._queue)
+        self.res = f.run(self._notify)
+        if self.res[0] is None:
+            self.send_message(cancel=self.res[-1])
+        else:
+            self.send_message(end=self.res[-1])
 
     def send_message(self, **kwargs):
         event = misc_ui.ResultEvent(self._notify.GetId(), **kwargs)
