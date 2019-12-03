@@ -173,7 +173,6 @@ class FitInteractor(object):
             it, info, res_var = evt.iteration
             pub.sendMessage((self.view.id,'message'), msg='Fit in progress: iteration {}'.format(it))
 
-
     def OnFeatureKeyDown(self, evt):
         evt.Skip()
         if evt.GetKeyCode() == 13:

@@ -146,7 +146,7 @@ class Fit:
             data = FitData(self.ds)
         guess = list(self.func.par_fit.values())
 
-        kwargs = {'maxit':1}
+        kwargs = {'maxit':1} # stop and redstart after each iteration
         self.maxiter = maxiter
         if not autostep:
             kwargs.update({'stpb':np.ones((len(guess)))*stepsize})
@@ -166,6 +166,10 @@ class Fit:
             event = misc_ui.ResultEvent(notify.GetId(), **kwargs)
             wx.PostEvent(notify, event)
 
+        def message(**kwargs):
+            event = misc_ui.ResultEvent(notify.GetId(), **kwargs)
+            wx.PostEvent(notify, event)
+
         out = self.odr.run()
         if True:
             for k in range(self.maxiter):
@@ -176,6 +180,7 @@ class Fit:
                     pass
                 if notify is not None:
                     message(iteration=(k + 2, out.info, out.res_var))
+                #print(out.info, out.stopreason)
                 if out.info != 4:
                     break
                 out = self.odr.restart(1)
