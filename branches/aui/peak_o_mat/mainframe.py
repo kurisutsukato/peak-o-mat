@@ -66,7 +66,7 @@ class MainFrame(wx.Frame):
 
         self._mgr = aui.AuiManager(self, aui.AUI_MGR_ALLOW_ACTIVE_PANE|
                                    aui.AUI_MGR_ALLOW_FLOATING|aui.AUI_MGR_TRANSPARENT_HINT)
-        self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClosePane)
+        #self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClosePane)
 
         self.create_menus(plotserver)
         self.setup_controls()
@@ -175,6 +175,9 @@ class MainFrame(wx.Frame):
     def check_menu(self, item, state):
         self.menubar.Check(self.menu_factory.menu_ids[item], state)
         
+    def check_module_menu(self, item, state):
+        self.menubar.Check(item, state)
+
     def get_filehistory(self):
         return [self.filehistory.GetHistoryFile(n) for n in reversed(list(range(self.filehistory.GetCount())))]
 

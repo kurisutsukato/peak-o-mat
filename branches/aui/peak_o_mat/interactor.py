@@ -159,6 +159,11 @@ class Interactor(object):
     def OnModuleCloseButton(self, evt):
         m = evt.GetPane().name
         self.controller._modules[m].hide()
+        print('pane close main interactor)', m)
+        for mid, name in self.view.menu_factory.module_menu_ids.items():
+            if name == m:
+                self.view.check_module_menu(mid, False)
+        evt.Skip()
 
     def OnMenuShowHideModule(self, evt, mid):
         self.view._mgr.GetPane(self.view.menu_factory.module_menu_ids[mid]).Show(evt.IsChecked())

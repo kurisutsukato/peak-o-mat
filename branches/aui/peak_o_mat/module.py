@@ -61,7 +61,7 @@ class BaseModule(Module):
         pass
 
     def OnClose(self, evt):
-        print(evt)
+        print('abstract method of BaseModule was called!!!', evt)
 
     def OnEnter(self, evt):
         if(self.view.HitTest(evt.Position) == wx.HT_WINDOW_INSIDE) and Module.last_focus != self:
@@ -151,8 +151,9 @@ class MyModule(module.Module):
 
         self.view.Bind(wx.EVT_BUTTON, self.OnHelp)
 
+
     def OnClose(self, evt):
-        print(evt)
+        print('abstract method of XRCModule was called!!!', evt)
 
     def __getattr__(self, name):
         if name.find('xrc_') == 0:
