@@ -96,6 +96,9 @@ class XRCModule(module.XRCModule):
         if self.visible:
             self.update_background()
 
+    def OnClose(self, evt):
+        self.focus_changed()
+
     def focus_changed(self, newfocus=None):
         if newfocus != self:
             self.plotme = None
