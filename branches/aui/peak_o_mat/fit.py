@@ -131,11 +131,11 @@ def pprint(result):
     return out
 
 class Fit:
-    def __init__(self, ds, model, fittype=0, maxiter=50, stepsize=-1, autostep=True, msgqueue=None):
+    def __init__(self, ds, model, fittype=0, maxiter=50, stepsize=-1, autostep=True, stopflag=None):
         fittype = [2,0][fittype]
         self.ds = copy.deepcopy(ds)
         self.func = QuickEvaluate(copy.deepcopy(model))
-        self._queue = msgqueue
+        self.stopflag = stopflag
 
         if model.coupled_model:
             ds_lengths = [len(q) for q in ds]
@@ -166,18 +166,12 @@ class Fit:
             event = misc_ui.ResultEvent(notify.GetId(), **kwargs)
             wx.PostEvent(notify, event)
 
-        def message(**kwargs):
-            event = misc_ui.ResultEvent(notify.GetId(), **kwargs)
-            wx.PostEvent(notify, event)
-
         out = self.odr.run()
         if True:
             for k in range(self.maxiter):
-                try:
-                    if self._queue.get(False):
-                        return None,None,['Fit cancelled by user']
-                except queue.Empty:
-                    pass
+                if self.stopflag is not None and self.stopflag.is_set():
+                #if self._queue.get(False):
+                    return None,None,['Fit cancelled by user']
                 if notify is not None:
                     message(iteration=(k + 2, out.info, out.res_var))
                 #print(out.info, out.stopreason)
