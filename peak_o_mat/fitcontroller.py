@@ -117,6 +117,7 @@ class FitController(object):
         plot_changed = self._current_pl != plot
         self._current_pl = plot
         #print('fc:selection changed',self._current_fititem)
+
         if self._current_fititem is not None:
             ds = self._current_fititem
             if ds.weights is not None:
@@ -506,6 +507,8 @@ class BatchWorker(Thread):
         wx.PostEvent(self._notify, event)
         super(BatchWorker, self).join()
 
+    cancel = join
+
     def run(self):
         msg = []
 
@@ -540,16 +543,18 @@ class WorkerThread(Thread):
         Thread.__init__(self)
         self._notify = notify
         self._job = job
-        self._queue = Queue()
+        #self._queue = Queue()
+        self.stopflag = Event()
         WorkerThread.threadnum += 1
 
     def cancel(self):
-        self._queue.put(True)
+        #self._queue.put(True)
+        self.stopflag.set()
         self.join()
 
     def run(self):
         ds, mod, fitopts = self._job
-        f = fit.Fit(ds, mod, **fitopts, msgqueue=self._queue)
+        f = fit.Fit(ds, mod, **fitopts, stopflag=self.stopflag)
         self.res = f.run(self._notify)
         if self.res[0] is None:
             self.send_message(cancel=self.res[-1])
