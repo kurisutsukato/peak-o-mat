@@ -602,12 +602,17 @@ class Component(dict):
 
         return x
 
+    def dottedsymbol(self, p, x):
+        return x
+
     def parse(self):
         scanner = Scanner([
             (r"(?<![a-z0-9])x(?![a-z0-9(])", self.x_found),
             (r"c_[a-zA-Z0-9_]+", lambda y,x: x),
             (r"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", lambda y,x: x),
-            (r"[A-Za-z_][A-Za-z0-9_]*((\.[A-Za-z_][A-Za-z0-9_]*)|\()+", self.func_found),
+            #(r"[A-Za-z_][A-Za-z0-9_]*((\.[A-Za-z_][A-Za-z0-9_]*)|^(?!\(\()\()+", self.func_found),
+            (r"([A-Za-z_][A-Za-z0-9_]*\.|)([A-Za-z_][A-Za-z0-9_]+\()", self.func_found),
+            (r"([A-Za-z_][A-Za-z0-9_]*\.)([A-Za-z_][A-Za-z0-9_]+)", lambda y,x: x),
             (r"[a-zA-Z_][a-zA-Z0-9_]*", self.var_found),
             (r"\+|-|\*|/", lambda y,x: x),
             (r"\s+", None),
@@ -799,7 +804,7 @@ def tp():
     print([q.name for q in m])
 
 def dm():
-    m = Model('a*x,np.sin(x*a)+b')
+    m = Model('a*x*np.pi,np.sin((x*a))+b')
     m.parse()
     m.CUSTOM.a.value = 1
     m.CUSTOM.b.value = 2
@@ -808,7 +813,7 @@ def dm():
     print(m.evaluate(np.linspace(0,10,5)))
 
 if __name__ == '__main__':
-    tp()
+    dm()
 
 
 
