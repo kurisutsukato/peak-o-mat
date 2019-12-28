@@ -118,11 +118,11 @@ if len(sys.argv) > 1:
         print('only allowed argument: --tag')
         sys.exit()
     else:
-        __version__ = version.VERSION
+        __version__ = '2rev'+version.VERSION
     SVN = False
 else:
     SVN = True
-    __version__ = version.__version__
+    __version__ = '2rev'+version.__version__
 
 files = []
 
