@@ -422,8 +422,9 @@ ValueError: invalid literal for int() with base 10: ''
         self._worker = BatchWorker(self.view, job)
         self._worker.start()
 
-    def batch_step_result(self, dsuuid, result):
-        ds = self._batchfit_plot[dsuuid]
+    def batch_step_result(self, batchds, result):
+        ds = self._batchfit_plot[batchds.uuid]
+        ds.limits = batchds.limits
         self._batchfit_basemodel.update_from_fit(result)
         ds.model = copy.deepcopy(self._batchfit_basemodel)
         self.view.pan_batch.txt_log.AppendText(ds.name+'\n')
@@ -512,7 +513,6 @@ class BatchWorker(Thread):
     def run(self):
         msg = []
 
-        #TODO ist __job eine Kopie?
         datasets, base, initial, order, fitopts = self._job
         for n,ds in enumerate(datasets):
             if self.stopreason.is_set():
@@ -531,7 +531,7 @@ class BatchWorker(Thread):
             #mod.update_from_fit(res)
             #pl[setnum].model = mod.copy()
             #TODO: das geht nicht, falscher thread
-            event = misc_ui.BatchStepEvent(self._notify.GetId(), ds=ds.uuid, result=res)
+            event = misc_ui.BatchStepEvent(self._notify.GetId(), ds=ds, result=res)
             wx.PostEvent(self._notify, event)
 			
         event = misc_ui.ResultEvent(self._notify.GetId(), endbatch='finished')
