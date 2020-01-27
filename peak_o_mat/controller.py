@@ -843,15 +843,15 @@ class Controller(object):
     def load_set_from_model(self, model, which, xr, pts):
         x = np.linspace(xr[0],xr[1],pts)
 
-        #if which > 0:
-        #    y = model.evaluate(x, single=True)[which-1]
-        #    name = model.tokens.split(' ')[which-1]
-        #else:
         y = model.evaluate(x, restrict=which)
         name = ' '.join(which)
-
         plot,sel = self.selection
-        self.project[plot].add(spec.Spec(x,y,name))
+
+        if type(y) is tuple:
+            for n,yn in enumerate(y):
+                self.project[plot].add(spec.Spec(x,yn,'{}_{}'.format(name,n+1)))
+        else:
+            self.project[plot].add(spec.Spec(x, y, name))
         self.update_tree(plot)
         self.update_plot()
         self.project_modified = True

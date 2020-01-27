@@ -34,7 +34,7 @@ class FitController(object):
         self.exportwhich = 'all'
         self._last_page = None
         self._current_page = None
-        self._current_fititem = None
+        self._current_ds = None
         self._current_pl = None
         self._fit_in_progress = False
 
@@ -55,7 +55,7 @@ class FitController(object):
         self._weights = w
         self.view.pan_weights.weightsgrid.table.data = self._weights
     def _get_weights(self):
-        if self._current_page != 'tab_weights':
+        if self._current_page != 2:
             return None
         else:
             return self._weights
@@ -82,21 +82,21 @@ class FitController(object):
         pub.sendMessage((self.view.id, 'fitctrl','limitfitrange'),msg=state)
         self.view.silent = False
         
-    def page_changed(self, name):
-        self._current_page = name
-        if name == 'tab_parameters':
+    def page_changed(self, page):
+        self._current_page = page
+        if page == 1:
             if self.model is not None:
                 #self.model.analyze()
                 if self.model.ok:
                     self.model.parse()
                     self.model = self.model # this will update the pargrid 
                     self.update_parameter_panel()
-        elif name == 'tab_weights':
+        elif page == 2:
             pub.sendMessage((self.view.id, 'fitctrl','plot'), msg=None)
 
-        if self._last_page == 'tab_weights':
+        if self._last_page == 2:
             self.stop_select_weights()
-        self._last_page = name
+        self._last_page = page
         self.sync_gui(batch=True)
 
     def sync_gui(self, **kwargs):
@@ -104,7 +104,7 @@ class FitController(object):
             self._fit_in_progress = kwargs['fit_in_progress']
         self.view.enable_stop(self._fit_in_progress)
         #self.view.enable_fit(not self._fit_in_progress and self.model is not None and self.model.is_filled() and self._current_fititem is not None)
-        self.view.enable_pick(not self._fit_in_progress and self.model is not None and self._current_fititem is not None and self.model.is_autopickable())
+        self.view.enable_pick(not self._fit_in_progress and self.model is not None and self._current_ds is not None and self.model.is_autopickable())
         self.view.pan_pars.Enable(self.model is not None and not self.model.is_empty())
 
         if 'batch' in kwargs and kwargs['batch']:
@@ -113,16 +113,17 @@ class FitController(object):
     def selection_changed(self, plot, ds):
         #print('fitcontroller selection changed',plot,dataset)
 
-        self._current_fititem = plot if len(ds) == len(plot) and len(plot) > 1 else (None if len(ds) > 1 or len(ds) == 0 else ds[0])
+        self._current_ds = plot if len(ds) == len(plot) \
+                                   and len(plot) > 1 \
+                                     else (None if len(ds) > 1 or len(ds) == 0 else ds[0])
         plot_changed = self._current_pl != plot
         self._current_pl = plot
-        #print('fc:selection changed',self._current_fititem)
 
-        if self._current_fititem is not None:
-            ds = self._current_fititem
+        if self._current_ds is not None:
+            ds = self._current_ds
             if ds.weights is not None:
                 self.weights = ds.weights
-                if self._current_page == 'tab_weights':
+                if self._current_page == 2:
                     self.view.canvas.set_handles(self._weights.getBorders())
             else:
                 self.weights = copy.deepcopy(self._weights)
@@ -395,16 +396,8 @@ class FitController(object):
         #                data=data.as_table(), name='{}:{}'.format(data.name, data.par))
         return data
 
-    def batch_fit(self, baseds_name, initial, order, fitopts):
+    def start_batchfit(self, baseds_name, initial, order, fitopts):
         pl,ds = self.selection
-
-        # hier gabs mal nen Fehler
-        # TODO
-        '''
-          File "D:\peak-o-mat\peak_o_mat\fitcontroller.py", line 316, in batch_fit
-    self._base_ds = base = int(baseds_name[1:])
-ValueError: invalid literal for int() with base 10: ''
-'''
 
         base = int(baseds_name[1:])
         self._batchfit_plot = pl
@@ -429,7 +422,7 @@ ValueError: invalid literal for int() with base 10: ''
         ds.model = copy.deepcopy(self._batchfit_basemodel)
         self.view.pan_batch.txt_log.AppendText(ds.name+'\n')
         self.view.pan_batch.txt_log.AppendText('\n'.join(result[-1]))
-        self.view.pan_batch.txt_log.AppendText('\n\n')
+        #self.view.pan_batch.txt_log.AppendText('\n\n')
 
     def stop_batch_fit(self):
         if hasattr(self, '_worker'):
@@ -444,18 +437,22 @@ ValueError: invalid literal for int() with base 10: ''
     def start_fit(self, limit, fitopts):
         pl,ds = self.selection
         if len(pl) == len(ds) and len(pl) > 1:
+            # fit multi model
             # multi spectra fit
             if limit:
                 xr = self.view.canvas.GetXCurrentRange()
                 for dataset in ds:
                     dataset.limits = xr
             job = (pl, self.model, fitopts)
+            self._fitobject = pl
         else:
+            # fit single model
             ds = ds[0]
             if limit:
                 xr = self.view.canvas.GetXCurrentRange()
                 ds.limits = xr
             job = (ds, self.model, fitopts)
+            self._fitobject = ds
 
         self.sync_gui(fit_in_progress=True)
         self.message('Fit in progress: iteration 1', forever=True)
@@ -464,24 +461,28 @@ ValueError: invalid literal for int() with base 10: ''
         self._worker.start()
 
     def fit_cancelled(self, msgs):
-        self.message('%s: fit cancelled' % self._current_fititem.name)
-        if self._current_fititem is not None:
+        self.message('%s: fit cancelled' % self._fitobject.name)
+        if self._fitobject is not None:
             self.sync_gui(fit_in_progress=False, batch=True)
             pub.sendMessage((self.view.id, 'updateview'))
+
+            self._fitobject = None
 
             self.view.pan_options.txt_fitlog.SetValue('\n'.join(msgs))
             pub.sendMessage((self.view.id, 'fitfinished'))
 
     def fit_finished(self, msgs):
-        self.message('%s: fit finshed' % self._current_fititem.name)
+        self.message('%s: fit finshed' % self._fitobject.name)
 
-        if self._current_fititem is not None:
+        if self._fitobject is not None:
             self.model.update_from_fit(self._worker.res)
-            self._current_fititem.model = self.model.copy()
+            self._fitobject.model = self.model.copy()
 
             self.sync_gui(fit_in_progress=False, batch=True)
 
             pub.sendMessage((self.view.id, 'updateview'))
+
+            self._fitobject = None
 
             #self.message('%s: fit finshed'%ds.name)
             #self.log(u'\'{}\' fit to {}\n'.format(ds.model,ds.name))
@@ -543,12 +544,10 @@ class WorkerThread(Thread):
         Thread.__init__(self)
         self._notify = notify
         self._job = job
-        #self._queue = Queue()
         self.stopflag = Event()
         WorkerThread.threadnum += 1
 
     def cancel(self):
-        #self._queue.put(True)
         self.stopflag.set()
         self.join()
 
@@ -556,10 +555,12 @@ class WorkerThread(Thread):
         ds, mod, fitopts = self._job
         f = fit.Fit(ds, mod, **fitopts, stopflag=self.stopflag)
         self.res = f.run(self._notify)
+        # returns None, msg if fit was cancelled
+
         if self.res[0] is None:
-            self.send_message(cancel=self.res[-1])
+            self.send_message(cancel=self.res[1])
         else:
-            self.send_message(end=self.res[-1])
+            self.send_message(end=self.res[1])
 
     def send_message(self, **kwargs):
         event = misc_ui.ResultEvent(self._notify.GetId(), **kwargs)
