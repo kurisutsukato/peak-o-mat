@@ -5,6 +5,7 @@ import sys
 
 import copy as cp
 from operator import mul, add
+from functools import reduce
 
 import numpy as np
 #np.seterr(divide='ignore')
@@ -195,7 +196,8 @@ tokens: a space separated list of valid function symbols
 
     @property
     def coupled_model(self):
-        return [1 for q in self if q.coupled_model] != []
+        commas_found = reduce(lambda a, b: a + b, [q.num_coupling for q in self])
+        return commas_found+1 if commas_found > 0 else 0
 
     def analyze(self):
         names = []
@@ -211,7 +213,7 @@ tokens: a space separated list of valid function symbols
                 names = self.get_parameter_names()
                 try:
                     ev = QuickEvaluate(self)
-                    out = ev(np.array([-2,1]),np.zeros(20))
+                    out = ev(np.array([-2,1]),np.zeros(len(names)))
                 except SyntaxError:
                     txt = 'Incomplete or invalid model.'
                 except TypeError as err:
@@ -242,7 +244,8 @@ tokens: a space separated list of valid function symbols
             else:
                 txt= 'Model valid.'
                 self.ok = True
-
+        if self.coupled_model:
+            txt += '\nThis is a coupled model for {} datasets.'.format(self.coupled_model)
         return txt,names
 
     def get_parameter_names(self):
@@ -372,7 +375,7 @@ fitresult: result of Fit.run()
 
 Update the model with the results from a fit.
         """
-        beta, sd_beta, msg = fitresult
+        (beta, sd_beta), msg = fitresult
 
         for component in self:
             for key,var in list(component.items()):
@@ -538,7 +541,7 @@ class Component(dict):
         self.has_x = False
 
         self._plevel = 0
-        self.num_coupled_models = 0
+        self.num_coupling = 0
 
         self.name = tok
         self.op = op
@@ -561,9 +564,9 @@ class Component(dict):
         #return '{}: {}'.format(self.name,pars)
         return self.name
 
-    @property
-    def coupled_model(self):
-        return self.num_coupled_models > 0
+    #@property
+    #def coupled_model(self):
+    #    return self.num_coupling
 
     def clear(self):
         for k in self.keys():
@@ -598,8 +601,7 @@ class Component(dict):
 
     def comma_found(self, p, x):
         if self._plevel == 0:
-            self.num_coupled_models += 1
-
+            self.num_coupling += 1
         return x
 
     def dottedsymbol(self, p, x):

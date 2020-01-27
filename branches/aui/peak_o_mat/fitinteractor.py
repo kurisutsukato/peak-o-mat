@@ -21,8 +21,10 @@ class FitInteractor(object):
         self.view.pan_model.lst_features.Bind(wx.EVT_LEFT_DCLICK, self.OnAddFeature)
         self.view.Bind(wx.EVT_BUTTON, self.OnClearModel, self.view.pan_model.btn_modelclear)
 
+        self.view.nb_fit.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnNotebookPageChanged)
+
         pub.subscribe(self.OnCanvasMode, (self.view.id, 'canvas','newmode'))
-        pub.subscribe(self.OnPageChanged, (self.view.id, 'notebook','pagechanged'))
+        #pub.subscribe(self.OnPageChanged, (self.view.id, 'notebook','pagechanged'))
         pub.subscribe(self.pubOnFitFinished, (self.view.id, 'fitfinished'))
 
         self.view.Bind(wx.EVT_BUTTON, self.OnPickParameters, self.view.pan_pars.btn_pickpars)
@@ -149,10 +151,10 @@ class FitInteractor(object):
 
 
         self.view.pan_batch.btn_stop.Enable()
-        self.controller.batch_fit(self.view.pan_batch.ch_base.GetStringSelection(),
-                                  self.view.pan_batch.ch_initial.GetSelection(),
-                                  self.view.pan_batch.ch_order.GetSelection(),
-                                  fitopts)
+        self.controller.start_batchfit(self.view.pan_batch.ch_base.GetStringSelection(),
+                                       self.view.pan_batch.ch_initial.GetSelection(),
+                                       self.view.pan_batch.ch_order.GetSelection(),
+                                       fitopts)
 
     def OnFitResult(self, evt):
         evt.Skip()
@@ -197,12 +199,16 @@ class FitInteractor(object):
             self.view.pan_model.lab_peakinfo.Value = info
             evt.Skip()
 
-    def OnPageChanged(self, msg):
-        if msg.GetName() == 'fitpanel':
-            self.controller.page_changed(self.view.nb_fit.GetCurrentPage().GetName())
-        else:
-            self.controller.page_changed(msg.GetName())
-    
+    def OnNotebookPageChanged(self, evt):
+        evt.Skip()
+        #pagename = evt.GetEventObject().GetCurrentPage().GetName()
+        #print('fitineractor, page changed',msg.GetName())
+        #if msg.GetName() == 'fitpanel':
+        #    self.controller.page_changed(self.view.nb_fit.GetCurrentPage().GetName())
+        #else:
+        self.controller.page_changed(evt.GetSelection())
+
+
     def OnCanvasMode(self, mode):
         if mode != 'handle':
             self.view.pan_weights.btn_placehandles.SetValue(False)

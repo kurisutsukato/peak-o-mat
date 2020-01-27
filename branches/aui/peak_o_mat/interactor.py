@@ -27,7 +27,8 @@ class Interactor(object):
         def menuitem(name):
             return self.view.GetMenuBar().FindItemById(xrc.XRCID(name))
 
-        self.view.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnNotebookPageChanged)
+        #self.view.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnNotebookPageChanged)
+        # moved to fitinteractor
 
         self.view.Bind(wx.EVT_MENU, self.OnNew, id=menu_ids['New'])
         self.view.Bind(wx.EVT_MENU, self.OnOpen, id=menu_ids['Open project...'])
@@ -218,6 +219,7 @@ class Interactor(object):
         else:
             self.view.msg_dialog('File not found: \'{}\''.format(path), 'Error')
 
+    #TODO: obnsolete
     def OnNotebookPageChanged(self, evt):
         pub.sendMessage((self.view_id, 'notebook', 'pagechanged'), msg=evt.GetEventObject().GetCurrentPage())
 

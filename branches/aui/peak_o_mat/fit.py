@@ -24,6 +24,7 @@ from .model import QuickEvaluate
 from .spec import Spec
 from . import misc_ui
 import wx
+import time
 
 class BatchComponent(object):
     def __init__(self):
@@ -131,7 +132,7 @@ def pprint(result):
     return out
 
 class Fit:
-    def __init__(self, ds, model, fittype=0, maxiter=50, stepsize=-1, autostep=True, stopflag=None):
+    def __init__(self, ds, model, fittype=0, maxiter=200, stepsize=-1, autostep=True, stopflag=None):
         fittype = [2,0][fittype]
         self.ds = copy.deepcopy(ds)
         self.func = QuickEvaluate(copy.deepcopy(model))
@@ -170,17 +171,20 @@ class Fit:
         if True:
             for k in range(self.maxiter):
                 if self.stopflag is not None and self.stopflag.is_set():
-                #if self._queue.get(False):
-                    return None,None,['Fit cancelled by user']
+                    return None,['Fit cancelled by user']
                 if notify is not None:
                     message(iteration=(k + 2, out.info, out.res_var))
-                #print(out.info, out.stopreason)
                 if out.info != 4:
+                    # 4 == iteration limit reached -> restart odr
                     break
                 out = self.odr.restart(1)
+                time.sleep(0.5)
+
+        #decoerce parameters if necessary
         pars, errors = self.func.fill(out.beta,out.sd_beta)
+
         msg = pprint(out)
-        return pars,errors,msg
+        return (pars,errors),msg
 
 def test1():
     bp = BatchParameters(name='test', par='amp')
