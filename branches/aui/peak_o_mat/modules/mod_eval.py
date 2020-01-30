@@ -24,7 +24,7 @@ import wx
 from pubsub import pub
 
 import numpy as np
-from scipy.misc import comb as nOk
+from scipy.special import comb as nOk
 from scipy.interpolate import Akima1DInterpolator
 
 from peak_o_mat import module,spec,controls,misc_ui
