@@ -75,7 +75,10 @@ class ModelTableProxy(list):
 
         def __setitem__(self, item, value):
             if item in [1,3,4,5]:
-                setattr(self.var, self.attrmap[item], self.types[item](value))
+                try:
+                    setattr(self.var, self.attrmap[item], self.types[item](value))
+                except ValueError:
+                    return
 
     def __init__(self, model):
         if model is None:

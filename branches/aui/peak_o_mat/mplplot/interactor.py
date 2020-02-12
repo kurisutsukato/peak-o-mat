@@ -31,7 +31,8 @@ class Interactor:
         self.view.Bind(wx.EVT_UPDATE_UI, self.OnIdle)
         self.view.Bind(wx.EVT_TIMER, self.OnTimer)
 
-        self.view.Bind(dv.EVT_DATAVIEW_ITEM_VALUE_CHANGED, self.OnLineStyleUpdate)
+        #self.view.Bind(dv.EVT_DATAVIEW_ITEM_VALUE_CHANGED, self.OnLineStyleUpdate)
+        self.view.line_control.Bind(wx.EVT_TEXT, self.OnLineAttrText)
 
         txtinput = ['txt_xlabel','txt_ylabel','txt_title','spn_legend_fontsize','spn_legend_position',
                     'spn_fontsize',
@@ -88,6 +89,13 @@ class Interactor:
         self.view.plot_layout.pop.Bind(EVT_RECT_SELECT, self.OnSelectGridPosition)
 
         self.view.plot_layout.pop.Bind(EVT_RECT_REORDER, self.OnReorderPlots)
+
+    def OnLineAttrText(self, evt):
+        obj = evt.GetEventObject()
+        item = obj.Name
+        sel = self.view.line_control.selection
+
+        self.controller.set_line_attr(sel, item, obj.Value)
 
     def OnReorderPlots(self, evt):
         evt.Skip()

@@ -237,8 +237,10 @@ class Plot(LData):
     rng = property(_get_range, _set_range)
 
     def add_ref(self, ref):
+        #print('project:addref',ref)
         self._references.append(ref)
     def del_ref(self, ref):
+        #print('project:delref',ref)
         self._references.remove(ref)
 
     @property
@@ -410,9 +412,12 @@ class Project(LData):
     def __getitem__(self, item):
         if type(item) in [int,slice]:
             return super(Project, self).__getitem__(item)
+        _tmp = []
         for p in self:
+            _tmp.append(p.uuid)
             if p.uuid == item:
                 return p
+        print(_tmp)
         raise KeyError('no plot with uuid "{}"'.format(item))
 
     def __contains__(self, item):
