@@ -54,6 +54,7 @@ class PlotData(object):
         obj = PlotData(self.project, self.plot_ref, plot_hash=self.plot_hash, data=deepcopy(self.line_data.data, memo))
         for attr in self.attrs:
             setattr(obj, attr, getattr(self, attr))
+        self.project[self.plot_ref].del_ref(obj.uuid)
         return obj
 
     def equals(self, other):
@@ -122,7 +123,9 @@ class PlotData(object):
             df = DataFactory()
             for s in self.project[self.plot_ref]:
                 data.append(df.next_with_name(s.name))
-        return ListModel(data)
+
+        return data
+        #return ListModel(data)
 
     @property
     def modified(self):
@@ -205,7 +208,7 @@ class PlotData(object):
         return self.get_range()[1]
 
     def __iter__(self):
-        for p,q in zip(self.project[self.plot_ref],self.line_data.data):
+        for p,q in zip(self.project[self.plot_ref],self.line_data):
             if not p.hide:
                 yield p,q
 
@@ -383,8 +386,10 @@ class MultiPlotModel(dict):
             return super(MultiPlotModel, self).__getitem__(item)
 
     def add(self, plotdata, pos):
-        if plotdata is None:
-            plotdata = PlotData(self.project, 0)
+        #plotdata = PlotData(self.project, plot)
+        #if plotdata is None:
+        #    plotdata = PlotData(self.project, 0)
+
         if pos in self:
             self[pos].plot_ref = plotdata.plot_ref
         else:

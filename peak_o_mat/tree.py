@@ -44,6 +44,7 @@ class TreeCtrl(CustomTreeCtrl):
         self._drag = False
         self._update = False
         
+        self.view_id = 'ID'+str(id(wx.GetTopLevelParent(self)))
         self.root = self.AddRoot('project tree')
         
         isz = (16,16)
@@ -80,10 +81,6 @@ class TreeCtrl(CustomTreeCtrl):
     def OnMouseEnter(self, evt):
         if wx.GetTopLevelParent(self).IsActive():
             self.SetFocus()
-
-    @property
-    def view_id(self):
-        return 'ID'+str(id(wx.GetTopLevelParent(self)))
 
     def __getitem__(self, item):
         """\

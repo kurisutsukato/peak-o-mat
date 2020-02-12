@@ -18,7 +18,7 @@ from matplotlib.ticker import FuncFormatter, NullFormatter, ScalarFormatter, Log
 
 from .view import ControlFrame
 from .interactor import Interactor
-from .model import MultiPlotModel, PlotData
+from .model import MultiPlotModel, PlotData, LineData
 
 class Locals(dict):
     def __init__(self, stdout, data={}):
@@ -135,7 +135,7 @@ class PlotController(object):
                 pass
             self.view.enable_edit(False)
         else:
-            pd = PlotData(self.controller.project,plot)
+            pd = PlotData(self.model.project,plot)
             self.model.add(pd, pos)
             self.view.update_from_model(self.model)
             self.view.enable_edit(True)
@@ -158,10 +158,16 @@ class PlotController(object):
 
     def draw(self):
         self.resize_frame()
-        self.redraw(force=True)
+        #self.redraw(force=True)
 
     def update_model(self):
         self.model.update_from_view(self.view)
+
+    def set_line_attr(self, sel, item, val):
+        ld = self.model.selected.line_data
+        for s in sel:
+            ld[s][ld[s]._attrs.index(item)] = val
+        self.redraw()
 
     def redraw(self, update_selected=False, force=False):
         if hasattr(self, 't') and self.t.is_alive():
@@ -282,3 +288,16 @@ def set_plot_attributes(ax, pm):
 
 def new(controller, parent, plotmodel):
     return PlotController(controller, ControlFrame(parent), plotmodel)
+
+if __name__ == '__main__':
+    from ..project import Project
+
+    p = Project()
+    print(p.load('d:/dev/pom/trunk/example.lpj'))
+
+    import wx
+    app = wx.App()
+    c = new(None, None, MultiPlotModel(p))
+    c.draw()
+    c.view.Show(True)
+    app.MainLoop()

@@ -104,7 +104,7 @@ defaultconfig = {'general':{'floating_point_is_comma':False,
                             'default_encoding':'utf-8',
                            },
                  'display':{'fast_max_pts':200,
-                           'fast_display':True
+                           'fast_display':False,
                            },
                  'encodings':{'utf-8':'','iso8859-1':'','iso2022-jp-2':''}
                  }

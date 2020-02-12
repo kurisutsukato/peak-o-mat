@@ -46,49 +46,84 @@ class CHRenderer(dv.DataViewChoiceRenderer):
         super(CHRenderer, self).ActivateCell(*args, **kwargs)
 
 class LineControlPanel(wx.Panel):
+    def __setattr__(self, attr, val):
+        if issubclass(val.__class__, wx.Window):
+            self.__ctrls.append(val)
+        return super(LineControlPanel, self).__setattr__(attr, val)
+
     def __init__(self, parent, data=[]):
+        self.__ctrls = []
+        self.selection = []
         wx.Panel.__init__(self, parent, -1)
 
-        # Create a dataview control
-        self.dvc = dv.DataViewCtrl(self,
-                                   style=wx.BORDER_THEME
-                                   #| dv.DV_ROW_LINES # nice alternating bg colors
-                                   | dv.DV_HORIZ_RULES
-                                   | dv.DV_VERT_RULES
-                                   | dv.DV_MULTIPLE
-                                   )
-        renderer = dv.DataViewChoiceRenderer(choices=('','-','--','-.',':'))
-        c0 = dv.DataViewColumn("Linestyle",
-                               renderer,
-                               0,
-                               width=80)
-        self.dvc.AppendColumn(c0)
+        self.dataset_list = wx.ListCtrl(self, style=wx.LC_LIST)
+        self.txt_label = wx.TextCtrl(self, size=(120,-1), name='label')
+        self.cho_linestyle = wx.Choice(self, size=(60,-1))
+        self.spn_linewidth = wx.SpinCtrlDouble(self, min=0.5, initial=1, max=50, inc=0.5, size=(60,-1))
+        self.cho_markerstyle = wx.Choice(self, size=(60,-1))
+        self.spn_markersize = wx.SpinCtrl(self, min=2, initial=8, max=50, size=(60,-1))
+        self.txt_linecolor = wx.TextCtrl(self, value='', size=(60,-1), name='color')
+        self.txt_markercolor = wx.TextCtrl(self, value='', size=(60,-1), name='color')
 
-        renderer = dv.DataViewChoiceRenderer(choices=('','.',',','o','v','^','<','>','1','2','3','4','8','s','p','*','h','H','+','x','D','d','|','_'))
-        c0 = dv.DataViewColumn("Markerstyle",
-                               renderer,
-                               1,
-                               width=80)
-        self.dvc.AppendColumn(c0)
+        outer = wx.BoxSizer(wx.HORIZONTAL)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.dataset_list, 1)
 
-        c2 = self.dvc.AppendTextColumn("Linewidth",   2, width=50, mode=dv.DATAVIEW_CELL_EDITABLE)
-        c2 = self.dvc.AppendTextColumn("Markersize",   3, width=50, mode=dv.DATAVIEW_CELL_EDITABLE)
-        c3 = self.dvc.AppendTextColumn("Color",    4, width=70, mode=dv.DATAVIEW_CELL_EDITABLE)
-        c4 = self.dvc.AppendTextColumn('Alpha', 5, width=50, mode=dv.DATAVIEW_CELL_EDITABLE)
-        c5 = self.dvc.AppendTextColumn('Label',   6, width=140, mode=dv.DATAVIEW_CELL_EDITABLE)
-        c6 = self.dvc.AppendToggleColumn('Legend',   7, width=80, mode=dv.DATAVIEW_CELL_ACTIVATABLE)
+        outer.Add(vbox, 0, wx.ALL|wx.EXPAND, 5)
 
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.dvc, 1, wx.EXPAND)
-        self.SetSizer(sizer)
-        self.dvc.Bind(dv.EVT_DATAVIEW_ITEM_ACTIVATED, self.OnActivate)
-        self.dvc.Bind(dv.EVT_DATAVIEW_ITEM_EDITING_DONE, self.OnEndEdit)
+        grd = wx.FlexGridSizer(cols=2, hgap=2, vgap=5)
 
-    def OnEndEdit(self, evt):
-        print('endedit')
+        grd.Add(wx.StaticText(self, label='Label'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+        grd.Add(self.txt_label, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
 
-    def OnActivate(self, evt):
-        self.dvc.EditItem(evt.GetItem(), self.dvc.GetColumn(evt.GetColumn()))
+        grd.Add(wx.StaticText(self, label='Line style'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+        grd.Add(self.cho_linestyle, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+
+        grd.Add(wx.StaticText(self, label='Line width'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+        grd.Add(self.spn_linewidth, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+
+        grd.Add(wx.StaticText(self, label='Line color'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+        grd.Add(self.txt_linecolor, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+
+        grd.Add(wx.StaticText(self, label='Marker style'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+        grd.Add(self.cho_markerstyle, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+
+        grd.Add(wx.StaticText(self, label='Marker size'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+        grd.Add(self.spn_markersize, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+
+        grd.Add(wx.StaticText(self, label='Maker color'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+        grd.Add(self.txt_markercolor, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+
+        outer.Add(grd, 0, wx.ALL|wx.EXPAND, 5)
+        self.SetSizer(outer)
+
+        self.Bind(wx.EVT_TEXT, self.OnText)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
+        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnDeSelect)
+        self.enable()
+
+    def associate_model(self, line_data):
+        self.__line_data = line_data
+        for ld in line_data:
+            self.dataset_list.Append([ld[6]])
+        self.dataset_list.Select(0)
+
+    def OnText(self, evt):
+        item = evt.GetEventObject().Name
+        self.line_data.index(LineData._attrs[item])
+
+    def OnDeSelect(self, evt):
+        self.selection.remove(evt.Index)
+        self.enable()
+
+    def OnSelect(self, evt):
+        self.selection.append(evt.Index)
+        self.enable()
+
+    def enable(self):
+        for c in self.__ctrls:
+            if not isinstance(c, wx.ListCtrl):
+                wx.CallAfter(c.Enable, len(self.selection) > 0)
 
 class BlitCanvas(wx.Window):
     def __init__(self, parent):
@@ -136,10 +171,15 @@ class MPLFrame(wx.Frame):
 
 class ControlFrame(wx.Frame):
     def __init__(self, parent):
-        style = wx.DEFAULT_FRAME_STYLE|wx.FRAME_FLOAT_ON_PARENT
-        super(ControlFrame, self).__init__(parent, style=style, pos=_pos[0])
 
-        self.id = parent.id
+        style = wx.DEFAULT_FRAME_STYLE
+        if parent is not None:
+            style |= wx.FRAME_FLOAT_ON_PARENT
+            self.id = parent.id
+        else:
+            self.id = 'ID'+str(id(self))
+
+        super(ControlFrame, self).__init__(parent, style=style, pos=_pos[0])
 
         self.setup_controls()
         self.set_tooltips()
@@ -181,9 +221,6 @@ class ControlFrame(wx.Frame):
             wx.TheClipboard.SetData(wx.BitmapDataObject(bmp))
             wx.TheClipboard.Close()
 
-    def associate_model(self, line_data):
-        self.line_control.dvc.AssociateModel(line_data)
-
     def update_from_model(self, mpmodel):
         if mpmodel is None:
             return
@@ -205,7 +242,7 @@ class ControlFrame(wx.Frame):
             self.enable_edit(True)
 
             self.plot_layout.update_from_model(mpmodel)
-            self.associate_model(mpmodel.selected.line_data)
+            self.line_control.associate_model(mpmodel.selected.line_data)
 
             self.txt_xlabel.Value = mpmodel.selected.label_x
             self.txt_ylabel.Value = mpmodel.selected.label_y
