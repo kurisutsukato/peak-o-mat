@@ -58,7 +58,7 @@ class MainFrame(wx.Frame):
 
 
     def __init__(self, silent=False, plotserver=False):
-        super(MainFrame, self).__init__(None)
+        super(MainFrame, self).__init__(None, name='pomuiroot')
 
         #self.app = wx.GetApp()
         if not silent:
@@ -122,7 +122,7 @@ class MainFrame(wx.Frame):
         self.pan_tree.SetSizer(vbox)
 
     def setup_controls(self):
-        self.id = 'ID'+str(id(self))
+        self.id = 'ID'+str(id(wx.FindWindowByName('pomuiroot')))
 
         self.statusbar = controls.Status(self)
         self.SetStatusBar(self.statusbar)

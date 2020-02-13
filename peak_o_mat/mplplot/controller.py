@@ -163,12 +163,6 @@ class PlotController(object):
     def update_model(self):
         self.model.update_from_view(self.view)
 
-    def set_line_attr(self, sel, item, val):
-        ld = self.model.selected.line_data
-        for s in sel:
-            ld[s][ld[s]._attrs.index(item)] = val
-        self.redraw()
-
     def redraw(self, update_selected=False, force=False):
         if hasattr(self, 't') and self.t.is_alive():
             self.view._redraw_requested = (update_selected, force)

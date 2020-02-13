@@ -31,9 +31,6 @@ class Interactor:
         self.view.Bind(wx.EVT_UPDATE_UI, self.OnIdle)
         self.view.Bind(wx.EVT_TIMER, self.OnTimer)
 
-        #self.view.Bind(dv.EVT_DATAVIEW_ITEM_VALUE_CHANGED, self.OnLineStyleUpdate)
-        self.view.line_control.Bind(wx.EVT_TEXT, self.OnLineAttrText)
-
         txtinput = ['txt_xlabel','txt_ylabel','txt_title','spn_legend_fontsize','spn_legend_position',
                     'spn_fontsize',
                     'txt_xrng_min','txt_xrng_max','txt_yrng_min','txt_yrng_max',
@@ -90,12 +87,10 @@ class Interactor:
 
         self.view.plot_layout.pop.Bind(EVT_RECT_REORDER, self.OnReorderPlots)
 
-    def OnLineAttrText(self, evt):
-        obj = evt.GetEventObject()
-        item = obj.Name
-        sel = self.view.line_control.selection
+        Publisher.subscribe(self.pubOnRedraw, (self.view.id, 'lineattrs','changed'))
 
-        self.controller.set_line_attr(sel, item, obj.Value)
+    def pubOnRedraw(self):
+        self.controller.redraw(update_selected=True, force=True)
 
     def OnReorderPlots(self, evt):
         evt.Skip()
@@ -165,7 +160,6 @@ annotate('look at this', color='red', xy=(0.3,0.8), xytext=(0.2,0.6), xycoords='
         self.view.editor.SetText(info + text)
 
     def OnTimer(self, evt):
-        print(self.view._redraw)
         self.controller.redraw(*self.view._redraw)
 
     def OnIdle(self, evt):
@@ -187,15 +181,7 @@ annotate('look at this', color='red', xy=(0.3,0.8), xytext=(0.2,0.6), xycoords='
         kwargs = {name:evt.GetEventObject().GetValue()}
         self.controller.model.update_from_view(self.view)
         self.view.figure.subplots_adjust(**kwargs)
-        #self.view.figure.canvas.draw()
         self.controller.redraw()
-        #self.controller.plot()
-
-    def OnLineStyleUpdate(self, evt):
-        self.controller.update_model()
-        self.controller.redraw(update_selected=True, force=True)
-        #wx.CallLater(200, self.__cmds.append, ('redraw',[],{'update_selected':True, 'force':True}))
-        #wx.CallAfter(self.controller.redraw, update_selected=True, force=True)
 
     def OnUpdateSelected(self, evt):
         obj = evt.GetEventObject()

@@ -159,7 +159,7 @@ class GridPanel(wx.Panel):
         if show_shell:
             raise Exception('should not happen')
         wx.Panel.__init__(self, parent)
-        self.id = wx.GetTopLevelParent(self).id
+        self.id = wx.FindWindowByName('pomuiroot').id
         self.grid = Grid(self)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -208,7 +208,7 @@ class GridPanel(wx.Panel):
 class Grid(wx.grid.Grid):
     def __init__(self, parent):
         wx.grid.Grid.__init__(self, parent, -1, style=wx.SUNKEN_BORDER)
-        self.id = wx.GetTopLevelParent(self).id
+        self.id = wx.FindWindowByName('pomuiroot').id
         self.SetColLabelSize(20)
         self.SetDefaultCellOverflow(False)
         self.SetRowLabelSize(120)

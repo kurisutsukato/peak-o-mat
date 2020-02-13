@@ -634,12 +634,12 @@ class Project(LData):
                     token_elem.attrib['name'] = feat.name
                     for par in feat.keys():
                         par_elem = ET.SubElement(token_elem, 'var')
-                        tmp = {'name': par, 'value': str(feat[par].value), 'error': str(feat[par].error)}
+                        tmp = {'name': par, 'value': repr(feat[par].value), 'error': repr(feat[par].error)}
                         if feat[par].constr == 2:
                             if feat[par].amin is not None:
-                                tmp['amin'] = str(feat[par].amin)
+                                tmp['amin'] = repr(feat[par].amin)
                             if feat[par].amax is not None:
-                                tmp['amax'] = str(feat[par].amax)
+                                tmp['amax'] = repr(feat[par].amax)
                         elif feat[par].constr == 1:
                             tmp['fix'] = 'True'
                         par_elem.attrib.update(tmp)
@@ -648,12 +648,12 @@ class Project(LData):
                 set_elem = ET.SubElement(plot_elem, 'set')
                 if self[p][s].hide:
                     set_elem.attrib['hide'] = 'True'
-                set_elem.attrib['x'] = ' '.join(['{:.16g}'.format(q) for q in self[p][s].data[0]])
-                set_elem.attrib['y'] = ' '.join(['{:.16g}'.format(q) for q in self[p][s].data[1]])
+                set_elem.attrib['x'] = ' '.join([repr(q) for q in self[p][s].data[0]])
+                set_elem.attrib['y'] = ' '.join([repr(q) for q in self[p][s].data[1]])
                 set_elem.attrib['name'] = slash(self[p][s].name)
 
                 if self[p][s].limits is not None:
-                    set_elem.attrib['limits'] = ' '.join(['{:.16g}'.format(q) for q in self[p][s].limits])
+                    set_elem.attrib['limits'] = ' '.join([repr(q) for q in self[p][s].limits])
 
                 if self[p][s].model is not None:
                     mod_elem = ET.SubElement(set_elem, 'mod')
@@ -665,12 +665,12 @@ class Project(LData):
                         token_elem.attrib['name'] = feat.name
                         for par in feat.keys():
                             par_elem = ET.SubElement(token_elem, 'var')
-                            tmp = {'name':par,'value':str(feat[par].value),'error':str(feat[par].error)}
+                            tmp = {'name':par,'value':repr(feat[par].value),'error':repr(feat[par].error)}
                             if feat[par].constr == 2:
                                 if feat[par].amin is not None:
-                                    tmp['amin'] = str(feat[par].amin)
+                                    tmp['amin'] = repr(feat[par].amin)
                                 if feat[par].amax is not None:
-                                    tmp['amax'] = str(feat[par].amax)
+                                    tmp['amax'] = repr(feat[par].amax)
                             elif feat[par].constr == 1:
                                 tmp['fix'] = 'True'
                             par_elem.attrib.update(tmp)
@@ -679,12 +679,12 @@ class Project(LData):
                     weights_elem = ET.SubElement(set_elem, 'weights')
                     for w in self[p][s].weights:
                         wreg_elem = ET.SubElement(weights_elem, 'weightsregion')
-                        wreg_elem.attrib = {'lower':str(w.xmin),'upper':str(w.xmax),'rel':str(w.w_rel),'abs':str(w.w_abs),'mode':str(w.mode)}
+                        wreg_elem.attrib = {'lower':repr(w.xmin),'upper':repr(w.xmax),'rel':repr(w.w_rel),'abs':repr(w.w_abs),'mode':repr(w.mode)}
 
                 if len(self[p][s].trafo) > 0:
                     for axis,trafo,comment,skip in self[p][s].trafo:
                         trafo_elem = ET.SubElement(set_elem, 'trafo')
-                        trafo_elem.attrib = {'axis':axis, 'trafo':trafo,'comment':slash(comment),'skip':str(skip)}
+                        trafo_elem.attrib = {'axis':axis, 'trafo':trafo,'comment':slash(comment),'skip':repr(skip)}
 
                 if sometrue(self[p][s].mask != 0):
                     mask_elem = ET.SubElement(set_elem, 'mask')
@@ -699,7 +699,7 @@ class Project(LData):
                 elem.text = v
             for pos,pd in mpmodel.items():
                 fig_elem = ET.SubElement(mpm_elem, 'figure')
-                fig_elem.attrib = {'row':str(pos[0]), 'col':str(pos[1])}
+                fig_elem.attrib = {'row':repr(pos[0]), 'col':repr(pos[1])}
 
                 #fig_elem = ET.SubElement(root, 'figure')
                 ref, settings, data = pd.to_xml()

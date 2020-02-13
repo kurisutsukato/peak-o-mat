@@ -44,7 +44,7 @@ class TreeCtrl(CustomTreeCtrl):
         self._drag = False
         self._update = False
         
-        self.view_id = 'ID'+str(id(wx.GetTopLevelParent(self)))
+        self.view_id = 'ID'+str(id(wx.FindWindowByName('pomuiroot')))
         self.root = self.AddRoot('project tree')
         
         isz = (16,16)
@@ -79,7 +79,7 @@ class TreeCtrl(CustomTreeCtrl):
         self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
 
     def OnMouseEnter(self, evt):
-        if wx.GetTopLevelParent(self).IsActive():
+        if wx.FindWindowByName('pomuiroot').IsActive():
             self.SetFocus()
 
     def __getitem__(self, item):

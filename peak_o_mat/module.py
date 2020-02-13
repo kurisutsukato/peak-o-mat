@@ -35,7 +35,6 @@ class Module:
     # it will steal the focus from any other module
     need_attention = False
 
-
 #TODO: remove similiar code from XRCModule and BaseModule
 
 class BaseModule(Module):
@@ -47,7 +46,7 @@ class BaseModule(Module):
         self.parent_view = view
         self.parent_controller = controller
         self.name = os.path.splitext(os.path.basename(__file__))[0]
-        self.view_id = 'ID'+str(id(wx.GetTopLevelParent(view)))
+        self.view_id = 'ID'+str(id(wx.FindWindowByName('pomuiroot')))
         self.view = None
 
     def init(self):
@@ -103,7 +102,7 @@ class MyModule(module.Module):
         self.plotme = None
         self.visible = False
 
-        self.view_id = 'ID'+str(id(wx.GetTopLevelParent(self.controller.view)))
+        self.view_id = 'ID'+str(id(wx.FindWindowByName('pomuiroot')))
 
         assert hasattr(self, 'title')
 

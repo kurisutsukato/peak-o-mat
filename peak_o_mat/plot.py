@@ -790,7 +790,7 @@ class PlotCanvas(wx.Panel):
         self.state = State(self)
 
 
-        Interactor('ID'+str(id(wx.GetTopLevelParent(self)))).install(self)
+        Interactor('ID'+str(id(wx.FindWindowByName('pomuiroot')))).install(self)
 
     def report(self, cmds):
         self.state.set('getpars')

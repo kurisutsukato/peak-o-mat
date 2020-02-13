@@ -458,7 +458,7 @@ class FitPanel(wx.Panel):
         self.SetSizer(box)
 
     def setup_controls(self):
-        self.id = 'ID'+str(id(wx.GetTopLevelParent(self)))
+        self.id = 'ID'+str(id(wx.FindWindowByName('pomuiroot')))
 
         self.nb_fit = wx.Notebook(self)
         self.pan_model = FitModelPanel(self.nb_fit)

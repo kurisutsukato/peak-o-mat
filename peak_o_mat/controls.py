@@ -267,7 +267,7 @@ class Toolbar(wx.Panel):
         self.Layout()
         #self.SetMinSize((20,-1))
 
-        pub.subscribe(self.OnNewMode, ('ID'+str(id(wx.GetTopLevelParent(self))),'canvas','newmode'))
+        pub.subscribe(self.OnNewMode, ('ID'+str(id(wx.FindWindowByName('pomuiroot'))),'canvas','newmode'))
 
     def _set_silent(self, state):
         self.SetEvtHandlerEnabled(not state)
@@ -664,7 +664,7 @@ class FigureListCtrl(wx.Panel):
         self.model = model # ugly: this should be refe renced here
 
         self.controller = controller
-        self.id = 'ID'+str(id(wx.GetTopLevelParent(self)))
+        self.id = 'ID'+str(id(wx.FindWindowByName('pomuiroot')))
 
         self.lst = dv.DataViewCtrl(self,style=dv.DV_NO_HEADER|dv.DV_ROW_LINES)
 

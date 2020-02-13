@@ -182,6 +182,7 @@ class Interactor(object):
             menu.SetLabel(mi.GetId(), 'Start plot server')
 
     def OnFigureClose(self):
+        print('figure close')
         self.controller.create_or_show_figure(False, discard=True)
 
     def OnFigureSave(self):
