@@ -136,13 +136,12 @@ class PlotData(object):
         return False
 
     def sync_with_plot(self):
-        print('syncplot')
-        nlines = len(self.line_data.data)
+        nlines = len(self.line_data)
         diff = len(self.project[self.plot_ref])-nlines
         df = DataFactory()
         for n,s in zip(list(range(diff)), self.project[self.plot_ref][nlines:]):
-            self.line_data.data.append(df.next_with_name(s.name))
-        self.line_data.data = self.line_data.data[:len(self.project[self.plot_ref])]
+            self.line_data.append(df.next_with_name(s.name))
+        self.line_data = self.line_data[:len(self.project[self.plot_ref])]
         self.plot_hash = self.project[self.plot_ref].hash
 
     def hash(self):

@@ -6,6 +6,8 @@ import wx.stc as stc
 import matplotlib as mpl
 mpl.use('Agg')
 
+from pubsub import pub
+
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
@@ -47,23 +49,26 @@ class CHRenderer(dv.DataViewChoiceRenderer):
 
 class LineControlPanel(wx.Panel):
     def __setattr__(self, attr, val):
-        if issubclass(val.__class__, wx.Window):
+        if issubclass(val.__class__, wx.Window) and val.Name != 'ignore':
             self.__ctrls.append(val)
         return super(LineControlPanel, self).__setattr__(attr, val)
 
     def __init__(self, parent, data=[]):
         self.__ctrls = []
         self.selection = []
-        wx.Panel.__init__(self, parent, -1)
+        self.__process_queue = []
 
-        self.dataset_list = wx.ListCtrl(self, style=wx.LC_LIST)
+        wx.Panel.__init__(self, parent, -1)
+        self.id = 'ID'+str(id(wx.FindWindowByName('pomuiroot')))
+
+        self.dataset_list = wx.ListCtrl(self, style=wx.LC_LIST|wx.LC_HRULES, size=(200,-1), name='ignore')
         self.txt_label = wx.TextCtrl(self, size=(120,-1), name='label')
-        self.cho_linestyle = wx.Choice(self, size=(60,-1))
-        self.spn_linewidth = wx.SpinCtrlDouble(self, min=0.5, initial=1, max=50, inc=0.5, size=(60,-1))
-        self.cho_markerstyle = wx.Choice(self, size=(60,-1))
-        self.spn_markersize = wx.SpinCtrl(self, min=2, initial=8, max=50, size=(60,-1))
+        self.cho_linestyle = wx.Choice(self, size=(60,-1), name='linestyle')
+        self.spn_linewidth = wx.SpinCtrlDouble(self, min=0.5, initial=1, max=50, inc=0.5, size=(60,-1), name='linewidth')
+        self.cho_markerstyle = wx.Choice(self, size=(60,-1), name='marker')
+        self.spn_markersize = wx.SpinCtrl(self, min=2, initial=8, max=50, size=(60,-1), name='markersize')
         self.txt_linecolor = wx.TextCtrl(self, value='', size=(60,-1), name='color')
-        self.txt_markercolor = wx.TextCtrl(self, value='', size=(60,-1), name='color')
+        self.txt_markercolor = wx.TextCtrl(self, value='', size=(60,-1))
 
         outer = wx.BoxSizer(wx.HORIZONTAL)
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -97,33 +102,54 @@ class LineControlPanel(wx.Panel):
         outer.Add(grd, 0, wx.ALL|wx.EXPAND, 5)
         self.SetSizer(outer)
 
-        self.Bind(wx.EVT_TEXT, self.OnText)
+        self.Bind(wx.EVT_TEXT, self.OnLineAttrText)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
         self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnDeSelect)
+        self.Bind(wx.EVT_IDLE, self.OnProcess)
+
         self.enable()
 
-    def associate_model(self, line_data):
+    def associate_model(self, line_data, ds_names):
         self.__line_data = line_data
-        for ld in line_data:
-            self.dataset_list.Append([ld[6]])
+        self.dataset_list.ClearAll()
+        for ld in ds_names:
+            self.dataset_list.Append([ld])
         self.dataset_list.Select(0)
 
-    def OnText(self, evt):
-        item = evt.GetEventObject().Name
-        self.line_data.index(LineData._attrs[item])
+    def OnLineAttrText(self, evt):
+        obj = evt.GetEventObject()
+        item = obj.Name
+
+        ld = self.__line_data
+        for s in self.selection:
+            setattr(ld[s], item, obj.Value)
+        print('linearres')
+        pub.sendMessage((self.id, 'lineattrs','changed'))
+
+    def OnProcess(self, evt):
+        if len(self.__process_queue) > 0:
+            self.__process_queue[0]()
+            self.__process_queue.clear()
 
     def OnDeSelect(self, evt):
         self.selection.remove(evt.Index)
-        self.enable()
+        self.__process_queue.append(self.enable)
+        #pub.sendMessage((self.id, 'plotitem', 'selectionchanged'))
 
     def OnSelect(self, evt):
         self.selection.append(evt.Index)
-        self.enable()
+        self.__process_queue.append(self.enable)
+        #pub.sendMessage((self.id, 'plotitem', 'selectionchanged'))
 
     def enable(self):
         for c in self.__ctrls:
-            if not isinstance(c, wx.ListCtrl):
+            if c.Name != 'ignore':
                 wx.CallAfter(c.Enable, len(self.selection) > 0)
+
+        if len(set([self.__line_data[q].label for q in self.selection])) == 1:
+            self.txt_label.ChangeValue(self.__line_data[self.selection[0]].label)
+        else:
+            self.txt_label.ChangeValue('')
 
 class BlitCanvas(wx.Window):
     def __init__(self, parent):
@@ -171,15 +197,11 @@ class MPLFrame(wx.Frame):
 
 class ControlFrame(wx.Frame):
     def __init__(self, parent):
-
         style = wx.DEFAULT_FRAME_STYLE
         if parent is not None:
             style |= wx.FRAME_FLOAT_ON_PARENT
-            self.id = parent.id
-        else:
-            self.id = 'ID'+str(id(self))
-
         super(ControlFrame, self).__init__(parent, style=style, pos=_pos[0])
+        self.id = 'ID'+str(id(wx.FindWindowByName('pomuiroot')))
 
         self.setup_controls()
         self.set_tooltips()
@@ -242,7 +264,8 @@ class ControlFrame(wx.Frame):
             self.enable_edit(True)
 
             self.plot_layout.update_from_model(mpmodel)
-            self.line_control.associate_model(mpmodel.selected.line_data)
+            ds_names = ['s{:d} {}'.format(n, q.name) for n,q in enumerate(mpmodel.project[mpmodel.selected.plot_ref])]
+            self.line_control.associate_model(mpmodel.selected.line_data, ds_names)
 
             self.txt_xlabel.Value = mpmodel.selected.label_x
             self.txt_ylabel.Value = mpmodel.selected.label_y
