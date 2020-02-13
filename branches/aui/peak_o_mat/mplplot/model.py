@@ -51,7 +51,7 @@ class PlotData(object):
         self.project[self.plot_ref].del_ref(self.uuid)
 
     def __deepcopy__(self, memo):
-        obj = PlotData(self.project, self.plot_ref, plot_hash=self.plot_hash, data=deepcopy(self.line_data.data, memo))
+        obj = PlotData(self.project, self.plot_ref, plot_hash=self.plot_hash, data=deepcopy(self.line_data, memo))
         for attr in self.attrs:
             setattr(obj, attr, getattr(self, attr))
         self.project[self.plot_ref].del_ref(obj.uuid)
@@ -106,7 +106,7 @@ class PlotData(object):
         settings = {}
         for attr in self.attrs:
             settings[attr] = str(getattr(self, attr))
-        data = ['|'.join([str(q) for q in line]) for line in self.line_data.data]
+        data = ['|'.join([str(q) for q in line]) for line in self.line_data]
         return self.plot_ref,settings, data
 
     @property
