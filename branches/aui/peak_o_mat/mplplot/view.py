@@ -52,88 +52,22 @@ def validticks(arg):
             return False
     return True
 
+def gen_bitmap(color, size):
+    bmp = wx.Bitmap(*size)
+    temp_dc = wx.MemoryDC()
+    temp_dc.SelectObject(bmp)
+    temp_dc.SetPen(wx.Pen(wx.Colour(*color)))
+    temp_dc.SetBrush(wx.Brush(wx.Colour(*color), wx.SOLID))
+    w,h = size
+    temp_dc.DrawRectangle(0, 0, w-1, h-1)
+    temp_dc.SelectObject(wx.NullBitmap)
+    return bmp
+
 _pos = [(-1,-1)]*2
-
-class CHRenderer(dv.DataViewChoiceRenderer):
-    def ActivateCell(self, *args, **kwargs):
-        print('activate cell', args, kwargs)
-        super(CHRenderer, self).ActivateCell(*args, **kwargs)
-
-class ColorRangeCombo(wx.adv.OwnerDrawnComboBox):
-    def __init__(self, *args, **kwargs):
-        super(ColorRangeCombo, self).__init__(*args, **kwargs)
-
-        self.cmap_bmps = []
-
-        self.Clear()
-
-        dpi = (90, 90)
-        fig = mpl.figure.Figure((1, 0.15), dpi=dpi[0])
-        ax = fig.add_axes((0, 0, 1, 1))
-        FigureCanvas(fig)
-
-        l, b, w, h = fig.bbox.bounds
-        w, h = int(w), int(h)
-        self.height = h
-
-        for n,cmap_id in enumerate(plt.colormaps()):
-            col_map = mpl.cm.get_cmap(cmap_id)
-            mpl.colorbar.ColorbarBase(ax, cmap=col_map, orientation='horizontal')
-            fig.canvas.draw()
-            buf = fig.canvas.tostring_rgb()
-            bmp = wx.Bitmap.FromBuffer(w, h, buf)
-            ax.cla()
-            self.cmap_bmps.append(bmp)  # The file header off-set of BMP is 14 bytes
-            self.Append('lala')
-            if n==10:
-                break
-
-    def OnDrawItem(self, dc, rect, item, flags):
-        if item == wx.NOT_FOUND:
-            # painting the control, but there is no valid item selected yet
-            return
-
-        r = wx.Rect(*rect)  # make a copy
-        #r.Deflate(3, 5)
-
-        #penStyle = wx.PENSTYLE_SOLID
-
-        #pen = wx.Pen(dc.GetTextForeground(), 3, penStyle)
-        #dc.SetPen(pen)
-
-        if flags & wx.adv.ODCB_PAINTING_CONTROL:
-            # for painting the control itself
-            dc.DrawBitmap(self.cmap_bmps[0], 0, 0)
-        else:
-            dc.DrawBitmap(self.cmap_bmps[item], r.x, r.y)
-
-    def OnDrawBackground(self, dc, rect, item, flags):
-        # If the item is selected, or its item # iseven, or we are painting the
-        # combo control itself, then use the default rendering.
-        if (item & 1 == 0 or flags & (wx.adv.ODCB_PAINTING_CONTROL |
-                                      wx.adv.ODCB_PAINTING_SELECTED)):
-            wx.adv.OwnerDrawnComboBox.OnDrawBackground(self, dc, rect, item, flags)
-            return
-
-        # Otherwise, draw every other background with different colour.
-        bgCol = wx.Colour(240,240,250)
-        dc.SetBrush(wx.Brush(bgCol))
-        dc.SetPen(wx.Pen(bgCol))
-        dc.DrawRectangle(rect)
-
-    # Overridden from OwnerDrawnComboBox, should return the height
-    # needed to display an item in the popup, or -1 for default
-    def OnMeasureItem(self, item):
-        return self.height
-
-    # Overridden from OwnerDrawnComboBox.  Callback for item width, or
-    # -1 for default/undetermined
-    def OnMeasureItemWidth(self, item):
-        return 60; # default - will be measured from text width
 
 class CmpDlg(wx.MiniFrame):
     def __init__(self, parent):
-        super(CmpDlg, self).__init__(parent, size=(180,400))
+        super(CmpDlg, self).__init__(parent, size=(180,400))#, style=wx.DEFAULT_FRAME_STYLE|wx.CLOSE_BOX)
 
         dpi = (90, 90)
         fig = mpl.figure.Figure((1, 0.15), dpi=dpi[0])
@@ -177,10 +111,9 @@ class CmpDlg(wx.MiniFrame):
         sizer.Add(self.list, 1, wx.LEFT, 5)
         self.SetSizer(sizer)
         self.Layout()
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
 
-    def OnListSelect(self, evt):
-        self.selection = evt.Index
-        del self._disabled
+    def OnClose(self, evt):
         self.Hide()
 
 class LineControlPanel(WithMessage, wx.Panel):
@@ -204,7 +137,9 @@ class LineControlPanel(WithMessage, wx.Panel):
         self.cho_marker = wx.Choice(self, size=(100,-1), name='marker')
         self.spn_markersize = wx.SpinCtrl(self, min=2, initial=8, max=50, size=(100,-1), name='markersize')
         self.txt_linecolor = wx.TextCtrl(self, value='', size=(100,-1), name='color')
-        self.bmp_linecolor = wx.StaticBitmap(self, bitmap=wx.Bitmap(60,15), size=(20,-1))
+        self.txt_linecolor.Hide()
+
+        self.bmp_linecolor = wx.StaticBitmap(self, bitmap=wx.Bitmap(15,15), size=(15,15))
         self.txt_markercolor = wx.TextCtrl(self, value='', size=(100,-1))
         self.spn_alpha = wx.SpinCtrlDouble(self, min=0.1, initial=1, max=1, inc=0.1, name='alpha', size=(100, -1))
         self.btn_linecolorchooser = wx.Button(self, label='Select')
@@ -231,8 +166,8 @@ class LineControlPanel(WithMessage, wx.Panel):
 
         grd.Add(wx.StaticText(self, label='Line color'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
         hb = wx.BoxSizer(wx.HORIZONTAL)
-        hb.Add(self.txt_linecolor, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-        hb.Add(self.bmp_linecolor, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.EXPAND, 5)
+        hb.Add(self.txt_linecolor, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+        hb.Add(self.bmp_linecolor, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
         hb.Add(self.btn_linecolorchooser, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
         hb.Add(self.btn_linecolorrange, 0, wx.ALIGN_CENTER_VERTICAL)
         grd.Add(hb, 1, wx.ALIGN_CENTER_VERTICAL)
@@ -251,6 +186,7 @@ class LineControlPanel(WithMessage, wx.Panel):
 
         outer.Add(grd, 0, wx.ALL|wx.EXPAND, 5)
         self.SetSizer(outer)
+        self.Layout()
 
         self.dlg_colorrange.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnColorRangeSelect)
 
@@ -263,6 +199,10 @@ class LineControlPanel(WithMessage, wx.Panel):
         self.Bind(wx.EVT_IDLE, self.OnProcess)
 
         self.enable()
+
+    def _set_silent(self, state):
+        self.SetEvtHandlerEnabled(not state)
+    silent = property(fset=_set_silent)
 
     def associate_model(self, line_data, ds_names):
         self.__line_data = line_data
@@ -279,22 +219,18 @@ class LineControlPanel(WithMessage, wx.Panel):
 
     def OnColorRangeSelect(self, evt):
         self.dlg_colorrange.Hide()
-        print(evt.Index)
         cmap_id = plt.colormaps()[evt.Index]
-        color = np.asarray(mpl.cm.get_cmap(cmap_id)(0.0))*255
-        color = np.asarray(color, dtype=int)
-        print(*color)
-        bmp = wx.Bitmap(60,15)
-        temp_dc = wx.MemoryDC()
-        temp_dc.SelectObject(bmp)
-        temp_dc.SetPen(wx.Pen(wx.Colour(*color)))
-        temp_dc.SetBrush(wx.Brush(wx.Colour(*color), wx.SOLID))
-        temp_dc.DrawRectangle(0,0,60,15)
-        temp_dc.SelectObject(wx.NullBitmap)
-        bmp.SaveFile('test.png', wx.BITMAP_TYPE_PNG)
-        self.bmp_linecolor.SetBitmap(bmp)
-        #self.txt_linecolor.SetBackgroundColour(wx.Colour(*color))
-        self.Refresh()
+
+        ld = self.__line_data
+        for n,(sel, ci) in enumerate(zip(*(self.selection, np.linspace(0,1,len(self.selection))))):
+            color = mpl.cm.get_cmap(cmap_id)(ci)
+            setattr(ld[sel], 'color', '{:.2f},{:.2f},{:.2f}'.format(*color[:-1]))
+
+        pub.sendMessage((self.instid, 'lineattrs', 'changed'))
+
+        #color = np.asarray(color, dtype=int)
+        self.bmp_linecolor.SetBitmap(gen_bitmap((255,255,255,0), self.bmp_linecolor.GetSize()))
+        pub.sendMessage((self.instid, 'lineattrs', 'changed'))
 
     def OnShowRangeDlg(self, evt):
         self.dlg_colorrange.Show()
@@ -329,6 +265,7 @@ class LineControlPanel(WithMessage, wx.Panel):
     def OnLineAttrText(self, evt):
         obj = evt.GetEventObject()
         item = obj.Name
+        print(item)
 
         ld = self.__line_data
         for s in self.selection:
@@ -355,6 +292,7 @@ class LineControlPanel(WithMessage, wx.Panel):
             if c.Name != 'ignore':
                 wx.CallAfter(c.Enable, len(self.selection) > 0)
 
+        self.silent = True
         if len(set([self.__line_data[q].label for q in self.selection])) == 1:
             self.txt_label.ChangeValue(self.__line_data[self.selection[0]].label)
         else:
@@ -386,6 +324,7 @@ class LineControlPanel(WithMessage, wx.Panel):
             self.spn_linewidth.SetValue(self.__line_data[self.selection[0]].linewidth)
         else:
             self.spn_linewidth.SetValue('')
+        self.silent = False
 
 class BlitCanvas(wx.Window):
     def __init__(self, parent):
