@@ -214,7 +214,7 @@ class TGButton(buttons.GenBitmapToggleButton):
         self.highlightPenClr = wx.Colour(hr,hg,hb)
         self.focusClr = wx.Colour(hr, hg, hb)
 
-class Toolbar(wx.Panel):
+class Toolbar(misc_ui.WithMessage, wx.Panel):
     tbdata = [
         ['logx.png','btn_logx', 'toggle Xlog/lin scale', 1, False],
         ['logy.png','btn_logy', 'toggle Ylog/lin scale', 1, False],
@@ -231,6 +231,8 @@ class Toolbar(wx.Panel):
 
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, -1)
+        misc_ui.WithMessage.__init__(self)
+        
         self.action = []
         
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -267,7 +269,7 @@ class Toolbar(wx.Panel):
         self.Layout()
         #self.SetMinSize((20,-1))
 
-        pub.subscribe(self.OnNewMode, ('ID'+str(id(wx.FindWindowByName('pomuiroot'))),'canvas','newmode'))
+        pub.subscribe(self.OnNewMode, (self.instid,'canvas','newmode'))
 
     def _set_silent(self, state):
         self.SetEvtHandlerEnabled(not state)
@@ -641,7 +643,7 @@ class FigureListController:
 
         self.create_ui()
 
-        pub.subscribe(self.refresh_view, (self.view.id, 'figurelist','needsupdate'))
+        pub.subscribe(self.refresh_view, (self.view.instid, 'figurelist','needsupdate'))
 
     def refresh_view(self):
         self.model.Reset(len(self.model.data))
@@ -658,13 +660,13 @@ class FigureListController:
         #self.parent_view.pan_tree.Layout()
 
 
-class FigureListCtrl(wx.Panel):
+class FigureListCtrl(misc_ui.WithMessage, wx.Panel):
     def __init__(self, parent, model, controller):
         wx.Panel.__init__(self, parent, size=(-1,150))
+        misc_ui.WithMessage.__init__(self)
         self.model = model # ugly: this should be refe renced here
 
         self.controller = controller
-        self.id = 'ID'+str(id(wx.FindWindowByName('pomuiroot')))
 
         self.lst = dv.DataViewCtrl(self,style=dv.DV_NO_HEADER|dv.DV_ROW_LINES)
 
@@ -692,8 +694,8 @@ class FigureListCtrl(wx.Panel):
         self.btn_fig_clone.Bind(wx.EVT_BUTTON, self.OnCloneFigure)
         self.Bind(wx.EVT_IDLE, self.OnIdle)
 
-        pub.subscribe(self.OnFigureClose, (self.id, 'figure','discard'))
-        pub.subscribe(self.OnFigureClose, (self.id, 'figure','save'))
+        pub.subscribe(self.OnFigureClose, (self.instid, 'figure','discard'))
+        pub.subscribe(self.OnFigureClose, (self.instid, 'figure','save'))
 
         self.set_tooltips()
 
@@ -712,21 +714,21 @@ class FigureListCtrl(wx.Panel):
     def OnCloneFigure(self, evt):
         if self.lst.HasSelection():
             sel = self.model.get_selected((self.lst.GetSelection()))
-            pub.sendMessage((self.id, 'figurelist','clone'), msg=sel)
+            pub.sendMessage((self.instid, 'figurelist','clone'), msg=sel)
 
     def OnCreateFigure(self, evt):
-        pub.sendMessage((self.id, 'figurelist','create'), msg=None)
+        pub.sendMessage((self.instid, 'figurelist','create'), msg=None)
 
     def OnShow(self, evt):
         sel = self.model.get_selected((self.lst.GetSelection()))
-        pub.sendMessage((self.id, 'figurelist','show'), msg=sel)
+        pub.sendMessage((self.instid, 'figurelist','show'), msg=sel)
         evt.Skip()
         self.Enable(False)
 
     def OnDeleteFigure(self, event):
         if self.lst.HasSelection():
             sel = self.model.get_selected((self.lst.GetSelection()))
-            pub.sendMessage((self.id, 'figurelist','del'), msg=sel)
+            pub.sendMessage((self.instid, 'figurelist','del'), msg=sel)
 
 
 if __name__ == '__main__':

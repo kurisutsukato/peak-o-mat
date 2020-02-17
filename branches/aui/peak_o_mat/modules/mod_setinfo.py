@@ -93,7 +93,7 @@ class XRCModule(module.XRCModule):
         
         self.xrc_lc_trafo.OnCheckItem = self.OnCheckItem
         self.xrc_btn_trafo_remove.Enable(False)
-        pub.subscribe(self.OnSetinfoUpdate, (self.view_id, 'setinfo','update'))
+        pub.subscribe(self.OnSetinfoUpdate, (self.instid, 'setinfo','update'))
 
     def OnSetinfoUpdate(self):
         if self._selected and not self._updating:

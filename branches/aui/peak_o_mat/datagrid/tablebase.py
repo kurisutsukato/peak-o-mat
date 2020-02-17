@@ -4,6 +4,8 @@ from pubsub import pub
 
 import numpy as np
 
+from ..misc_ui import WithMessage
+
 class cbarray(np.ndarray):
     def __new__(subtype, data, cb=None, dtype=None, copy=False):
         subtype.__defaultcb = cb
@@ -46,14 +48,18 @@ class cbarray(np.ndarray):
         cb, = own_state
         self.cb = cb
 
-class TableBase(wx.grid.GridTableBase):
+class TableBase(WithMessage, wx.grid.GridTableBase):
     def __init__(self):
         wx.grid.GridTableBase.__init__(self)
-        
+
         self.tabledata = cbarray(np.zeros((15,4),float),cb=self.Update)
         self.currentRows, self.currentCols = self.tabledata.shape
         self.rowLabels = ['']*self.currentRows
         self.colLabels = ['']*self.currentCols
+
+    def SetView(self, *args, **kwargs):
+        wx.grid.GridTableBase.SetView(self, *args, **kwargs)
+        WithMessage.__init__(self, self.GetView())
 
     def getdata(self):
         return self.tabledata
@@ -217,5 +223,5 @@ class TableBase(wx.grid.GridTableBase):
         self.GetView().EndBatch() 
         self.currentRows = self.GetNumberRows()
         self.currentCols = self.GetNumberCols()
-        pub.sendMessage((wx.GetTopLevelParent(self.GetView()).id, 'changed'))
+        pub.sendMessage((self.instid, 'changed'))
 

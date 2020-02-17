@@ -37,7 +37,7 @@ class Module:
 
 #TODO: remove similiar code from XRCModule and BaseModule
 
-class BaseModule(Module):
+class BaseModule(misc_ui.WithMessage, Module):
 
     def __init__(self, controller, view):
         self.visible = False
@@ -46,15 +46,16 @@ class BaseModule(Module):
         self.parent_view = view
         self.parent_controller = controller
         self.name = os.path.splitext(os.path.basename(__file__))[0]
-        self.view_id = 'ID'+str(id(wx.FindWindowByName('pomuiroot')))
         self.view = None
 
     def init(self):
         assert hasattr(self, 'title')
+        misc_ui.WithMessage.__init__(self, self.view)
+
         self.view.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
         self.view.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClose)
-        pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
-        pub.subscribe(self.focus_changed, (self.view_id, 'module', 'focuschanged'))
+        pub.subscribe(self.OnSelectionChanged, (self.instid, 'selection','changed'))
+        pub.subscribe(self.focus_changed, (self.instid, 'module', 'focuschanged'))
 
     def focus_changed(self, newfocus):
         pass
@@ -65,7 +66,7 @@ class BaseModule(Module):
     def OnEnter(self, evt):
         if(self.view.HitTest(evt.Position) == wx.HT_WINDOW_INSIDE) and Module.last_focus != self:
             if self.need_attention:
-                pub.sendMessage((self.view_id,'module','focuschanged'),newfocus=self)
+                pub.sendMessage((self.instid,'module','focuschanged'),newfocus=self)
                 Module.last_focus = self
             self.show()
 
@@ -102,8 +103,6 @@ class MyModule(module.Module):
         self.plotme = None
         self.visible = False
 
-        self.view_id = 'ID'+str(id(wx.FindWindowByName('pomuiroot')))
-
         assert hasattr(self, 'title')
 
         self._last_page = None
@@ -126,6 +125,7 @@ class MyModule(module.Module):
         if self.xmlres is not None:
             #self.panel = self.xmlres.LoadPanel(self.notebook, self.name)
             self.view = self.xmlres.LoadPanel(controller.view, self.name)
+            misc_ui.WithMessage.__init__(self, self.view)
             controller.view._mgr.AddPane(self.view, aui.AuiPaneInfo().Float().
                                          Dockable(True).Caption(self.title).
                                          Name(self.title).Hide())
@@ -135,11 +135,11 @@ class MyModule(module.Module):
                 raise IOError('unable to load wx.Panel \'%s\' from %s'%(self.name,xrcfile))
             print('registering module \'%s\''%(self.name))
             #self.notebook.AddPage(self.panel, self.title, select=False)
-            #pub.subscribe(self.OnPageChanged, (self.view_id, 'notebook','pagechanged'))
+            #pub.subscribe(self.OnPageChanged, (self.instid, 'notebook','pagechanged'))
             #menu.add_module(controller.view.menubar, self.title)
             controller.view.menu_factory.add_module(controller.view.menubar, self.title)
-            pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
-            pub.subscribe(self.focus_changed, (self.view_id, 'module', 'focuschanged'))
+            pub.subscribe(self.OnSelectionChanged, (self.instid, 'selection','changed'))
+            pub.subscribe(self.focus_changed, (self.instid, 'module', 'focuschanged'))
 
             controller.view.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClose)
             self.view.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
@@ -166,7 +166,7 @@ class MyModule(module.Module):
     def OnEnter(self, evt):
         if(self.view.HitTest(evt.Position) == wx.HT_WINDOW_INSIDE) and Module.last_focus != self:
             if self.need_attention:
-                pub.sendMessage((self.view_id,'module','focuschanged'),newfocus=self)
+                pub.sendMessage((self.instid,'module','focuschanged'),newfocus=self)
                 Module.last_focus = self
             self.show()
 

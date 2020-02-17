@@ -79,7 +79,7 @@ class FitController(object):
     def set_limit_fitrange(self, state):
         self.view.silent = True
         self.view.limitfitrange = state
-        pub.sendMessage((self.view.id, 'fitctrl','limitfitrange'),msg=state)
+        pub.sendMessage((self.view.instid, 'fitctrl','limitfitrange'),msg=state)
         self.view.silent = False
         
     def page_changed(self, page):
@@ -92,7 +92,7 @@ class FitController(object):
                     self.model = self.model # this will update the pargrid 
                     self.update_parameter_panel()
         elif page == 2:
-            pub.sendMessage((self.view.id, 'fitctrl','plot'), msg=None)
+            pub.sendMessage((self.view.instid, 'fitctrl','plot'), msg=None)
 
         if self._last_page == 2:
             self.stop_select_weights()
@@ -173,10 +173,10 @@ class FitController(object):
         self.view.canvas.state.restore_last()
 
     def attach_weights(self):
-        pub.sendMessage((self.view.id, 'fitctrl','attachweights'),msg=(self.view.pan_weights.weightsgrid.table.data))
+        pub.sendMessage((self.view.instid, 'fitctrl','attachweights'),msg=(self.view.pan_weights.weightsgrid.table.data))
     
     def weights_changed(self):
-        pub.sendMessage((self.view.id, 'fitctrl','plot'), msg=None)
+        pub.sendMessage((self.view.instid, 'fitctrl','plot'), msg=None)
 
     def find_peaks(self):
         p, s = self.selection
@@ -203,7 +203,7 @@ class FitController(object):
                         if not np.isfinite(v.value):
                             v.value = 0.0
                 self.got_pars()
-                pub.sendMessage((self.view.id, 'fitctrl','editpars'), msg=None)
+                pub.sendMessage((self.view.instid, 'fitctrl','editpars'), msg=None)
             else:
                 self.message('Found {} peaks but model has {} peak-like features'.format(len(idx), numpeaks))
 
@@ -253,10 +253,10 @@ class FitController(object):
         self.new_tokens(tokens)
 
     def load_set_from_model(self, which, xr, pts):
-        pub.sendMessage((self.view.id, 'fitctrl','loadset'),msg=(self.model,which,xr,pts))
+        pub.sendMessage((self.view.instid, 'fitctrl','loadset'),msg=(self.model,which,xr,pts))
 
     def export_pars(self, which, witherrors):
-        pub.sendMessage((self.view.id, 'fitctrl','parexport'),
+        pub.sendMessage((self.view.instid, 'fitctrl','parexport'),
                         msg=(self.model.parameters_as_table(which,witherrors)))
 
     def start_pick_pars(self):
@@ -277,7 +277,7 @@ class FitController(object):
         #cumtmp = tmp[:]
         #for i in range(1,len(tmp)):
         #    cumtmp[i] = cumtmp[i]+cumtmp[i-1]
-        pub.sendMessage((self.view.id, 'fitctrl','pickpars'), msg=(tmp, reduce(add, self.pickers)))
+        pub.sendMessage((self.view.instid, 'fitctrl','pickpars'), msg=(tmp, reduce(add, self.pickers)))
 
     def got_pars(self):
         self.view.pan_pars.pargrid.refresh()
@@ -285,7 +285,7 @@ class FitController(object):
         
     def changed_pars(self):
         self.view.enable_fit(self.model.is_filled())
-        pub.sendMessage((self.view.id, 'fitctrl','editpars'), msg=None)
+        pub.sendMessage((self.view.instid, 'fitctrl','editpars'), msg=None)
 
     def log(self, msg):
         self.view.log = msg
@@ -294,7 +294,7 @@ class FitController(object):
         fitopts = dict([('fittype',self.view.fittype), ('maxiter',self.view.maxiter), \
                         ('stepsize',self.view.stepsize), ('autostep',self.view.autostep)])
 
-        pub.sendMessage((self.view.id, 'fitctrl','fit'),
+        pub.sendMessage((self.view.instid, 'fitctrl','fit'),
                                 msg=(self.model,
                                  self.view.limitfitrange,
                                  fitopts))
@@ -341,13 +341,13 @@ class FitController(object):
             raise
             return False
 
-        pub.sendMessage((self.view.id, 'generate_dataset'), spec=spec, target=target)
+        pub.sendMessage((self.view.instid, 'generate_dataset'), spec=spec, target=target)
         return True
 
     def batch_export(self, xexpr, yexpr, errors=False):
         data = self._batch_parameters(xexpr, yexpr)
         table = data.as_table(errors)
-        pub.sendMessage((self.view.id, 'generate_grid'), data=table, name=data.name)
+        pub.sendMessage((self.view.instid, 'generate_grid'), data=table, name=data.name)
         return True
 
     def _batch_parameters(self, xexpr, yexpr):
@@ -392,7 +392,7 @@ class FitController(object):
                         else:
                             data[c].append(n, val)
 
-        #pub.sendMessage((self.view.id, 'generate_grid'),
+        #pub.sendMessage((self.view.instid, 'generate_grid'),
         #                data=data.as_table(), name='{}:{}'.format(data.name, data.par))
         return data
 
@@ -464,12 +464,12 @@ class FitController(object):
         self.message('%s: fit cancelled' % self._fitobject.name)
         if self._fitobject is not None:
             self.sync_gui(fit_in_progress=False, batch=True)
-            pub.sendMessage((self.view.id, 'updateview'))
+            pub.sendMessage((self.view.instid, 'updateview'))
 
             self._fitobject = None
 
             self.view.pan_options.txt_fitlog.SetValue('\n'.join(msgs))
-            pub.sendMessage((self.view.id, 'fitfinished'))
+            pub.sendMessage((self.view.instid, 'fitfinished'))
 
     def fit_finished(self, msgs):
         self.message('%s: fit finshed' % self._fitobject.name)
@@ -480,7 +480,7 @@ class FitController(object):
 
             self.sync_gui(fit_in_progress=False, batch=True)
 
-            pub.sendMessage((self.view.id, 'updateview'))
+            pub.sendMessage((self.view.instid, 'updateview'))
 
             self._fitobject = None
 
@@ -488,7 +488,7 @@ class FitController(object):
             #self.log(u'\'{}\' fit to {}\n'.format(ds.model,ds.name))
             #self.log(u'\n'.join(msgs))
             self.view.pan_options.txt_fitlog.SetValue('\n'.join(msgs))
-            pub.sendMessage((self.view.id, 'fitfinished'))
+            pub.sendMessage((self.view.instid, 'fitfinished'))
 
     def message(self, msg, target=1, blink=False, forever=False):
         event = misc_ui.ShoutEvent(self.view.GetId(), msg=msg, target=target, blink=blink, forever=forever)

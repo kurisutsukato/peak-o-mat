@@ -104,7 +104,7 @@ class XRCModule(module.XRCModule):
         if newfocus != self:
             self.plotme = None
             self.leave()
-            pub.sendMessage((self.view_id, 'updateplot'))
+            pub.sendMessage((self.instid, 'updateplot'))
 
     def selection_changed(self):
         try:
@@ -129,7 +129,7 @@ class XRCModule(module.XRCModule):
         self.xrc_btn_bez_load.Disable()
         self.xrc_btn_place_handles.SetValue(False)
         self.controller.view.canvas.state.restore_last()
-        pub.sendMessage((self.view_id, 'updateplot'))
+        pub.sendMessage((self.instid, 'updateplot'))
 
     def OnCanvasMode(self, mode):
         if mode != 'handle':

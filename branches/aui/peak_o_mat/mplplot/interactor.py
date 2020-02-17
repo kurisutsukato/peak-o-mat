@@ -87,7 +87,7 @@ class Interactor:
 
         self.view.plot_layout.pop.Bind(EVT_RECT_REORDER, self.OnReorderPlots)
 
-        Publisher.subscribe(self.pubOnRedraw, (self.view.id, 'lineattrs','changed'))
+        Publisher.subscribe(self.pubOnRedraw, (self.view.instid, 'lineattrs','changed'))
 
     def pubOnRedraw(self):
         self.controller.redraw(update_selected=True, force=True)
@@ -114,10 +114,10 @@ class Interactor:
         pass
 
     def OnSave(self, evt):
-        Publisher.sendMessage((self.view.id, 'figure','save'))
+        Publisher.sendMessage((self.view.instid, 'figure','save'))
 
     def OnCancel(self, evt):
-        Publisher.sendMessage((self.view.id, 'figure','discard'))
+        Publisher.sendMessage((self.view.instid, 'figure','discard'))
 
     def OnExportCode(self, evt):
         self.view.copy2clipboard()
@@ -202,4 +202,4 @@ annotate('look at this', color='red', xy=(0.3,0.8), xytext=(0.2,0.6), xycoords='
     def OnClose(self, evt):
         dlg = wx.MessageDialog(self.view, 'All changes will be lost.','Are you sure?',wx.YES_NO|wx.ICON_WARNING)
         if dlg.ShowModal() == wx.ID_YES:
-            Publisher.sendMessage((self.view.id, 'figure','discard'))
+            Publisher.sendMessage((self.view.instid, 'figure','discard'))

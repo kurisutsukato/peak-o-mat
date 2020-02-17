@@ -380,11 +380,8 @@ class PlotGraphics:
     def __getitem__(self, item):
         return self.objects[item]
 
-
 class Interactor:
-    def __init__(self, id):
-        self.view_id = str(id)
-
+    def __init__(self):
         # Zooming variables
         self._zoomInFactor =  1/1.2
         self._zoomOutFactor = 1.2
@@ -402,6 +399,7 @@ class Interactor:
 
     def install(self, view):
         self.view = view
+        
         # Create some mouse evts for zooming
         self.view.canvas.Bind(wx.EVT_LEFT_DOWN, self.OnMouseLeftDown)
         self.view.canvas.Bind(wx.EVT_LEFT_UP, self.OnMouseLeftUp)
@@ -508,7 +506,7 @@ class Interactor:
         elif self.view.state.eq('xmarker') and evt.LeftIsDown():
             self._mousestop = self.view.GetXY(evt)
             self.view._drawXMarker(rng=(self._mousestart[0],self._mousestop[0]))
-            pub.sendMessage((self.view_id, 'plot','xmarker'), wl=(self._mousestart[0],self._mousestop[0]))
+            pub.sendMessage((self.view.instid, 'plot','xmarker'), wl=(self._mousestart[0],self._mousestop[0]))
 
         elif self.view.state.eq('zoom') and evt.LeftIsDown():
             if self._hasDragged:
@@ -540,7 +538,7 @@ class Interactor:
         if evt.ShiftDown():
             pt = self.view.GetXY(evt)
             write_clipboard('{}'.format(pt[0]))
-            pub.sendMessage((self.view_id, 'message'), msg='X-coordinate copied to clipboard.')
+            pub.sendMessage((self.view.instid, 'message'), msg='X-coordinate copied to clipboard.')
         if self.view.state.eq('getpars') and len(self.view._cmds) > 0:
             cmd, cb = self.view._cmds[0]
             x,y = self.view.GetXY(evt)
@@ -583,7 +581,7 @@ class Interactor:
             self._mousestop = self.view.GetXY(evt)
             x1, y1 = self._mousestart
             x2, y2 = self._mousestop
-            pub.sendMessage((self.view_id, 'canvas','erase'),msg=((min(x1,x2),min(y1,y2)),(max(x1,x2),max(y1,y2))))
+            pub.sendMessage((self.view.instid, 'canvas','erase'),msg=((min(x1,x2),min(y1,y2)),(max(x1,x2),max(y1,y2))))
             self._hasDragged = False
         elif self.view.state.eq('zoom'):
             if self._hasDragged == True:
@@ -622,7 +620,7 @@ class Interactor:
         if evt.ShiftDown():
             pt = self.view.GetXY(evt)
             write_clipboard('{}'.format(pt[1]))
-            pub.sendMessage((self.view_id, 'message'), msg='Y-coordinate copied to clipboard.')
+            pub.sendMessage((self.view.instid, 'message'), msg='Y-coordinate copied to clipboard.')
         elif self.view.state.eq('zoom'):
             X,Y = self.view._getXY(evt)
             self.view.Zoom( (X,Y), (self._zoomOutFactor, self._zoomOutFactor) )
@@ -649,7 +647,7 @@ class Interactor:
             x,y = self.view.GetXY(evt)
             text = '{:.16f};{:.16f}'.format(x,y)
             write_clipboard(text)
-            pub.sendMessage((self.view_id, 'message'), msg='Point-coordinate copied to clipboard.')
+            pub.sendMessage((self.view.instid, 'message'), msg='Point-coordinate copied to clipboard.')
         else:
             self.view.state.set('drag')
 
@@ -737,7 +735,7 @@ class State:
     def restore_last(self):
         self.set(self._last, self._opt)
 
-class PlotCanvas(wx.Panel):
+class PlotCanvas(misc_ui.WithMessage,wx.Panel):
     """
     Subclass of a wx.Panel which holds two scrollbars and the actual
     plotting canvas (self.canvas). It allows for simple general plotting
@@ -748,6 +746,7 @@ class PlotCanvas(wx.Panel):
         any other non-control window"""
     
         wx.Panel.__init__(self, parent, **kwargs)
+        misc_ui.WithMessage.__init__(self)
 
         self.wxoverlay = wx.Overlay()
 
@@ -789,8 +788,7 @@ class PlotCanvas(wx.Panel):
 
         self.state = State(self)
 
-
-        Interactor('ID'+str(id(wx.FindWindowByName('pomuiroot')))).install(self)
+        Interactor().install(self)
 
     def report(self, cmds):
         self.state.set('getpars')

@@ -86,9 +86,9 @@ class Server(Thread):
 
 class PlotServer:
     def __init__(self, view_id):
-        self.view_id = view_id
+        self.instid = view_id
 
-        pub.subscribe(self.stop, (self.view_id, 'stop_all',))
+        pub.subscribe(self.stop, (self.instid, 'stop_all',))
 
     def start(self):
         try: # check if port is available
@@ -117,5 +117,5 @@ class PlotServer:
         y = np.atleast_2d(data['data'][1:,:])
         for n,_y in enumerate(y):
             s = spec.Spec(x,_y,'{}_col{}'.format(data['name'],n))
-            pub.sendMessage((self.view_id, 'set.add'), spec=s)
+            pub.sendMessage((self.instid, 'set.add'), spec=s)
 

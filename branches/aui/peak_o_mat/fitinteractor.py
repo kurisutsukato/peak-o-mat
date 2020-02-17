@@ -23,9 +23,9 @@ class FitInteractor(object):
 
         self.view.nb_fit.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnNotebookPageChanged)
 
-        pub.subscribe(self.OnCanvasMode, (self.view.id, 'canvas','newmode'))
-        #pub.subscribe(self.OnPageChanged, (self.view.id, 'notebook','pagechanged'))
-        pub.subscribe(self.pubOnFitFinished, (self.view.id, 'fitfinished'))
+        pub.subscribe(self.OnCanvasMode, (self.view.instid, 'canvas','newmode'))
+        #pub.subscribe(self.OnPageChanged, (self.view.instid, 'notebook','pagechanged'))
+        pub.subscribe(self.pubOnFitFinished, (self.view.instid, 'fitfinished'))
 
         self.view.Bind(wx.EVT_BUTTON, self.OnPickParameters, self.view.pan_pars.btn_pickpars)
         self.view.Bind(wx.EVT_BUTTON, self.OnBtnGenerateSetDialog, self.view.pan_pars.btn_generateset)
@@ -37,7 +37,7 @@ class FitInteractor(object):
         self.view.Bind(wx.EVT_CHECKBOX, self.OnLimitFitRange, self.view.pan_options.cb_limitfitrange)
         self.view.Bind(wx.EVT_CHECKBOX, self.OnAutostep, self.view.pan_options.cb_autostep)
 
-        pub.subscribe(self.OnSelectionChanged, (self.view.id, 'selection','changed'))
+        pub.subscribe(self.OnSelectionChanged, (self.view.instid, 'selection','changed'))
 
         self.view.Bind(misc_ui.EVT_GOTPARS, self.OnGotPars)
         #TODO: ist das in Ordnung so?
@@ -58,8 +58,8 @@ class FitInteractor(object):
         self.view.Bind(wx.EVT_BUTTON, self.OnClearWeightsRegion, self.view.pan_weights.btn_clearweights)
         self.view.pan_weights.weightsgrid.Bind(wx.grid.EVT_GRID_CELL_CHANGED, self.OnWeightsChanged)
 
-        pub.subscribe(self.pubOnPlotAdded, (self.view.id, 'plot_added'))
-        pub.subscribe(self.pubDelmod, (self.view.id, 'delmod'))
+        pub.subscribe(self.pubOnPlotAdded, (self.view.instid, 'plot_added'))
+        pub.subscribe(self.pubDelmod, (self.view.instid, 'delmod'))
 
     def listen_to_handles(self, listen=True):
         if listen:
@@ -161,19 +161,19 @@ class FitInteractor(object):
         if hasattr(evt, 'name'):
             #self.view.progress_dialog(step=evt.name)
             # TODO
-            pub.sendMessage((self.view.id,'message'),msg='Fitting {}'.format(evt.name))
+            pub.sendMessage((self.view.instid,'message'),msg='Fitting {}'.format(evt.name))
         elif hasattr(evt, 'endbatch'):
             self.controller.sync_gui(fit_in_progress=False, batch=True)
             self.view.pan_batch.btn_stop.Disable()
-            pub.sendMessage((self.view.id,'message'),msg='Batch fit finished.')
-            pub.sendMessage((self.view.id,'updateview'))
+            pub.sendMessage((self.view.instid,'message'),msg='Batch fit finished.')
+            pub.sendMessage((self.view.instid,'updateview'))
         elif hasattr(evt, 'end'):
             self.controller.fit_finished(evt.end)
         elif hasattr(evt, 'cancel'):
             self.controller.fit_cancelled(evt.cancel)
         elif hasattr(evt, 'iteration'):
             it, info, res_var = evt.iteration
-            pub.sendMessage((self.view.id,'message'), msg='Fit in progress: iteration {}'.format(it))
+            pub.sendMessage((self.view.instid,'message'), msg='Fit in progress: iteration {}'.format(it))
 
     def OnFeatureKeyDown(self, evt):
         evt.Skip()

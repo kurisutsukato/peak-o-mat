@@ -58,9 +58,9 @@ class MainFrame(wx.Frame):
 
 
     def __init__(self, silent=False, plotserver=False):
-        super(MainFrame, self).__init__(None, name='pomuiroot')
+        super(MainFrame, self).__init__(None)
+        self.instid = 'ID'+str(id(self)) # needed for the message system
 
-        #self.app = wx.GetApp()
         if not silent:
             self.splash = Splash(self)
 
@@ -122,8 +122,6 @@ class MainFrame(wx.Frame):
         self.pan_tree.SetSizer(vbox)
 
     def setup_controls(self):
-        self.id = 'ID'+str(id(wx.FindWindowByName('pomuiroot')))
-
         self.statusbar = controls.Status(self)
         self.SetStatusBar(self.statusbar)
 

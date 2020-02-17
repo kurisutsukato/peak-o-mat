@@ -5,6 +5,9 @@ import uuid
 import types
 import hashlib
 
+from matplotlib.markers import MarkerStyle
+import matplotlib._color_data as mcd
+
 textbool = lambda x: x == 'True'
 string = lambda x: str(x) if x is not None else ''
 
@@ -241,14 +244,16 @@ def color(arg):
 
 class LineData:
     # ex_types are the kwargs unterstood by figure.plot
-    _ex_types = [str, str, int, int, color, float, str, bool]
+    _ex_types = [str, str, float, float, color, float, str, bool]
     # in types are used to parse the xml data
     _in_types = [str, str, str, str, str, str, str, textbool]
     _attrs = ['linestyle','marker','linewidth','markersize','color','alpha','label','show']
 
     styles = ['-','--','-.',':']
     markers = ['.',',','o','v','^','<','>','1','2','3','4','8','s','p','*','h','H','+','x','D','d','|','_']
+    markers = list(MarkerStyle.filled_markers)
     colors = ['black','green','red','blue','magenta','cyan','yellow']
+    #colors = list(mcd.XKCD_COLORS)
 
     def __init__(self, *args):
         for n,arg in enumerate(args):
