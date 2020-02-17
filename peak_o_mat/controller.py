@@ -154,7 +154,7 @@ class Controller(object):
                 wx.CallAfter(self.view._mgr.LoadPerspective, perspective, True)
 
             interactor.Install(self, self.view)
-            wx.CallAfter(pub.sendMessage, (self.view.id, 'figurelist','needsupdate'))
+            wx.CallAfter(pub.sendMessage, (self.view.instid, 'figurelist','needsupdate'))
 
     def message(self, msg, blink=False, forever=False):
         event = misc_ui.ShoutEvent(self.view.GetId(), msg=msg, target=1, blink=blink, time=5000, forever=forever)
@@ -220,8 +220,8 @@ class Controller(object):
                 self.view.filehistory.AddFileToHistory(os.path.abspath(path))
                 self.save_filehistory()
             self.project_modified = False
-            wx.CallAfter(pub.sendMessage, (self.view.id, 'figurelist','needsupdate'))
-            pub.sendMessage((self.view.id, 'plot_added'), plotlist=['p{}'.format(n) for n in range(len(self.project))])
+            wx.CallAfter(pub.sendMessage, (self.view.instid, 'figurelist','needsupdate'))
+            pub.sendMessage((self.view.instid, 'plot_added'), plotlist=['p{}'.format(n) for n in range(len(self.project))])
 
             misc.set_cwd(path)
 
@@ -230,17 +230,17 @@ class Controller(object):
             return
         if hasattr(self, 'plot_server'):
             self.plot_server.stop()
-            pub.sendMessage((self.view.id, 'message'), msg='Plot server stopped.')
+            pub.sendMessage((self.view.instid, 'message'), msg='Plot server stopped.')
             del self.plot_server
             return False
         else:
-            self.plot_server = PlotServer(self.view.id)
+            self.plot_server = PlotServer(self.view.instid)
             if self.plot_server.start():
                 print('starting plot server')
-                pub.sendMessage((self.view.id, 'message'), msg='Plot server started.')
+                pub.sendMessage((self.view.instid, 'message'), msg='Plot server started.')
                 return True
             else:
-                pub.sendMessage((self.view.id, 'message'), msg='Plot server: address in use.')
+                pub.sendMessage((self.view.instid, 'message'), msg='Plot server: address in use.')
                 del self.plot_server
 
     def open_recent(self, num):
@@ -282,7 +282,7 @@ class Controller(object):
                     f.write(perspective)
             except IOError:
                 print('unable to save perspective')
-            pub.sendMessage((self.view.id, 'stop_all'))
+            pub.sendMessage((self.view.instid, 'stop_all'))
             return True
         return False
 
@@ -443,7 +443,7 @@ class Controller(object):
 
     def annotations_changed(self, txt):
         self.project.annotations = txt
-        pub.sendMessage((self.view.id, 'changed'))
+        pub.sendMessage((self.view.instid, 'changed'))
         
     def set2clipboard(self):
         if wx.TheClipboard.Open():
@@ -535,7 +535,7 @@ class Controller(object):
         self.update_tree()
         self.view.tree.selection = added
         self.project_modified = True
-        pub.sendMessage((self.view.id, 'plot_added'), plotlist=['p{}'.format(n) for n in range(len(self.project))])
+        pub.sendMessage((self.view.instid, 'plot_added'), plotlist=['p{}'.format(n) for n in range(len(self.project))])
         return added
         
     def add_set(self, data, plot=None):
@@ -554,7 +554,7 @@ class Controller(object):
         self.update_tree()
         self.view.tree.selection = plot,added
         self.project_modified = True
-        pub.sendMessage((self.view.id, 'dataset_added'), datasetlist=[q.name for q in self.project[plot]])
+        pub.sendMessage((self.view.instid, 'dataset_added'), datasetlist=[q.name for q in self.project[plot]])
         return added
 
     def rem_attr(self, attr, only_sel=False):
@@ -572,7 +572,7 @@ class Controller(object):
                     setattr(s, attr, None)
         self.update_plot()
         self.project_modified = True
-        pub.sendMessage((self.view.id, 'setattrchanged'))
+        pub.sendMessage((self.view.instid, 'setattrchanged'))
 
     def set_limit_fitrange(self, state):
         if state:
@@ -724,7 +724,7 @@ class Controller(object):
             self._selection = Selection((plot, sel))
         plot_sel = self.project[plot]
         dataset_sel = [self.project[plot][s] for s in sel]
-        wx.CallAfter(pub.sendMessage,(self.view.id, 'selection', 'changed'),
+        wx.CallAfter(pub.sendMessage,(self.view.instid, 'selection', 'changed'),
                      plot=plot_sel, dataset=dataset_sel)
         self.update_plot()
     selection = property(_get_selection, _set_selection, doc="the current tree selection")
@@ -744,7 +744,7 @@ class Controller(object):
         wx.CallAfter(self.update_setinfo)
 
     def update_setinfo(self):
-        pub.sendMessage((self.view.id, 'setinfo', 'update'))
+        pub.sendMessage((self.view.instid, 'setinfo', 'update'))
 
     def _get_active_set(self):
         try:
@@ -821,7 +821,7 @@ class Controller(object):
     def attach_weights_to_set(self, weights):
         self.active_set.weights = weights
         self.update_plot()
-        wx.CallAfter(pub.sendMessage,(self.view.id, 'selection', 'changed'),
+        wx.CallAfter(pub.sendMessage,(self.view.instid, 'selection', 'changed'),
                      plot=self.active_plot, dataset=[self.active_set])
         #msg=self.active_set)
 
@@ -865,7 +865,7 @@ class Controller(object):
 
     def code_changed(self):
         self.project.code = self.codeeditor.data
-        pub.sendMessage((self.view.id, 'changed'))
+        pub.sendMessage((self.view.instid, 'changed'))
 
     def show_codeeditor(self, show=False):
         self.view.check_menu('Code Editor', show)
@@ -877,12 +877,12 @@ class Controller(object):
         item = self.project.figure_list.pop(self.project.figure_list.index(fig))
         k,v = list(item.items())[0]
         v.release()
-        pub.sendMessage((self.view.id, 'figurelist', 'needsupdate'))
+        pub.sendMessage((self.view.instid, 'figurelist', 'needsupdate'))
 
     def clone_figure(self, fig):
         clone = deepcopy(fig)
         self.figure_list_controller.model.data.append(clone)
-        pub.sendMessage((self.view.id, 'figurelist', 'needsupdate'))
+        pub.sendMessage((self.view.instid, 'figurelist', 'needsupdate'))
 
     def create_or_show_figure(self, show=False, model=None, discard=False):
         if show:
@@ -902,7 +902,7 @@ class Controller(object):
                 else:
                     self.figure_list_controller.model.data.append(self.__mpm_edit_combo[1])
             self.__mpm_edit_combo = None
-            pub.sendMessage((self.view.id, 'figurelist', 'needsupdate'))
+            pub.sendMessage((self.view.instid, 'figurelist', 'needsupdate'))
 
     def show_datagrid(self, show=False):
         self.view.check_menu('Data Grid', show)

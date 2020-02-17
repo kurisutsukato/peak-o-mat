@@ -17,7 +17,7 @@ class XRCModule(module.XRCModule):
         self.view.Bind(wx.EVT_TEXT, self.OnTemp, self.xrc_txt_temp)
         self.view.Bind(wx.EVT_CHOICE, self.OnChoice)
         
-        pub.subscribe(self.selection_changed, (self.view_id, 'fitfinished'))
+        pub.subscribe(self.selection_changed, (self.instid, 'fitfinished'))
         self.view.Layout()
 
         self.xrc_txt_temp.SetValidator(controls.InputValidator(controls.FLOAT_ONLY))

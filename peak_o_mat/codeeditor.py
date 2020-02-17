@@ -17,6 +17,7 @@ import sys
 import re
 
 from .controls import PythonSTC
+from .misc_ui import WithMessage
 from . import images
 
 from .symbols import pom_globals
@@ -253,11 +254,11 @@ class EditorsProxy(list):
         else:
             return self.selection.GetText()
 
-class CodeEditorFrame(wx.Frame):
+class CodeEditorFrame(WithMessage,wx.Frame):
     def __init__(self, parent):
         style = wx.DEFAULT_FRAME_STYLE|wx.FRAME_FLOAT_ON_PARENT
         wx.Frame.__init__(self, parent, style=style)
-        self.id = parent.id
+        WithMessage.__init__(self)
 
         self.setup_controls()
         self.layout()

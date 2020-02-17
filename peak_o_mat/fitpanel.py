@@ -6,6 +6,7 @@ import re
 from . import pargrid
 from . import weightsgrid
 from . import controls
+from .misc_ui import WithMessage
 
 from . import lineshapebase
 
@@ -442,11 +443,13 @@ class FitOptionsPanel(wx.Panel):
         self.SetSizer(outer)
         self.Fit()
 
-class FitPanel(wx.Panel):
+class FitPanel(WithMessage,wx.Panel):
     def __init__(self, parent, canvas):
         self.canvas = canvas
         self.parent = parent
-        super(FitPanel, self).__init__(parent)
+        wx.Panel.__init__(self, parent)
+        #self.instid = parent.instid
+        WithMessage.__init__(self)
 
         self.setup_controls()
         self.layout()
@@ -458,8 +461,6 @@ class FitPanel(wx.Panel):
         self.SetSizer(box)
 
     def setup_controls(self):
-        self.id = 'ID'+str(id(wx.FindWindowByName('pomuiroot')))
-
         self.nb_fit = wx.Notebook(self)
         self.pan_model = FitModelPanel(self.nb_fit)
         self.pan_pars = FitParsPanel(self.nb_fit)

@@ -111,7 +111,7 @@ class XRCModule(module.XRCModule):
 
     def OnRepeat(self, evt):
         if self.do_op(self.xrc_op.last_op):
-            pub.sendMessage((self.view_id, 'changed'))
+            pub.sendMessage((self.instid, 'changed'))
             self.controller.update_plot()
     
     def OnOp(self, func, evt):
@@ -119,7 +119,7 @@ class XRCModule(module.XRCModule):
         name = evt.GetEventObject().GetName()
         if func(name, *self.controller.selection):
             self.controller.update_plot()
-            pub.sendMessage((self.view_id, 'changed'))
+            pub.sendMessage((self.instid, 'changed'))
         self.controller._busy = False
 
     def op_raman(self, name, plot, sel):
@@ -220,7 +220,7 @@ class XRCModule(module.XRCModule):
         if self.do_op(trafo):
             self.xrc_op.Store()
             self.xrc_btn_repeat.Enable()
-            #pub.sendMessage((self.view_id, 'changed'))
+            #pub.sendMessage((self.instid, 'changed'))
             return True
         else:
             self.xrc_op.SetTextSelection(0,-1)
@@ -245,7 +245,7 @@ class XRCModule(module.XRCModule):
                 return False
             else:
                 self.controller.add_set(newspec)
-                #pub.sendMessage((self.view_id, 'changed'))
+                #pub.sendMessage((self.instid, 'changed'))
                 return True
 
         else:
@@ -280,7 +280,7 @@ class XRCModule(module.XRCModule):
                     return False
                 else:
                     self.controller.project[plot][s].trafo.append((trafo_axis, trafo, 'custom'))
-            #pub.sendMessage((self.view_id, 'changed'))
+            #pub.sendMessage((self.instid, 'changed'))
             return True
 
         

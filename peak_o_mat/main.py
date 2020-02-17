@@ -57,7 +57,7 @@ def new_controller(path=None, silent=True, startapp=False):
     from .mainframe import MainFrame
 
     v = MainFrame(silent, plotserver=PLOTSERVER)
-    c = Controller(Project(),v,Interactor('ID'+str(id(wx.FindWindowByName('pomuiroot')))),path)
+    c = Controller(Project(),v,Interactor(),path)
 
     c.view.start(startapp=startapp)
 

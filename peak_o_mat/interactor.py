@@ -1,4 +1,3 @@
-#from pubsub import setupkwargs
 from pubsub import pub
 
 import wx
@@ -14,9 +13,6 @@ from . import misc
 #TODO: implement a 'set attribute changed' event
 
 class Interactor(object):
-    def __init__(self, id):
-        self.view_id = id
-
     def Install(self, controller, view):
         self.controller = controller
         self.view = view
@@ -26,9 +22,6 @@ class Interactor(object):
 
         def menuitem(name):
             return self.view.GetMenuBar().FindItemById(xrc.XRCID(name))
-
-        #self.view.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnNotebookPageChanged)
-        # moved to fitinteractor
 
         self.view.Bind(wx.EVT_MENU, self.OnNew, id=menu_ids['New'])
         self.view.Bind(wx.EVT_MENU, self.OnOpen, id=menu_ids['Open project...'])
@@ -65,63 +58,63 @@ class Interactor(object):
 
         self.view._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnModuleCloseButton)
 
-        pub.subscribe(self.pubOnMessage, (self.view_id, 'message'))
-        pub.subscribe(self.OnTreeSelect, (self.view_id, 'tree', 'select'))
-        pub.subscribe(self.pubOnTreeDelete, (self.view_id, 'tree', 'delete'))
-        pub.subscribe(self.OnTreeRename, (self.view_id, 'tree', 'rename'))
-        pub.subscribe(self.OnTreeMove, (self.view_id, 'tree', 'move'))
-        pub.subscribe(self.OnTreeHide, (self.view_id, 'tree', 'hide'))
-        pub.subscribe(self.OnTreeDuplicate, (self.view_id, 'tree', 'duplicate'))
-        pub.subscribe(self.OnTreeNewFromVisArea, (self.view_id, 'tree', 'newfromvisarea'))
-        pub.subscribe(self.OnTreeInsert, (self.view_id, 'tree', 'insert'))
-        pub.subscribe(self.OnTreeCopyToGrid, (self.view_id, 'tree', 'togrid'))
-        pub.subscribe(self.OnTreeRemFit, (self.view_id, 'tree', 'remfit'))
-        pub.subscribe(self.OnTreeRemTrafo, (self.view_id, 'tree', 'remtrafo'))
-        pub.subscribe(self.OnTreeRemWeights, (self.view_id, 'tree', 'remerror'))
-        pub.subscribe(self.OnTreeUnmask, (self.view_id, 'tree', 'unmask'))
-        pub.subscribe(self.pubOnAddPlot, (self.view_id, 'tree', 'addplot'))
-        pub.subscribe(self.OnTreeCopy, (self.view_id, 'tree', 'copy'))
-        pub.subscribe(self.OnTreePaste, (self.view_id, 'tree', 'paste'))
+        pub.subscribe(self.pubOnMessage, (self.view.instid, 'message'))
+        pub.subscribe(self.OnTreeSelect, (self.view.instid, 'tree', 'select'))
+        pub.subscribe(self.pubOnTreeDelete, (self.view.instid, 'tree', 'delete'))
+        pub.subscribe(self.OnTreeRename, (self.view.instid, 'tree', 'rename'))
+        pub.subscribe(self.OnTreeMove, (self.view.instid, 'tree', 'move'))
+        pub.subscribe(self.OnTreeHide, (self.view.instid, 'tree', 'hide'))
+        pub.subscribe(self.OnTreeDuplicate, (self.view.instid, 'tree', 'duplicate'))
+        pub.subscribe(self.OnTreeNewFromVisArea, (self.view.instid, 'tree', 'newfromvisarea'))
+        pub.subscribe(self.OnTreeInsert, (self.view.instid, 'tree', 'insert'))
+        pub.subscribe(self.OnTreeCopyToGrid, (self.view.instid, 'tree', 'togrid'))
+        pub.subscribe(self.OnTreeRemFit, (self.view.instid, 'tree', 'remfit'))
+        pub.subscribe(self.OnTreeRemTrafo, (self.view.instid, 'tree', 'remtrafo'))
+        pub.subscribe(self.OnTreeRemWeights, (self.view.instid, 'tree', 'remerror'))
+        pub.subscribe(self.OnTreeUnmask, (self.view.instid, 'tree', 'unmask'))
+        pub.subscribe(self.pubOnAddPlot, (self.view.instid, 'tree', 'addplot'))
+        pub.subscribe(self.OnTreeCopy, (self.view.instid, 'tree', 'copy'))
+        pub.subscribe(self.OnTreePaste, (self.view.instid, 'tree', 'paste'))
         
-        pub.subscribe(self.OnSetFromGrid, (self.view_id, 'grid', 'newset'))
+        pub.subscribe(self.OnSetFromGrid, (self.view.instid, 'grid', 'newset'))
 
-        pub.subscribe(self.OnCanvasErase, (self.view_id, 'canvas', 'erase'))
+        pub.subscribe(self.OnCanvasErase, (self.view.instid, 'canvas', 'erase'))
         #em.eventManager.Register(self.OnGotPars, misc_ui.EVT_GOTPARS, self.view.canvas)
         self.view.canvas.Bind(misc_ui.EVT_GOTPARS, self.OnGotPars)
         
-        pub.subscribe(self.OnLoadSetFromModel, (self.view_id, 'fitctrl', 'loadset'))
-        pub.subscribe(self.OnFitPars2DataGrid, (self.view_id, 'fitctrl', 'parexport'))
-        pub.subscribe(self.pubOnStartFit, (self.view_id, 'fitctrl', 'fit'))
-        pub.subscribe(self.OnStartPickPars, (self.view_id, 'fitctrl', 'pickpars'))
-        pub.subscribe(self.OnEditPars, (self.view_id, 'fitctrl', 'editpars'))
-        pub.subscribe(self.OnAttachWeights, (self.view_id, 'fitctrl', 'attachweights'))
-        pub.subscribe(self.OnLimitFitRange, (self.view_id, 'fitctrl', 'limitfitrange'))
-        pub.subscribe(self.OnPlot, (self.view_id, 'fitctrl', 'plot'))
+        pub.subscribe(self.OnLoadSetFromModel, (self.view.instid, 'fitctrl', 'loadset'))
+        pub.subscribe(self.OnFitPars2DataGrid, (self.view.instid, 'fitctrl', 'parexport'))
+        pub.subscribe(self.pubOnStartFit, (self.view.instid, 'fitctrl', 'fit'))
+        pub.subscribe(self.OnStartPickPars, (self.view.instid, 'fitctrl', 'pickpars'))
+        pub.subscribe(self.OnEditPars, (self.view.instid, 'fitctrl', 'editpars'))
+        pub.subscribe(self.OnAttachWeights, (self.view.instid, 'fitctrl', 'attachweights'))
+        pub.subscribe(self.OnLimitFitRange, (self.view.instid, 'fitctrl', 'limitfitrange'))
+        pub.subscribe(self.OnPlot, (self.view.instid, 'fitctrl', 'plot'))
 
-        pub.subscribe(self.OnProjectModified, (self.view_id, 'changed'))
+        pub.subscribe(self.OnProjectModified, (self.view.instid, 'changed'))
 
         self.view.Bind(wx.EVT_CLOSE, self.OnClose)
 
-        pub.subscribe(self.OnEditCode, (self.view_id, 'code', 'changed'))
+        pub.subscribe(self.OnEditCode, (self.view.instid, 'code', 'changed'))
 
-        pub.subscribe(self.OnFigureShow, (self.view_id, 'figurelist', 'show'))
-        pub.subscribe(self.OnFigureShow, (self.view_id, 'figurelist', 'create'))
-        pub.subscribe(self.OnFigureDelete, (self.view_id, 'figurelist', 'del'))
-        pub.subscribe(self.OnFigureClone, (self.view_id, 'figurelist', 'clone'))
+        pub.subscribe(self.OnFigureShow, (self.view.instid, 'figurelist', 'show'))
+        pub.subscribe(self.OnFigureShow, (self.view.instid, 'figurelist', 'create'))
+        pub.subscribe(self.OnFigureDelete, (self.view.instid, 'figurelist', 'del'))
+        pub.subscribe(self.OnFigureClone, (self.view.instid, 'figurelist', 'clone'))
 
-        pub.subscribe(self.OnFigureClose, (self.view_id, 'figure', 'discard'))
-        pub.subscribe(self.OnFigureSave, (self.view_id, 'figure', 'save'))
+        pub.subscribe(self.OnFigureClose, (self.view.instid, 'figure', 'discard'))
+        pub.subscribe(self.OnFigureSave, (self.view.instid, 'figure', 'save'))
 
-        pub.subscribe(self.pubOnAddSet, (self.view_id, 'set', 'add'))
+        pub.subscribe(self.pubOnAddSet, (self.view.instid, 'set', 'add'))
 
-        pub.subscribe(self.pubOnUpdateView, (self.view_id, 'updateview'))
+        pub.subscribe(self.pubOnUpdateView, (self.view.instid, 'updateview'))
 
-        pub.subscribe(self.pubOnGenerateDataset, (self.view_id, 'generate_dataset'))
-        pub.subscribe(self.pubOnGenerateGrid, (self.view_id, 'generate_grid'))
+        pub.subscribe(self.pubOnGenerateDataset, (self.view.instid, 'generate_dataset'))
+        pub.subscribe(self.pubOnGenerateGrid, (self.view.instid, 'generate_grid'))
 
-        pub.subscribe(self.pubOnStopAll, (self.view_id, 'stop_all'))
+        pub.subscribe(self.pubOnStopAll, (self.view.instid, 'stop_all'))
 
-        pub.subscribe(self.pubOnUpdatePlot, (self.view_id, 'updateplot'))
+        pub.subscribe(self.pubOnUpdatePlot, (self.view.instid, 'updateplot'))
 
     def pubOnStopAll(self):
         return
@@ -222,7 +215,7 @@ class Interactor(object):
 
     #TODO: obnsolete
     def OnNotebookPageChanged(self, evt):
-        pub.sendMessage((self.view_id, 'notebook', 'pagechanged'), msg=evt.GetEventObject().GetCurrentPage())
+        pub.sendMessage((self.view.instid, 'notebook', 'pagechanged'), msg=evt.GetEventObject().GetCurrentPage())
 
     def OnEditAnnotations(self, evt):
         self.controller.annotations_changed(self.view.annotations)
@@ -253,7 +246,7 @@ class Interactor(object):
 
     def OnTreeRemFit(self, msg):
         self.controller.rem_attr('mod', only_sel=True)
-        pub.sendMessage((self.view_id,'delmod'))
+        pub.sendMessage((self.view.instid, 'delmod'))
 
     def OnTreeRemTrafo(self, msg):
         self.controller.rem_attr('trafo', only_sel=True)

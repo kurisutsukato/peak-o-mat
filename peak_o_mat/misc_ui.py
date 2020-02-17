@@ -49,3 +49,16 @@ def xrc_resource():
         xrc.XmlResource.Get().Load(xrcpath)
         xres_loaded = True
     return xrc.XmlResource.Get()
+
+class WithMessage:
+    def __init__(self, view=None):
+        if view is not None:
+            p = view.GetParent()
+        else:
+            p = self.GetParent()
+        while p is not None:
+            if hasattr(p, 'instid'):
+                self.instid = p.instid
+                break
+            p = p.GetParent()
+

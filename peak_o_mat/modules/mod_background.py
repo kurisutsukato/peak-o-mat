@@ -68,7 +68,7 @@ class XRCModule(module.XRCModule):
                 dataset = self.controller.project[p][s[0]]
                 x,y = self.calc_background(dataset)
                 self.plotme = 'Line', spec.Spec(x,y,'bg_{}'.format(dataset.name))
-                pub.sendMessage((self.view_id, 'updateplot'))
+                pub.sendMessage((self.instid, 'updateplot'))
 
     def OnBtn(self, evt):
         p,s = self.controller.selection
@@ -83,7 +83,7 @@ class XRCModule(module.XRCModule):
                 if evt.GetEventObject() == self.xrc_btn_substract:
                     #TODO: das hatte mal nicht funktioniert im trunk
                     dataset -= y
-                    pub.sendMessage((self.view_id, 'updateplot'))
+                    pub.sendMessage((self.instid, 'updateplot'))
                 else:
                     self.controller.add_set(spec.Spec(x,y,'bg_{}'.format(dataset.name)))
 
@@ -102,6 +102,6 @@ class XRCModule(module.XRCModule):
     def focus_changed(self, newfocus=None):
         if newfocus != self:
             self.plotme = None
-            pub.sendMessage((self.view_id, 'updateplot'))
+            pub.sendMessage((self.instid, 'updateplot'))
         else:
             self.update_background()

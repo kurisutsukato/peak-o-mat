@@ -23,6 +23,8 @@ from wx.lib.splitter import MultiSplitterWindow
 
 from .. import images
 from .. import controls
+from ..misc_ui import WithMessage
+
 
 ID_LOAD = wx.NewId()
 ID_SAVE = wx.NewId()
@@ -43,11 +45,11 @@ def intro():
     from ..datagrid import __doc__
     print(__doc__)
 
-class GridContainer(wx.Frame):
+class GridContainer(WithMessage,wx.Frame):
     def __init__(self, parent, onwin=False):
         wx.Frame.__init__(self, parent, -1, 'Data Grid', size=(700,400), style=wx.DEFAULT_FRAME_STYLE)
+        WithMessage.__init__(self)
         self.parent = parent
-        self.id = parent.id
 
         self.init_menu()
 
@@ -154,12 +156,13 @@ class GridContainer(wx.Frame):
         else:
             return None
 
-class GridPanel(wx.Panel):
+class GridPanel(WithMessage,wx.Panel):
     def __init__(self, parent, show_shell=False):
         if show_shell:
             raise Exception('should not happen')
         wx.Panel.__init__(self, parent)
-        self.id = wx.FindWindowByName('pomuiroot').id
+        WithMessage.__init__(self)
+
         self.grid = Grid(self)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -208,7 +211,7 @@ class GridPanel(wx.Panel):
 class Grid(wx.grid.Grid):
     def __init__(self, parent):
         wx.grid.Grid.__init__(self, parent, -1, style=wx.SUNKEN_BORDER)
-        self.id = wx.FindWindowByName('pomuiroot').id
+        self.instid = parent.instid
         self.SetColLabelSize(20)
         self.SetDefaultCellOverflow(False)
         self.SetRowLabelSize(120)

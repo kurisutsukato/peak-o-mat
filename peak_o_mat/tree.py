@@ -25,11 +25,12 @@ from pubsub import pub
 from wx.lib.agw.customtreectrl import CustomTreeCtrl
 
 from . import spec, project, images
+from .misc_ui import WithMessage
 
 if os.name == 'posix':
     CustomTreeCtrl = wx.TreeCtrl
 
-class TreeCtrl(CustomTreeCtrl):
+class TreeCtrl(CustomTreeCtrl, WithMessage):
     def __init__(self, parent):
 
         style = wx.TR_EDIT_LABELS|wx.TR_HAS_BUTTONS|wx.TR_MULTIPLE|wx.TR_HIDE_ROOT
@@ -38,13 +39,14 @@ class TreeCtrl(CustomTreeCtrl):
         else:
             CustomTreeCtrl.__init__(self, parent, style=wx.SIMPLE_BORDER, agwStyle=style)
             self.SetBackgroundColour(wx.WHITE)
+        WithMessage.__init__(self)
+
         self.item = None
         self.root = None
 
         self._drag = False
         self._update = False
         
-        self.view_id = 'ID'+str(id(wx.FindWindowByName('pomuiroot')))
         self.root = self.AddRoot('project tree')
         
         isz = (16,16)
@@ -79,7 +81,7 @@ class TreeCtrl(CustomTreeCtrl):
         self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnter)
 
     def OnMouseEnter(self, evt):
-        if wx.FindWindowByName('pomuiroot').IsActive():
+        if wx.GetTopLevelParent(self).IsActive():
             self.SetFocus()
 
     def __getitem__(self, item):
@@ -162,7 +164,7 @@ class TreeCtrl(CustomTreeCtrl):
             else:
                 plot = self.GetItemData(parent)
                 set = self.GetItemData(self.edit_item)
-            pub.sendMessage((self.view_id, 'tree', 'rename'),msg=(plot,set,name))
+            pub.sendMessage((self.instid, 'tree', 'rename'), msg=(plot, set, name))
         else:
             evt.Veto()
             self.SetItemText(self.edit_item, self.item_old_name)
@@ -219,25 +221,25 @@ class TreeCtrl(CustomTreeCtrl):
             self.PopupMenu(self.menu, evt.GetPosition())
 
     def OnAddPlot(self, evt):
-        pub.sendMessage((self.view_id, 'tree', 'addplot'), msg=None)
+        pub.sendMessage((self.instid, 'tree', 'addplot'), msg=None)
 
     def OnCopy(self, evt):
-        pub.sendMessage((self.view_id, 'tree', 'copy'), msg=None)
+        pub.sendMessage((self.instid, 'tree', 'copy'), msg=None)
 
     def OnPaste(self, evt):
-        pub.sendMessage((self.view_id, 'tree', 'paste'), msg=None)
+        pub.sendMessage((self.instid, 'tree', 'paste'), msg=None)
 
     def OnHide(self, evt):
-        pub.sendMessage((self.view_id, 'tree', 'hide'), msg=None)
+        pub.sendMessage((self.instid, 'tree', 'hide'), msg=None)
 
     def OnDuplicate(self, evt):
-        pub.sendMessage((self.view_id, 'tree', 'duplicate'),msg=self.isPlot(self.item))
+        pub.sendMessage((self.instid, 'tree', 'duplicate'), msg=self.isPlot(self.item))
 
     def OnNewSetsFromVisArea(self, evt):
-        pub.sendMessage((self.view_id, 'tree', 'newfromvisarea'),msg=self.isPlot(self.item))
+        pub.sendMessage((self.instid, 'tree', 'newfromvisarea'), msg=self.isPlot(self.item))
 
     def OnSpreadsheet(self, evt):
-        pub.sendMessage((self.view_id, 'tree', 'togrid'), msg=None)
+        pub.sendMessage((self.instid, 'tree', 'togrid'), msg=None)
 
     def OnNewFrame(self, evt):
         print('tree: on new frame - obsolete')
@@ -245,22 +247,22 @@ class TreeCtrl(CustomTreeCtrl):
 
     def OnInsertPlot(self, evt):
         loc = self.GetItemData(self.item)
-        pub.sendMessage((self.view_id, 'tree', 'insert'), msg=loc)
+        pub.sendMessage((self.instid, 'tree', 'insert'), msg=loc)
     
     def OnRemFit(self, evt=None):
-        pub.sendMessage((self.view_id, 'tree', 'remfit'), msg=None)
+        pub.sendMessage((self.instid, 'tree', 'remfit'), msg=None)
 
     def OnRemError(self, evt=None):
-        pub.sendMessage((self.view_id, 'tree', 'remerror'), msg=None)
+        pub.sendMessage((self.instid, 'tree', 'remerror'), msg=None)
 
     def OnRemTrafo(self, evt=None):
-        pub.sendMessage((self.view_id, 'tree', 'remtrafo'), msg=None)
+        pub.sendMessage((self.instid, 'tree', 'remtrafo'), msg=None)
             
     def OnUnmask(self, evt=None):
-        pub.sendMessage((self.view_id, 'tree', 'unmask'), msg=None)
+        pub.sendMessage((self.instid, 'tree', 'unmask'), msg=None)
             
     def OnRemItem(self, evt):
-        pub.sendMessage((self.view_id, 'tree', 'delete'),msg=self.isPlot(self.item))
+        pub.sendMessage((self.instid, 'tree', 'delete'), msg=self.isPlot(self.item))
 
     def OnChar(self, evt):
         if evt.KeyCode == 3:
@@ -328,7 +330,7 @@ class TreeCtrl(CustomTreeCtrl):
 
         self._drag = False
         
-        pub.sendMessage((self.view_id, 'tree', 'move'),msg=(s_plot, s_sets, t_plot, t_set))
+        pub.sendMessage((self.instid, 'tree', 'move'), msg=(s_plot, s_sets, t_plot, t_set))
 
     def OnSelChanged(self, evt):
         item = evt.GetItem()
@@ -354,7 +356,7 @@ class TreeCtrl(CustomTreeCtrl):
             else:
                 setnum = [self.GetItemData(evt.GetItem())]
         evt.Skip()
-        pub.sendMessage((self.view_id, 'tree', 'select'),selection=(plotnum,setnum))
+        pub.sendMessage((self.instid, 'tree', 'select'), selection=(plotnum, setnum))
 
     def GetFirstChild(self, *args):
         return CustomTreeCtrl.GetFirstChild(self, args[0])

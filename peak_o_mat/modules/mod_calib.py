@@ -110,11 +110,12 @@ class Module(module.BaseModule):
         self.parent_controller.view.menu_factory.add_module(self.parent_controller.view.menubar, self.title)
         #menu.add_module(self.parent_controller.view.menubar, self.title)
 
-        pub.subscribe(self.OnSelectionChanged, (self.view_id, 'selection','changed'))
+        pub.subscribe(self.OnSelectionChanged, (self.instid, 'selection','changed'))
 
     def init(self):
         self.calib = CalibrationModel([])
         self.view = Panel(self.parent_view, self.calib)
+        super(Module, self).init()
 
         self.init_ctrls()
         
@@ -139,9 +140,7 @@ class Module(module.BaseModule):
         self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApply, self.view.xrc_btn_dispersion)
         self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApplyStored, self.view.xrc_btn_applystored)
         
-        pub.subscribe(self.OnUpdate, (self.view_id, 'setattrchanged'))
-
-        super(Module, self).init()
+        pub.subscribe(self.OnUpdate, (self.instid, 'setattrchanged'))
 
     def update_from_model(self):
         #it = self.panel.xrc_ch_unit.FindString(self.calib.unit)
@@ -156,7 +155,7 @@ class Module(module.BaseModule):
             self.plotme = 'Spikes',spec.Spec(*self.calib.spectrum)
         else:
             self.plotme = None
-        pub.sendMessage((self.view_id, 'updateplot'))
+        pub.sendMessage((self.instid, 'updateplot'))
 
     def OnReadyToImport(self, evt):
         set = self.parent_controller.active_set
@@ -193,7 +192,7 @@ class Module(module.BaseModule):
         if newfocus != self:
             self.plotme = None
             self.view.xrc_chk_speclines.Value = False
-            pub.sendMessage((self.view_id, 'updateplot'))
+            pub.sendMessage((self.instid, 'updateplot'))
         else:
             self.OnUpdate()
 
@@ -217,7 +216,7 @@ class Module(module.BaseModule):
 
         if self.view.xrc_chk_speclines.Value:
             self.plotme = 'Spikes',spec.Spec(*self.calib.spectrum)
-            pub.sendMessage((self.view_id, 'updateplot'))
+            pub.sendMessage((self.instid, 'updateplot'))
 
     def OnElement(self, evt):
         dlg = controls.MultipleChoice(self.view, 'Select elements', choices=list(calib.elements.keys()))
@@ -245,7 +244,7 @@ class Module(module.BaseModule):
 
             if self.view.xrc_chk_speclines.Value:
                 self.plotme = 'Spikes',spec.Spec(*self.calib.spectrum)
-                pub.sendMessage((self.view_id, 'updateplot'))
+                pub.sendMessage((self.instid, 'updateplot'))
 
             self.lastsearch = None
 
@@ -279,7 +278,7 @@ class Module(module.BaseModule):
             if self.view.xrc_chk_speclines.Value:
                 self.plotme = 'Spikes',spec.Spec(*self.calib.spectrum)
 
-                pub.sendMessage((self.view_id, 'updateplot'))
+                pub.sendMessage((self.instid, 'updateplot'))
 
         if evt.GetColumn() == 0:
             coerced = min(int(self.view.xrc_spin_order.Value),max(0,len(self.calib.selection)-1))
@@ -324,7 +323,7 @@ class Module(module.BaseModule):
                 sets = sets[:1]
             for ds in sets:
                 self.parent_controller.project[plot][ds].trafo.append(('x',trafo,'calib, %d lines'%len(self.calib.selection)))
-            pub.sendMessage((self.view_id, 'updateplot'))
+            pub.sendMessage((self.instid, 'updateplot'))
 
     def OnStore(self, evt):
         if self.calib.element != ['Custom']:
