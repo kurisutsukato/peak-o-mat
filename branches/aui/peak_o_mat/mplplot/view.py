@@ -128,8 +128,7 @@ class LineControlPanel(WithMessage, wx.Panel):
         self.txt_linecolor = wx.TextCtrl(self, value='', size=(100,-1), name='color')
         self.txt_linecolor.Hide()
 
-        self.bmp_linecolor = wx.StaticBitmap(self, bitmap=wx.Bitmap(15,15), size=(15,15))
-        self.txt_markercolor = wx.TextCtrl(self, value='', size=(100,-1))
+        self.bmp_linecolor = wx.StaticBitmap(self, bitmap=wx.Bitmap(15,15), size=(15,15), style=wx.NO_BORDER)
         self.spn_alpha = wx.SpinCtrlDouble(self, min=0.1, initial=1, max=1, inc=0.1, name='alpha', size=(100, -1))
         self.btn_linecolorchooser = wx.Button(self, label='Select')
         #self.btn_linecolorchooser = PenStyleComboBox(self, choices=penStyles, style=wx.CB_READONLY)
@@ -167,9 +166,6 @@ class LineControlPanel(WithMessage, wx.Panel):
         grd.Add(wx.StaticText(self, label='Marker size'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
         grd.Add(self.spn_markersize, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
 
-        grd.Add(wx.StaticText(self, label='Maker color'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-        grd.Add(self.txt_markercolor, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-
         grd.Add(wx.StaticText(self, label='Alpha'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
         grd.Add(self.spn_alpha, 1, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
 
@@ -206,15 +202,23 @@ class LineControlPanel(WithMessage, wx.Panel):
         self.cho_marker.Clear()
         self.cho_marker.AppendItems(['None']+LineData.markers)
 
-    def gen_bitmap(self, color):
+    def gen_bitmap(self, color=None):
         size = self.bmp_linecolor.GetSize()
+        w, h = size
         bmp = wx.Bitmap(*size)
         temp_dc = wx.MemoryDC()
         temp_dc.SelectObject(bmp)
-        temp_dc.SetPen(wx.Pen(wx.Colour(*color)))
-        temp_dc.SetBrush(wx.Brush(wx.Colour(*color), wx.SOLID))
-        w, h = size
-        temp_dc.DrawRectangle(0, 0, w - 1, h - 1)
+        if color is None:
+            temp_dc.SetPen(wx.Pen(wx.WHITE))
+            temp_dc.SetBrush(wx.Brush(wx.WHITE, wx.SOLID))
+            temp_dc.DrawRectangle(0, 0, w, h)
+            temp_dc.SetPen(wx.Pen(wx.LIGHT_GREY))
+            temp_dc.DrawLine(0, 0, w, h)
+            temp_dc.DrawLine(0, h, w, 0)
+        else:
+            temp_dc.SetPen(wx.Pen(wx.Colour(*color)))
+            temp_dc.SetBrush(wx.Brush(wx.Colour(*color), wx.SOLID))
+            temp_dc.DrawRectangle(0, 0, w, h)
         temp_dc.SelectObject(wx.NullBitmap)
         return bmp
 
@@ -228,9 +232,8 @@ class LineControlPanel(WithMessage, wx.Panel):
             setattr(ld[sel], 'color', '{:.2f},{:.2f},{:.2f}'.format(*color[:-1]))
 
         pub.sendMessage((self.instid, 'lineattrs', 'changed'))
-        print([q.color for q in ld])
         #color = np.asarray(color, dtype=int)
-        self.bmp_linecolor.SetBitmap(self.gen_bitmap((255,255,255,0)))
+        self.bmp_linecolor.SetBitmap(self.gen_bitmap(None))
         pub.sendMessage((self.instid, 'lineattrs', 'changed'))
 
     def OnShowRangeDlg(self, evt):
@@ -246,13 +249,13 @@ class LineControlPanel(WithMessage, wx.Panel):
             color = dlg.GetColourData().GetColour()
             r,g,b,a = np.asarray(color, dtype=float)/255
             val = '{:.2f},{:.2f},{:.2f}'.format(r,g,b)
-            #self.txt_linecolor.ChangeValue(val)
             self.spn_alpha.SetValue(round(a,1))
 
             ld = self.__line_data
             for s in self.selection:
                 setattr(ld[s], 'color', val)
                 setattr(ld[s], 'alpha', round(a,1))
+            self.bmp_linecolor.SetBitmap(self.gen_bitmap(color))
         pub.sendMessage((self.instid, 'lineattrs', 'changed'))
 
     def OnLineAttrChoice(self, evt):
@@ -269,7 +272,6 @@ class LineControlPanel(WithMessage, wx.Panel):
     def OnLineAttrText(self, evt):
         obj = evt.GetEventObject()
         item = obj.Name
-        print(item)
 
         ld = self.__line_data
         for s in self.selection:
@@ -319,7 +321,7 @@ class LineControlPanel(WithMessage, wx.Panel):
                 self.bmp_linecolor.SetBitmap(self.gen_bitmap(color))
                 self.Refresh()
         else:
-            self.bmp_linecolor.SetBitmap(self.gen_bitmap((255,255,255,0)))
+            self.bmp_linecolor.SetBitmap(self.gen_bitmap(None))
 
         if len(set([self.__line_data[q].marker for q in self.selection])) == 1:
             item = self.cho_marker.FindString(self.__line_data[self.selection[0]].marker)
