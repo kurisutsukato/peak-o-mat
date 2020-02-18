@@ -238,12 +238,12 @@ def color(arg):
     if len(items) in [3,4]:
         return tuple([float(q) for q in items])
     elif arg in LineData.colors:
-        return arg
+        return 0.6,0.6,0.6
     else:
-        return 'k'
+        return 0,0,0
 
 class LineData:
-    # ex_types are the kwargs unterstood by figure.plot
+    # ex_types are the kwargs understood by figure.plot
     _ex_types = [str, str, float, float, color, float, str, bool]
     # in types are used to parse the xml data
     _in_types = [str, str, str, str, str, str, str, textbool]
@@ -253,7 +253,6 @@ class LineData:
     markers = ['.',',','o','v','^','<','>','1','2','3','4','8','s','p','*','h','H','+','x','D','d','|','_']
     markers = list(MarkerStyle.filled_markers)
     colors = ['black','green','red','blue','magenta','cyan','yellow']
-    #colors = list(mcd.XKCD_COLORS)
 
     def __init__(self, *args):
         for n,arg in enumerate(args):

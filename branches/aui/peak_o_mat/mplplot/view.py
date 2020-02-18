@@ -30,7 +30,7 @@ from ..images import get_bmp
 auto = get_bmp('auto.png')
 
 from .plotlayout import PlotLayout
-from .model import LineData
+from .model import LineData, color as colorcast
 
 def validfloat(arg):
     if arg == '':
@@ -52,17 +52,6 @@ def validticks(arg):
             return False
     return True
 
-def gen_bitmap(color, size):
-    bmp = wx.Bitmap(*size)
-    temp_dc = wx.MemoryDC()
-    temp_dc.SelectObject(bmp)
-    temp_dc.SetPen(wx.Pen(wx.Colour(*color)))
-    temp_dc.SetBrush(wx.Brush(wx.Colour(*color), wx.SOLID))
-    w,h = size
-    temp_dc.DrawRectangle(0, 0, w-1, h-1)
-    temp_dc.SelectObject(wx.NullBitmap)
-    return bmp
-
 _pos = [(-1,-1)]*2
 
 class CmpDlg(wx.MiniFrame):
@@ -81,7 +70,7 @@ class CmpDlg(wx.MiniFrame):
         self.il = wx.ImageList(w, h)
 
         ids = []
-        for n,cmap_id in enumerate(plt.colormaps()):
+        for n,cmap_id in enumerate(plt.colormaps()[::2]):
             col_map = mpl.cm.get_cmap(cmap_id)
             mpl.colorbar.ColorbarBase(ax, cmap=col_map, orientation='horizontal')
             fig.canvas.draw()
@@ -89,8 +78,8 @@ class CmpDlg(wx.MiniFrame):
             bmp = wx.Bitmap.FromBuffer(w, h, buf)
             ids.append((self.il.Add(bmp),cmap_id))
             ax.cla()
-            if n==10:
-                break
+            #if n==10:
+            #    break
 
         self.list = wx.ListCtrl(self, style=wx.LC_REPORT| wx.BORDER_NONE | wx.LC_NO_HEADER)
 
@@ -217,9 +206,21 @@ class LineControlPanel(WithMessage, wx.Panel):
         self.cho_marker.Clear()
         self.cho_marker.AppendItems(['None']+LineData.markers)
 
+    def gen_bitmap(self, color):
+        size = self.bmp_linecolor.GetSize()
+        bmp = wx.Bitmap(*size)
+        temp_dc = wx.MemoryDC()
+        temp_dc.SelectObject(bmp)
+        temp_dc.SetPen(wx.Pen(wx.Colour(*color)))
+        temp_dc.SetBrush(wx.Brush(wx.Colour(*color), wx.SOLID))
+        w, h = size
+        temp_dc.DrawRectangle(0, 0, w - 1, h - 1)
+        temp_dc.SelectObject(wx.NullBitmap)
+        return bmp
+
     def OnColorRangeSelect(self, evt):
         self.dlg_colorrange.Hide()
-        cmap_id = plt.colormaps()[evt.Index]
+        cmap_id = plt.colormaps()[evt.Index*2]
 
         ld = self.__line_data
         for n,(sel, ci) in enumerate(zip(*(self.selection, np.linspace(0,1,len(self.selection))))):
@@ -227,9 +228,9 @@ class LineControlPanel(WithMessage, wx.Panel):
             setattr(ld[sel], 'color', '{:.2f},{:.2f},{:.2f}'.format(*color[:-1]))
 
         pub.sendMessage((self.instid, 'lineattrs', 'changed'))
-
+        print([q.color for q in ld])
         #color = np.asarray(color, dtype=int)
-        self.bmp_linecolor.SetBitmap(gen_bitmap((255,255,255,0), self.bmp_linecolor.GetSize()))
+        self.bmp_linecolor.SetBitmap(self.gen_bitmap((255,255,255,0)))
         pub.sendMessage((self.instid, 'lineattrs', 'changed'))
 
     def OnShowRangeDlg(self, evt):
@@ -237,19 +238,22 @@ class LineControlPanel(WithMessage, wx.Panel):
 
     def OnShowColorDlg(self, evt):
         cd = wx.ColourData()
-        cd.SetColour(wx.Colour(46,80,255))
+        c = (np.asarray(colorcast(self.__line_data[self.selection[0]].color))*255).astype(int)
+        cd.SetColour(wx.Colour(c))
         dlg  = wx.ColourDialog(self, cd)
+
         if dlg.ShowModal() == wx.ID_OK:
             color = dlg.GetColourData().GetColour()
-            r,g,b,a = np.asarray(color)/255
-            val = '{:.1f},{:.1f},{:.1f}'.format(r,g,b)
-            self.txt_linecolor.ChangeValue(val)
+            r,g,b,a = np.asarray(color, dtype=float)/255
+            val = '{:.2f},{:.2f},{:.2f}'.format(r,g,b)
+            #self.txt_linecolor.ChangeValue(val)
             self.spn_alpha.SetValue(round(a,1))
 
             ld = self.__line_data
             for s in self.selection:
-                setattr(ld[s], 'linecolor', val)
+                setattr(ld[s], 'color', val)
                 setattr(ld[s], 'alpha', round(a,1))
+        pub.sendMessage((self.instid, 'lineattrs', 'changed'))
 
     def OnLineAttrChoice(self, evt):
         obj = evt.GetEventObject()
@@ -303,6 +307,19 @@ class LineControlPanel(WithMessage, wx.Panel):
             self.cho_linestyle.SetSelection(item)
         else:
             self.cho_linestyle.SetSelection(-1)
+
+        if len(set([self.__line_data[q].color for q in self.selection])) == 1:
+            try:
+                color = eval(self.__line_data[self.selection[0]].color)
+            except NameError:
+                #TODO: convert strings with lokkuptable
+                print('name error')
+            else:
+                color = (np.asarray(color)*255).astype(int)
+                self.bmp_linecolor.SetBitmap(self.gen_bitmap(color))
+                self.Refresh()
+        else:
+            self.bmp_linecolor.SetBitmap(self.gen_bitmap((255,255,255,0)))
 
         if len(set([self.__line_data[q].marker for q in self.selection])) == 1:
             item = self.cho_marker.FindString(self.__line_data[self.selection[0]].marker)
