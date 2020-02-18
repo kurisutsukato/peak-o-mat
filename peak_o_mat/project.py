@@ -612,15 +612,15 @@ class Project(LData):
             self.path = os.path.abspath(path)
 
         def a2unicode(text):
-            return tw.fill(' '.join(['%.15g'%x for x in text]))
+            return tw.fill(' '.join([repr(x) for x in text]))
 
         root = ET.Element('root')
         for p in range(len(self)):
             plot_elem = ET.SubElement(root, 'plot')
             if self[p].xrng is not None:
-                plot_elem.attrib['xrng'] = '{:.16g},{:.16g}'.format(self[p].xrng[0],self[p].xrng[1])
+                plot_elem.attrib['xrng'] = '{},{}'.format(repr(self[p].xrng[0]),repr(self[p].xrng[1]))
             if self[p].yrng is not None:
-                plot_elem.attrib['yrng'] = '{:.16g},{:.16g}'.format(self[p].yrng[0],self[p].yrng[1])
+                plot_elem.attrib['yrng'] = '{},{}'.format(repr(self[p].yrng[0]),repr(self[p].yrng[1]))
             plot_elem.attrib['uuid'] = self[p].uuid
             plot_elem.attrib['name'] = self[p].name
 
