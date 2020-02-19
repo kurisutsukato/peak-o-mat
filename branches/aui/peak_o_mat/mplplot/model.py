@@ -54,7 +54,7 @@ class PlotData(object):
         self.project[self.plot_ref].del_ref(self.uuid)
 
     def __deepcopy__(self, memo):
-        obj = PlotData(self.project, self.plot_ref, plot_hash=self.plot_hash, data=deepcopy(self.line_data, memo))
+        obj = PlotData(self.project, self.plot_ref, plot_hash=self.plot_hash, linedata=deepcopy(self.line_data, memo))
         for attr in self.attrs:
             setattr(obj, attr, getattr(self, attr))
         self.project[self.plot_ref].del_ref(obj.uuid)
@@ -72,7 +72,7 @@ class PlotData(object):
                 return False
         return True
 
-    def __init__(self, project, plot, data=None, plot_hash=None):
+    def __init__(self, project, plot, linedata=None, axesdata=None, plot_hash=None):
         self.plot_hash = project[plot].hash if plot_hash is None else plot_hash
 
         name = project[plot].name
@@ -85,7 +85,8 @@ class PlotData(object):
         project[plot].add_ref(self.uuid)
 
         self.project = project
-        self.line_data = self.init_line_data(data)
+        self.line_data = self.init_line_data(linedata)
+        self.axes_data = self.init_axes_data(axesdata)
 
         for attr, default in zip(self.attrs, self.defaults):
             setattr(self, attr, default)
@@ -120,15 +121,21 @@ class PlotData(object):
     def plot_exists(self):
         return self.plot_ref in self.project
 
+    def init_axes_data(self, data=None):
+        if data is None:
+            data = []
+            data.append(AxesData('x label', '', ''))
+            data.append(AxesData('y label', '', ''))
+            data.append(AxesData('second y', '', ''))
+        return data
+
     def init_line_data(self, data=None):
         if data is None:
             data = []
-            df = DataFactory()
+            df = LineDataFactory()
             for s in self.project[self.plot_ref]:
                 data.append(df.next_with_name(s.name))
-
         return data
-        #return ListModel(data)
 
     @property
     def modified(self):
@@ -141,7 +148,7 @@ class PlotData(object):
     def sync_with_plot(self):
         nlines = len(self.line_data)
         diff = len(self.project[self.plot_ref])-nlines
-        df = DataFactory()
+        df = LineDataFactory()
         for n,s in zip(list(range(diff)), self.project[self.plot_ref][nlines:]):
             self.line_data.append(df.next_with_name(s.name))
         self.line_data = self.line_data[:len(self.project[self.plot_ref])]
@@ -217,7 +224,7 @@ class PlotData(object):
     def human_readable(self):
         return '\n'.join([str((k,v)) for k,v in self.__dict__.items()])
 
-class DataFactory:
+class LineDataFactory:
     def __init__(self):
         self.index = [0,0]
 
@@ -241,6 +248,30 @@ def color(arg):
         return 0.6,0.6,0.6
     else:
         return 0,0,0
+
+class AxesData:
+    # ex_types are the kwargs understood by figure.plot
+    _ex_types = [str, float, float]
+    # in types are used to parse the xml data
+    _in_types = [str, str, str]
+    _attrs = ['label','min','max']
+
+    scales = ['linear', 'logarithmic']
+
+    def __init__(self, *args):
+        for n,arg in enumerate(args):
+            setattr(self, self._attrs[n], arg)
+    def __getitem__(self, item):
+        return getattr(self, self._attrs[item])
+    def __setitem__(self, key, value):
+        setattr(self, self._attrs[key], value)
+
+    def kwargs(self):
+        kw = dict([(q,p(getattr(self,q))) for q,p in zip(self._attrs[:-1], self._ex_types[:-1])])
+        return kw
+
+    def __str__(self):
+        return str([getattr(self, q) for q in self._attrs])
 
 class LineData:
     # ex_types are the kwargs understood by figure.plot
@@ -270,63 +301,6 @@ class LineData:
 
     def __str__(self):
         return str([getattr(self, q) for q in self._attrs])
-
-class ListModel(dv.PyDataViewModel):
-    def __init__(self, data):
-        dv.PyDataViewModel.__init__(self)
-        self._data = data
-
-        #self.objmapper.UseWeakRefs(True)
-
-    @property
-    def data(self):
-        return self._data
-    @data.setter
-    def data(self, data):
-        self._data = data
-        self.Cleared()
-
-    def GetChildren(self, parent, children):
-        if not parent:
-            for line in self._data:
-                children.append(self.ObjectToItem(line))
-            return len(self._data)
-
-    def IsContainer(self, item):
-        if not item:
-            return True
-        else:
-            return False
-
-    def GetColumnCount(self):
-        return 8
-
-    def GetCount(self):
-        return len(self.data)
-
-    def GetColumnType(self, col):
-        mapper = { 0 : 'string',
-                   1 : 'string',
-                   2 : 'int',
-                   3 : 'int',
-                   5 : 'string',
-                   6 : 'float',
-                   7 : 'string',
-                   8 : 'bool',
-                   }
-        return mapper[col]
-
-    def GetParent(self, item):
-        return dv.NullDataViewItem
-
-    def GetValue(self, item, col):
-        node = self.ItemToObject(item)
-        return node[col]
-
-    def SetValue(self, value, item, col):
-        print('set value')
-        node = self.ItemToObject(item)
-        node[col] = value
 
 class MultiPlotModel(dict):
     attrs = ['identifier',
