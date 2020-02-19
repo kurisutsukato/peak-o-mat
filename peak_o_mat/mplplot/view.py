@@ -78,8 +78,8 @@ class CmpDlg(wx.MiniFrame):
             bmp = wx.Bitmap.FromBuffer(w, h, buf)
             ids.append((self.il.Add(bmp),cmap_id))
             ax.cla()
-            #if n==10:
-            #    break
+            if n==4:
+                break
 
         self.list = wx.ListCtrl(self, style=wx.LC_REPORT| wx.BORDER_NONE | wx.LC_NO_HEADER)
 
@@ -104,6 +104,133 @@ class CmpDlg(wx.MiniFrame):
 
     def OnClose(self, evt):
         self.Hide()
+
+
+class AxesControlPanel(WithMessage, wx.Panel):
+    def __setattr__(self, attr, val):
+        # generate list with all controls
+        if issubclass(val.__class__, wx.Window) and val.Name != 'ignore':
+            self.__ctrls.append(val)
+        return super(AxesControlPanel, self).__setattr__(attr, val)
+
+    def __init__(self, parent, data=[]):
+        self.__ctrls = []
+        self.selection = []
+        self.__process_queue = []
+
+        wx.Panel.__init__(self, parent, -1)
+        WithMessage.__init__(self)
+        self.setup_controls()
+        self.layout()
+        self.setup_events()
+
+    def setup_controls(self):
+        self.axes_list = wx.ListCtrl(self, style=wx.LC_LIST|wx.LC_HRULES, size=(100,-1), name='ignore')
+
+        self.txt_label = wx.TextCtrl(self, value='x label', size=(220,-1), style=wx.TE_PROCESS_ENTER, name='label')
+        self.cmb_scale = wx.Choice(self, choices=('Linear','Log10', 'SymLog10'), size=(80,-1), name='scalex')
+        self.txt_rng_min = wx.TextCtrl(self, value='', size=(60,-1), style=wx.TE_PROCESS_ENTER, name='min')
+        self.txt_rng_max = wx.TextCtrl(self, value='', size=(60,-1), style=wx.TE_PROCESS_ENTER, name='max')
+        self.txt_rng_min.Hint = 'min.'
+        self.txt_rng_max.Hint = 'max.'
+        self.txt_rng_min.SetValidator(FormatValidator(validfloat))
+        self.txt_rng_max.SetValidator(FormatValidator(validfloat))
+        self.chk_ticks_hide = wx.CheckBox(self, -1)
+        self.cho_label_pos = wx.Choice(self, choices=['bottom','top'])
+        self.cho_label_pos.SetSelection(0)
+        self.cho_tickdir = wx.Choice(self, choices=['in','out'])
+        self.cho_tickdir.SetSelection(0)
+
+    def layout(self):
+        outer = wx.BoxSizer(wx.HORIZONTAL)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.axes_list, 1)
+
+        outer.Add(vbox, 0, wx.ALL | wx.EXPAND, 5)
+
+        fb = wx.GridBagSizer(hgap=10, vgap=5)
+
+        def Add(*args, **kwargs):
+            fb.Add(*args, **kwargs, flag=wx.ALIGN_CENTER_VERTICAL)
+
+        Add(wx.StaticText(self, label='Label'), (0,0))
+        Add(self.txt_label, (0,1), (1,2))
+        Add(wx.StaticText(self, label='Position'), (1,0))
+        Add(self.cho_label_pos, (1,1))
+
+        Add(wx.StaticText(self, label='Scale'), (2,0))
+        Add(self.cmb_scale, (2,1))
+
+        Add(wx.StaticText(self, label='Range'), (3,0))
+        Add(self.txt_rng_min, (3,1))
+        Add(self.txt_rng_max, (3,2))
+
+        #Add(wx.StaticText(self, -1, 'Ticklabel precision'),0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL,5)
+        #Add(self.cho_xticks_prec, 0, wx.RIGHT|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 10)
+
+        Add(wx.StaticText(self, label='Hide ticks'), (4,0))
+        Add(self.chk_ticks_hide, (4,1))
+        Add(wx.StaticText(self, label='Tick direction'), (5,0))
+        Add(self.cho_tickdir, (5,1))
+
+        outer.Add(fb, 1, wx.TOP|wx.EXPAND, 5)
+
+        self.SetSizer(outer)
+        self.Layout()
+
+    def _set_silent(self, state):
+        self.SetEvtHandlerEnabled(not state)
+    silent = property(fset=_set_silent)
+
+    def associate_model(self, axes_data):
+        self.__axes_data = axes_data
+        self.selection = []
+        self.axes_list.ClearAll()
+        self.axes_list.Append(['x axis'])
+        self.axes_list.Append(['y axis'])
+        if len(axes_data) == 3:
+            self.axes_list.Append(['secondary axis'])
+
+    def setup_events(self):
+        #self.Bind(wx.EVT_CHOICE, self.OnLineAttrChoice)
+        self.Bind(wx.EVT_TEXT, self.OnAxesAttrText)
+        self.axes_list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
+        self.axes_list.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnDeSelect)
+        self.Bind(wx.EVT_IDLE, self.OnProcess)
+
+    def OnAxesAttrText(self, evt):
+        obj = evt.GetEventObject()
+        item = obj.Name
+
+        ld = self.__axes_data
+        for s in self.selection:
+            setattr(ld[s], item, obj.Value)
+        pub.sendMessage((self.instid, 'axesattrs', 'changed'))
+
+    def OnProcess(self, evt):
+        if len(self.__process_queue) > 0:
+            self.__process_queue[0]()
+            self.__process_queue.clear()
+
+    def OnDeSelect(self, evt):
+        self.selection.remove(evt.Index)
+        self.__process_queue.append(self.enable)
+
+    def OnSelect(self, evt):
+        self.selection.append(evt.Index)
+        self.__process_queue.append(self.enable)
+
+    def enable(self):
+        for c in self.__ctrls:
+            if c.Name != 'ignore':
+                wx.CallAfter(c.Enable, len(self.selection) > 0)
+
+        self.silent = True
+        if len(set([self.__axes_data[q].label for q in self.selection])) == 1:
+            self.txt_label.ChangeValue(self.__axes_data[self.selection[0]].label)
+        else:
+            self.txt_label.ChangeValue('')
+        self.silent = False
 
 class LineControlPanel(WithMessage, wx.Panel):
     def __setattr__(self, attr, val):
@@ -191,6 +318,7 @@ class LineControlPanel(WithMessage, wx.Panel):
 
     def associate_model(self, line_data, ds_names):
         self.__line_data = line_data
+        self.selection = []
         self.dataset_list.ClearAll()
         for ld in ds_names:
             self.dataset_list.Append([ld])
@@ -201,6 +329,7 @@ class LineControlPanel(WithMessage, wx.Panel):
 
         self.cho_marker.Clear()
         self.cho_marker.AppendItems(['None']+LineData.markers)
+
 
     def gen_bitmap(self, color=None):
         size = self.bmp_linecolor.GetSize()
@@ -460,6 +589,7 @@ class ControlFrame(WithMessage,wx.Frame):
             self.plot_layout.update_from_model(mpmodel)
             ds_names = ['s{:d} {}'.format(n, q.name) for n,q in enumerate(mpmodel.project[mpmodel.selected.plot_ref])]
             self.line_control.associate_model(mpmodel.selected.line_data, ds_names)
+            self.axes_control.associate_model(mpmodel.selected.axes_data)
 
             self.txt_xlabel.Value = mpmodel.selected.label_x
             self.txt_ylabel.Value = mpmodel.selected.label_y
@@ -533,13 +663,16 @@ class ControlFrame(WithMessage,wx.Frame):
 
         self.panel_basic = wx.Panel(self.nb)
         self.line_control = LineControlPanel(self.nb)
+        self.axes_control = AxesControlPanel(self.nb)
         self.panel_axis = wx.Panel(self.nb)
+        self.panel_axis.Hide()
+
         self.panel_axis.InitDialog()
         self.panel_code = wx.Panel(self.nb)
 
         self.nb.AddPage(self.panel_basic, 'Basic')
         self.nb.AddPage(self.line_control, 'Styles')
-        self.nb.AddPage(self.panel_axis, 'Axis')
+        self.nb.AddPage(self.axes_control, 'Axis')
         self.nb.AddPage(self.panel_code, 'Code')
 
         self.txt_identifier = wx.TextCtrl(self.panel)
