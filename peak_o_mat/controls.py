@@ -720,7 +720,11 @@ class FigureListCtrl(misc_ui.WithMessage, wx.Panel):
         pub.sendMessage((self.instid, 'figurelist','create'), msg=None)
 
     def OnShow(self, evt):
-        sel = self.model.get_selected((self.lst.GetSelection()))
+        try:
+            sel = self.model.get_selected((self.lst.GetSelection()))
+        except IndexError:
+            return
+
         pub.sendMessage((self.instid, 'figurelist','show'), msg=sel)
         evt.Skip()
         self.Enable(False)

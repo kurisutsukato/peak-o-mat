@@ -18,11 +18,6 @@ from pubsub import pub
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
-from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
-from matplotlib.patches import Rectangle
-from matplotlib.axes import Axes
-from matplotlib.axis import Axis, XAxis
-
 from .. import images
 from ..controls import PythonSTC, FormatValidator
 from ..misc_ui import WithMessage
@@ -123,23 +118,24 @@ class AxesControlPanel(WithMessage, wx.Panel):
         self.setup_controls()
         self.layout()
         self.setup_events()
+        self.enable()
 
     def setup_controls(self):
-        self.axes_list = wx.ListCtrl(self, style=wx.LC_LIST|wx.LC_HRULES, size=(100,-1), name='ignore')
+        self.axes_list = wx.ListCtrl(self, style=wx.LC_LIST|wx.LC_HRULES|wx.LC_SINGLE_SEL, size=(100,-1), name='ignore')
 
         self.txt_label = wx.TextCtrl(self, value='x label', size=(220,-1), style=wx.TE_PROCESS_ENTER, name='label')
-        self.cmb_scale = wx.Choice(self, choices=('Linear','Log10', 'SymLog10'), size=(80,-1), name='scalex')
+        self.cho_scale = wx.Choice(self, choices=('linear','log'), size=(80,-1), name='scale')
         self.txt_rng_min = wx.TextCtrl(self, value='', size=(60,-1), style=wx.TE_PROCESS_ENTER, name='min')
         self.txt_rng_max = wx.TextCtrl(self, value='', size=(60,-1), style=wx.TE_PROCESS_ENTER, name='max')
         self.txt_rng_min.Hint = 'min.'
         self.txt_rng_max.Hint = 'max.'
         self.txt_rng_min.SetValidator(FormatValidator(validfloat))
         self.txt_rng_max.SetValidator(FormatValidator(validfloat))
-        self.chk_ticks_hide = wx.CheckBox(self, -1)
-        self.cho_label_pos = wx.Choice(self, choices=['bottom','top'])
-        self.cho_label_pos.SetSelection(0)
-        self.cho_tickdir = wx.Choice(self, choices=['in','out'])
-        self.cho_tickdir.SetSelection(0)
+        self.chk_ticks_hide = wx.CheckBox(self, -1, name='ticks_hide')
+        self.cho_labelpos = wx.Choice(self, choices=['bottom', 'top'], name='labelpos')
+        self.cho_labelpos.SetSelection(0)
+        self.cho_tdir = wx.Choice(self, choices=['in', 'out'], name='tdir')
+        self.cho_tdir.SetSelection(0)
 
     def layout(self):
         outer = wx.BoxSizer(wx.HORIZONTAL)
@@ -156,10 +152,10 @@ class AxesControlPanel(WithMessage, wx.Panel):
         Add(wx.StaticText(self, label='Label'), (0,0))
         Add(self.txt_label, (0,1), (1,2))
         Add(wx.StaticText(self, label='Position'), (1,0))
-        Add(self.cho_label_pos, (1,1))
+        Add(self.cho_labelpos, (1, 1))
 
         Add(wx.StaticText(self, label='Scale'), (2,0))
-        Add(self.cmb_scale, (2,1))
+        Add(self.cho_scale, (2,1))
 
         Add(wx.StaticText(self, label='Range'), (3,0))
         Add(self.txt_rng_min, (3,1))
@@ -171,12 +167,20 @@ class AxesControlPanel(WithMessage, wx.Panel):
         Add(wx.StaticText(self, label='Hide ticks'), (4,0))
         Add(self.chk_ticks_hide, (4,1))
         Add(wx.StaticText(self, label='Tick direction'), (5,0))
-        Add(self.cho_tickdir, (5,1))
+        Add(self.cho_tdir, (5, 1))
 
         outer.Add(fb, 1, wx.TOP|wx.EXPAND, 5)
 
         self.SetSizer(outer)
         self.Layout()
+
+    def setup_events(self):
+        self.Bind(wx.EVT_CHECKBOX, self.OnCheck)
+        self.Bind(wx.EVT_CHOICE, self.OnAxesAttrChoice)
+        self.Bind(wx.EVT_TEXT, self.OnAxesAttrText)
+        self.axes_list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
+        self.axes_list.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnDeSelect)
+        self.Bind(wx.EVT_IDLE, self.OnProcess)
 
     def _set_silent(self, state):
         self.SetEvtHandlerEnabled(not state)
@@ -190,21 +194,35 @@ class AxesControlPanel(WithMessage, wx.Panel):
         self.axes_list.Append(['y axis'])
         if len(axes_data) == 3:
             self.axes_list.Append(['secondary axis'])
+        self.axes_list.Select(0)
 
-    def setup_events(self):
-        #self.Bind(wx.EVT_CHOICE, self.OnLineAttrChoice)
-        self.Bind(wx.EVT_TEXT, self.OnAxesAttrText)
-        self.axes_list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
-        self.axes_list.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnDeSelect)
-        self.Bind(wx.EVT_IDLE, self.OnProcess)
+    def OnCheck(self, evt):
+        obj = evt.GetEventObject()
+        item = obj.Name
+
+        ld = self.__axes_data
+        s = self.selection[0]
+        setattr(ld[s], item, obj.Value)
+        pub.sendMessage((self.instid, 'axesattrs', 'changed'))
 
     def OnAxesAttrText(self, evt):
         obj = evt.GetEventObject()
         item = obj.Name
 
         ld = self.__axes_data
-        for s in self.selection:
-            setattr(ld[s], item, obj.Value)
+        s = self.selection[0]
+        setattr(ld[s], item, obj.Value)
+        pub.sendMessage((self.instid, 'axesattrs', 'changed'))
+
+    def OnAxesAttrChoice(self, evt):
+        obj = evt.GetEventObject()
+        item = obj.Name
+
+        ad = self.__axes_data
+        s = self.selection[0]
+        ctrl = getattr(self,'cho_{}'.format(item))
+        val = ctrl.GetString(ctrl.GetSelection())
+        setattr(ad[s], item, val)
         pub.sendMessage((self.instid, 'axesattrs', 'changed'))
 
     def OnProcess(self, evt):
@@ -224,12 +242,30 @@ class AxesControlPanel(WithMessage, wx.Panel):
         for c in self.__ctrls:
             if c.Name != 'ignore':
                 wx.CallAfter(c.Enable, len(self.selection) > 0)
+        if len(self.selection) == 0:
+            return
 
         self.silent = True
-        if len(set([self.__axes_data[q].label for q in self.selection])) == 1:
-            self.txt_label.ChangeValue(self.__axes_data[self.selection[0]].label)
-        else:
-            self.txt_label.ChangeValue('')
+
+        labelpos = {'x':['bottom','top'],
+                    'y':['left','right']}
+        self.cho_labelpos.Clear()
+        self.cho_labelpos.AppendItems(labelpos[self.__axes_data[self.selection[0]].type[0]])
+
+        self.txt_rng_min.ChangeValue(self.__axes_data[self.selection[0]].min)
+
+        self.txt_rng_max.ChangeValue(self.__axes_data[self.selection[0]].max)
+
+        self.txt_label.ChangeValue(self.__axes_data[self.selection[0]].label)
+
+        for attr in ['scale','labelpos']:
+            ctrl = getattr(self,'cho_{}'.format(attr))
+            val = getattr(self.__axes_data[self.selection[0]],attr)
+            ctrl.SetSelection(ctrl.FindString(val))
+
+        self.cho_tdir.SetSelection(self.cho_tdir.FindString(self.__axes_data[self.selection[0]].tdir))
+        self.chk_ticks_hide.SetValue(self.__axes_data[self.selection[0]].ticks_hide)
+
         self.silent = False
 
 class LineControlPanel(WithMessage, wx.Panel):
@@ -329,7 +365,6 @@ class LineControlPanel(WithMessage, wx.Panel):
 
         self.cho_marker.Clear()
         self.cho_marker.AppendItems(['None']+LineData.markers)
-
 
     def gen_bitmap(self, color=None):
         size = self.bmp_linecolor.GetSize()
@@ -591,40 +626,11 @@ class ControlFrame(WithMessage,wx.Frame):
             self.line_control.associate_model(mpmodel.selected.line_data, ds_names)
             self.axes_control.associate_model(mpmodel.selected.axes_data)
 
-            self.txt_xlabel.Value = mpmodel.selected.label_x
-            self.txt_ylabel.Value = mpmodel.selected.label_y
-            self.txt_title.Value = mpmodel.selected.label_title
-
-            self.txt_xrng_min.Value = mpmodel.selected.min_x
-            self.txt_yrng_min.Value = mpmodel.selected.min_y
-            self.txt_xrng_max.Value = mpmodel.selected.max_x
-            self.txt_yrng_max.Value = mpmodel.selected.max_y
-
-            self.chk_xticks_hide.Value = mpmodel.selected.xticks_hide
-            self.chk_yticks_hide.Value = mpmodel.selected.yticks_hide
-
-            self.cho_xlabel_pos.Selection = self.cho_xlabel_pos.FindString(mpmodel.selected.tlabel_pos_x)
-            self.cho_ylabel_pos.Selection = self.cho_ylabel_pos.FindString(mpmodel.selected.tlabel_pos_y)
-
-            self.cho_xtickdir.Selection = self.cho_xtickdir.FindString(mpmodel.selected.tdir_x)
-            self.cho_ytickdir.Selection = self.cho_ytickdir.FindString(mpmodel.selected.tdir_y)
-
             self.chk_legend.Value = mpmodel.selected.legend_show
             self.spn_legend_fontsize.Value = mpmodel.selected.legend_fontsize
             self.spn_legend_position.Value = mpmodel.selected.legend_position
 
             self.spn_fontsize.Value = mpmodel.selected.fontsize
-
-            self.cmb_scalex.Selection = int(mpmodel.selected.xscale)
-            self.cmb_scaley.Selection = int(mpmodel.selected.yscale)
-
-            self.txt_symlogthreshx.Value = str(mpmodel.selected.symlogthreshx)
-            self.txt_symlogthreshy.Value = str(mpmodel.selected.symlogthreshy)
-
-            self.txt_symlogthreshx.Enable(self.cmb_scalex.Selection == 2)
-            self.txt_symlogthreshy.Enable(self.cmb_scaley.Selection == 2)
-
-            self.editor.SetValue(mpmodel.selected.code)
 
     def resize_canvas(self, w, h, dpi):
         self.figure.set_size_inches(w,h,True)
@@ -664,23 +670,12 @@ class ControlFrame(WithMessage,wx.Frame):
         self.panel_basic = wx.Panel(self.nb)
         self.line_control = LineControlPanel(self.nb)
         self.axes_control = AxesControlPanel(self.nb)
-        self.panel_axis = wx.Panel(self.nb)
-        self.panel_axis.Hide()
-
-        self.panel_axis.InitDialog()
-        self.panel_code = wx.Panel(self.nb)
 
         self.nb.AddPage(self.panel_basic, 'Basic')
         self.nb.AddPage(self.line_control, 'Styles')
         self.nb.AddPage(self.axes_control, 'Axis')
-        self.nb.AddPage(self.panel_code, 'Code')
 
         self.txt_identifier = wx.TextCtrl(self.panel)
-
-        self.editor = CodeEditor(self.panel_code)
-        self.btn_runcode = wx.Button(self.panel_code, label='Run code')
-        #self.btn_example = wx.Button(self.panel_code, label='Show me some example')
-        self.txt_result = wx.TextCtrl(self.panel_code, style=wx.TE_MULTILINE)
 
         self.txt_title = wx.TextCtrl(self.panel_basic, value='title', style=wx.TE_PROCESS_ENTER, name='plotlabel')
 
@@ -689,56 +684,6 @@ class ControlFrame(WithMessage,wx.Frame):
         self.spn_legend_position = wx.SpinCtrl(self.panel_basic, size=(80,-1), min=0, max=10, initial=0, value='0', style=wx.TE_PROCESS_ENTER)
 
         self.spn_fontsize = wx.SpinCtrl(self.panel_basic, size=(80,-1), min=0, max=20, initial=10, value='10', style=wx.TE_PROCESS_ENTER)
-
-        # axis
-        self.txt_xlabel = wx.TextCtrl(self.panel_axis, value='x label', style=wx.TE_PROCESS_ENTER)
-        self.cmb_scalex = wx.Choice(self.panel_axis, choices=('Linear','Log10', 'SymLog10'), name='scalex')
-        self.txt_symlogthreshx = wx.TextCtrl(self.panel_axis, value='', style=wx.TE_PROCESS_ENTER)
-        self.txt_symlogthreshx.SetValidator(FormatValidator(validfloat))
-        self.txt_xrng_min = wx.TextCtrl(self.panel_axis, value='', style=wx.TE_PROCESS_ENTER)
-        self.txt_xrng_max = wx.TextCtrl(self.panel_axis, value='', style=wx.TE_PROCESS_ENTER)
-        self.txt_xrng_min.SetValidator(FormatValidator(validfloat))
-        self.txt_xrng_max.SetValidator(FormatValidator(validfloat))
-        #self.cho_xticks_prec = wx.Choice(self.panel_axis, choices=['Default','0','1','2','3','4'])
-        self.chk_xticks_hide = wx.CheckBox(self.panel_axis, -1, 'Hide ticks')
-        #self.chk_xtick_custom = wx.CheckBox(self.panel_axis, -1, 'Custom ticks')
-        #self.txt_xtick_major = wx.TextCtrl(self.panel_axis, style=wx.TE_PROCESS_ENTER)
-        #self.txt_xtick_minor = wx.TextCtrl(self.panel_axis, style=wx.TE_PROCESS_ENTER)
-        #self.txt_xtick_major.SetValidator(FormatValidator(validticks))
-        #self.txt_xtick_minor.SetValidator(FormatValidator(validticks))
-
-        self.cho_xlabel_pos = wx.Choice(self.panel_axis, choices=['bottom','top'])
-        self.cho_xlabel_pos.SetSelection(0)
-
-        self.cho_xtickdir = wx.Choice(self.panel_axis, choices=['in','out'])
-        self.cho_xtickdir.SetSelection(0)
-
-        self.txt_ylabel = wx.TextCtrl(self.panel_axis, value='y label', style=wx.TE_PROCESS_ENTER)
-        self.cmb_scaley = wx.Choice(self.panel_axis, choices=('Linear','Log10', 'SymLog10'), name='scaley')
-
-        self.txt_symlogthreshy = wx.TextCtrl(self.panel_axis, value='', style=wx.TE_PROCESS_ENTER)
-        self.txt_symlogthreshy.SetValidator(FormatValidator(validfloat))
-
-        self.txt_yrng_min = wx.TextCtrl(self.panel_axis, value='', style=wx.TE_PROCESS_ENTER)
-        self.txt_yrng_max = wx.TextCtrl(self.panel_axis, value='', style=wx.TE_PROCESS_ENTER)
-        self.txt_yrng_min.SetValidator(FormatValidator(validfloat))
-        self.txt_yrng_max.SetValidator(FormatValidator(validfloat))
-
-        #self.cho_yticks_prec = wx.Choice(self.panel_axis, choices=['Default','0','1','2','3','4'])
-        self.chk_yticks_hide = wx.CheckBox(self.panel_axis, -1, 'Hide ticks')
-
-        #self.chk_ytick_custom = wx.CheckBox(self.panel_axis, -1, 'Custom ticks')
-
-        #self.txt_ytick_major = wx.TextCtrl(self.panel_axis, style=wx.TE_PROCESS_ENTER)
-        #self.txt_ytick_minor = wx.TextCtrl(self.panel_axis, style=wx.TE_PROCESS_ENTER)
-        #self.txt_ytick_major.SetValidator(FormatValidator(validticks))
-        #self.txt_ytick_minor.SetValidator(FormatValidator(validticks))
-
-        self.cho_ylabel_pos = wx.Choice(self.panel_axis, choices=['left','right'])
-        self.cho_ylabel_pos.SetSelection(0)
-
-        self.cho_ytickdir = wx.Choice(self.panel_axis, choices=['in','out'])
-        self.cho_ytickdir.SetSelection(0)
 
         self.spn_bottom = wx.SpinCtrlDouble(self.panel, size=(80,-1), min=0, max=0.4, inc=0.05, value='0.1', style=wx.TE_PROCESS_ENTER, name='bottom')
         self.spn_top = wx.SpinCtrlDouble(self.panel, size=(80,-1),min=0.6, max=1.0, inc=0.05, value='0.9', style=wx.TE_PROCESS_ENTER, name='top')
@@ -765,9 +710,6 @@ class ControlFrame(WithMessage,wx.Frame):
         self.spn_left.SetToolTip('The plot margins are specified as fraction of the total plot size. Valid values are in the range between 0 and 1')
         self.spn_right.SetToolTip('The plot margins are specified as fraction of the total plot size. Valid values are in the range between 0 and 1')
 
-        self.editor.SetToolTip('Python code.')
-
-        #self.btn_example.SetToolTip('Click to fill the window above with some example code')
 
     def enable_edit(self, state=True):
         def enable(obj, state=True):
@@ -803,115 +745,6 @@ class ControlFrame(WithMessage,wx.Frame):
 
         self.panel_basic.SetSizer(vbox)
         vbox.SetSizeHints(self.panel_basic)
-
-        #axis
-        ovbox = wx.BoxSizer(wx.VERTICAL)
-
-        # x
-        bx = wx.StaticBox(self.panel_axis, label='X Axis')
-        vbox = wx.StaticBoxSizer(bx, wx.VERTICAL)
-
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(wx.StaticText(self.panel_axis, label='Label'), 0, wx.LEFT|wx.ALIGN_CENTER_VERTICAL,5)
-        hbox.Add(self.txt_xlabel, 1, wx.LEFT|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 10)
-        hbox.Add(wx.StaticText(self.panel_axis, label='Position'),0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL,5)
-        hbox.Add(self.cho_xlabel_pos, 0, wx.EXPAND|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        vbox.Add(hbox, 0, wx.EXPAND|wx.BOTTOM, 5)
-
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(wx.StaticText(self.panel_axis, label='Scale'), 0, wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        hbox.Add(self.cmb_scalex, 0, wx.RIGHT|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.lab_symlogthreshx = wx.StaticText(self.panel_axis, label='Symlog thresh.')
-        hbox.Add(self.lab_symlogthreshx, 0, wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 10)
-        hbox.Add(self.txt_symlogthreshx, 0, wx.RIGHT|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        hbox.Add(wx.StaticText(self.panel_axis, label='Range min.'), 0, wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 10)
-        hbox.Add(self.txt_xrng_min, 0, wx.RIGHT|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        hbox.Add(wx.StaticText(self.panel_axis, label='max.'), 0, wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        hbox.Add(self.txt_xrng_max, 0, wx.RIGHT|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        vbox.Add(hbox, 0, wx.EXPAND|wx.BOTTOM, 5)
-
-        #hbox = wx.BoxSizer(wx.HORIZONTAL)
-        #hbox.Add(self.chk_xtick_custom, 0, wx.EXPAND|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        #hbox.Add(wx.StaticText(self.panel_axis, label='Major'),0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL,25)
-        #hbox.Add(self.txt_xtick_major, 0, wx.EXPAND|wx.LEFT|wx.ALIGN_CENTER_VERTICAL,5)
-        #hbox.Add(wx.StaticText(self.panel_axis, label='Minor'),0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL,15)
-        #hbox.Add(self.txt_xtick_minor, 0, wx.EXPAND|wx.LEFT|wx.ALIGN_CENTER_VERTICAL,5)
-        #vbox.Add(hbox, 0, wx.EXPAND|wx.BOTTOM, 5)
-
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        #hbox.Add(wx.StaticText(self.panel_axis, -1, 'Ticklabel precision'),0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL,5)
-        #hbox.Add(self.cho_xticks_prec, 0, wx.RIGHT|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 10)
-        hbox.Add(self.chk_xticks_hide, 0, wx.EXPAND|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        hbox.Add(wx.StaticText(self.panel_axis, label='Tick direction'),0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL,10)
-        hbox.Add(self.cho_xtickdir, 0, wx.EXPAND|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        vbox.Add(hbox, 0, wx.EXPAND|wx.BOTTOM, 5)
-
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        vbox.Add(hbox, 0, wx.EXPAND|wx.BOTTOM, 5)
-
-        ovbox.Add(vbox, 0, wx.EXPAND)
-
-        # y
-        bx = wx.StaticBox(self.panel_axis, label='Y Axis')
-        vbox = wx.StaticBoxSizer(bx, wx.VERTICAL)
-
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(wx.StaticText(self.panel_axis, label='Label'), 0, wx.LEFT|wx.ALIGN_CENTER_VERTICAL,5)
-        hbox.Add(self.txt_ylabel, 1, wx.LEFT|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 10)
-        hbox.Add(wx.StaticText(self.panel_axis, label='Label position'),0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL,5)
-        hbox.Add(self.cho_ylabel_pos, 0, wx.EXPAND|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        vbox.Add(hbox, 0, wx.EXPAND|wx.BOTTOM, 5)
-
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(wx.StaticText(self.panel_axis, label='Scale'), 0, wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        hbox.Add(self.cmb_scaley, 0, wx.RIGHT|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.lab_symlogthreshy = wx.StaticText(self.panel_axis, label='Symlog thresh.')
-        hbox.Add(self.lab_symlogthreshy, 0, wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 10)
-        hbox.Add(self.txt_symlogthreshy, 0, wx.RIGHT|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        hbox.Add(wx.StaticText(self.panel_axis, label='Range min.'), 0, wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 10)
-        hbox.Add(self.txt_yrng_min, 0, wx.RIGHT|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        hbox.Add(wx.StaticText(self.panel_axis, label='max.'), 0, wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        hbox.Add(self.txt_yrng_max, 0, wx.RIGHT|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        vbox.Add(hbox, 0, wx.EXPAND|wx.BOTTOM, 5)
-
-        #hbox = wx.BoxSizer(wx.HORIZONTAL)
-        #hbox.Add(self.chk_ytick_custom, 0, wx.EXPAND|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        #hbox.Add(wx.StaticText(self.panel_axis, label='Major'),0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL,25)
-        #hbox.Add(self.txt_ytick_major, 0, wx.EXPAND|wx.LEFT|wx.ALIGN_CENTER_VERTICAL,5)
-        #hbox.Add(wx.StaticText(self.panel_axis, label='Minor'),0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL,15)
-        #hbox.Add(self.txt_ytick_minor, 0, wx.EXPAND|wx.LEFT|wx.ALIGN_CENTER_VERTICAL,5)
-        #vbox.Add(hbox, 0, wx.EXPAND|wx.BOTTOM, 5)
-
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        #hbox.Add(wx.StaticText(self.panel_axis, -1, 'Ticklabel precision'),0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL,5)
-        #hbox.Add(self.cho_yticks_prec, 0, wx.RIGHT|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 10)
-        hbox.Add(self.chk_yticks_hide, 0, wx.EXPAND|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        hbox.Add(wx.StaticText(self.panel_axis, label='Tick direction'),0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL,25)
-        hbox.Add(self.cho_ytickdir, 0, wx.EXPAND|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        vbox.Add(hbox, 0, wx.EXPAND|wx.BOTTOM, 5)
-
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        vbox.Add(hbox, 0, wx.EXPAND|wx.BOTTOM, 5)
-
-        ovbox.Add(vbox, 0, wx.EXPAND)
-
-        self.panel_axis.SetSizer(ovbox)
-        ovbox.SetSizeHints(self.panel_axis)
-
-        # panel code
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(self.editor, 1, wx.EXPAND|wx.ALL, 2)
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        #hbox.Add(self.btn_example, 0)
-        hbox.Add(wx.Window(self.panel_code, size=(1,1)), 1)
-        hbox.Add(self.btn_runcode, 0)
-
-        vbox.Add(hbox, 0, wx.EXPAND|wx.RIGHT|wx.LEFT|wx.BOTTOM, 2)
-        vbox.Add(self.txt_result, 1, wx.EXPAND|wx.RIGHT|wx.LEFT|wx.BOTTOM, 2)
-
-        self.panel_code.SetSizer(vbox)
-        vbox.SetSizeHints(self.panel_code)
 
         #main panel
         vbox = wx.BoxSizer(wx.VERTICAL)
