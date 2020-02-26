@@ -25,25 +25,17 @@ class Interactor:
 
         self.__cmds = []
 
-        self.view.Bind(wx.EVT_BUTTON, self.OnUpdateSelected, self.view.btn_runcode)
         self.view.Bind(wx.EVT_CLOSE, self.OnClose)
 
         self.view.Bind(wx.EVT_UPDATE_UI, self.OnIdle)
         self.view.Bind(wx.EVT_TIMER, self.OnTimer)
 
-        txtinput = ['txt_xlabel','txt_ylabel','txt_title','spn_legend_fontsize','spn_legend_position',
+        txtinput = ['txt_title','spn_legend_fontsize','spn_legend_position',
                     'spn_fontsize',
-                    'txt_xrng_min','txt_xrng_max','txt_yrng_min','txt_yrng_max',
-                    #'txt_xtick_minor','txt_xtick_major','txt_ytick_minor','txt_ytick_major',
-                    'txt_symlogthreshx','txt_symlogthreshy'
                     ]
         spins = ['spn_bottom','spn_top','spn_left','spn_right',
                  'spn_hspace','spn_wspace',
                  ]
-        choices = ['cmb_scalex', 'cmb_scaley',
-                   'cho_xtickdir','cho_ytickdir','cho_xlabel_pos','cho_ylabel_pos',
-                   #'cho_xticks_prec','cho_yticks_prec'
-                  ]
 
         for ctrl in txtinput:
             if ctrl.find('spn') == 0:
@@ -57,14 +49,6 @@ class Interactor:
             getattr(self.view, ctrl).Bind(wx.EVT_SPINCTRLDOUBLE, self.OnAdjustPlot)
             #getattr(self.view, ctrl).Bind(wx.EVT_MOUSEWHEEL, self.OnIgnore)
 
-        for ctrl in choices:
-            getattr(self.view, ctrl).Bind(wx.EVT_CHOICE, self.OnUpdateSelected)
-
-        #self.view.chk_xtick_custom.Bind(wx.EVT_CHECKBOX, self.OnUpdateSelected)
-        #self.view.chk_ytick_custom.Bind(wx.EVT_CHECKBOX, self.OnUpdateSelected)
-
-        self.view.chk_xticks_hide.Bind(wx.EVT_CHECKBOX, self.OnUpdateSelected)
-        self.view.chk_yticks_hide.Bind(wx.EVT_CHECKBOX, self.OnUpdateSelected)
 
         self.view.chk_legend.Bind(wx.EVT_CHECKBOX, self.OnUpdateSelected)
         #self.view.btn_example.Bind(wx.EVT_BUTTON, self.OnExample)
@@ -81,13 +65,14 @@ class Interactor:
         self.view.plot_layout.ch_rows.Bind(wx.EVT_CHOICE, self.OnShape)
         self.view.plot_layout.ch_cols.Bind(wx.EVT_CHOICE, self.OnShape)
 
-        self.view.plot_layout.ch_plot.Bind(wx.EVT_CHOICE, self.OnSelectPlot)
+        self.view.plot_layout.Bind(wx.EVT_CHOICE, self.OnSelectPlot)
 
         self.view.plot_layout.pop.Bind(EVT_RECT_SELECT, self.OnSelectGridPosition)
 
         self.view.plot_layout.pop.Bind(EVT_RECT_REORDER, self.OnReorderPlots)
 
         Publisher.subscribe(self.pubOnRedraw, (self.view.instid, 'lineattrs','changed'))
+        Publisher.subscribe(self.pubOnRedraw, (self.view.instid, 'axesattrs','changed'))
 
     def pubOnRedraw(self):
         self.controller.redraw(update_selected=True, force=True)
@@ -102,9 +87,15 @@ class Interactor:
 
     def OnSelectPlot(self, evt):
         evt.Skip()
-        wx.CallLater(200, self.controller.select_plot,
-                     self.view.plot_layout.ch_plot.GetClientData(self.view.plot_layout.ch_plot.Selection),
-                     self.view.plot_layout.selection)
+        src = evt.GetEventObject().GetName()
+        if src == 'pri':
+            wx.CallLater(200, self.controller.select_plot,
+                         self.view.plot_layout.ch_plot_pri.GetClientData(self.view.plot_layout.ch_plot_pri.Selection),
+                         self.view.plot_layout.selection)
+        elif src == 'sec':
+            wx.CallLater(200, self.controller.plot_add_secondary,
+                         self.view.plot_layout.ch_plot_sec.GetClientData(self.view.plot_layout.ch_plot_sec.Selection),
+                         self.view.plot_layout.selection)
 
     def OnShape(self, evt):
         evt.Skip()
@@ -138,26 +129,6 @@ class Interactor:
                     self.view.figure.savefig(dlg.GetPath(), dpi=dpi)
             else:
                 self.view.figure.savefig(dlg.GetPath())
-
-
-    def OnExample(self, evt):
-        #xlim = self.view.ax.get_xlim()
-        #ylim = self.view.ax.get_ylim()
-        #xpos = (xlim[1]+xlim[0])/2
-        #ypos = (ylim[1]+ylim[0])/2
-        #xticks = self.view.ax.get_xticks()
-        #xticks = ','.join(str(q) for q in sample(xticks, len(xticks)/2))
-        text = '''
-
-# For example:
-
-print 'peak-o-mat rocks!'
-annotate('peak-o-mat rocks!', xy=({xpos:.2g},{ypos:.2g}), fontsize=10)
-set_xticks([{xticks}])
-annotate('look at this', color='red', xy=(0.3,0.8), xytext=(0.2,0.6), xycoords='axes fraction', arrowprops={{'arrowstyle':'->'}})
-'''.format(xpos=xpos, ypos=ypos, xticks=xticks)
-
-        self.view.editor.SetText(info + text)
 
     def OnTimer(self, evt):
         self.controller.redraw(*self.view._redraw)

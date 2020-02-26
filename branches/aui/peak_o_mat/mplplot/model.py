@@ -18,44 +18,21 @@ def s2f(arg):
         return None
 
 class PlotData(object):
-    attrs = ['legend_show','legend_fontsize','legend_position','fontsize',
-             'xscale','yscale','symlogthreshx','symlogthreshy',
-             'label_x','label_y','label_title',
-             'xticks_hide','yticks_hide',
-             'xticks_prec','yticks_prec',
-             'ticks_major_x', 'ticks_major_y','ticks_minor_x', 'ticks_minor_y',
-             'tlabel_pos_x','tlabel_pos_y','tdir_x','tdir_y',
-             'min_x', 'max_x', 'min_y', 'max_y',
-             'code',
-             ]
+    _attrs = ['legend_show', 'legend_fontsize', 'legend_position', 'fontsize', 'label_title']
 
-    types = [textbool, int, int, int,
-             int, int,string,string,
-             string, string, string,
-             textbool, textbool,
-             int, int,
-             string, string, string, string,
-             string, string, string, string,
-             string, string, string, string,
-             string
-             ]
+    _types = [textbool, int, int, int, string]
 
-    defaults = [False, 12, 0, 10, 0, 0,'','',
-                'x', 'y', '',
-                False, False,
-                -1, -1,
-                '','','','',
-                'bottom','left','in','in',
-                '','','','',
-                '']
+    _defaults = [False, 12, 0, 10, '']
 
     def release(self):
         #TODO: nicer would be to have this done in the desctructor but there is always a reference hanging around
         self.project[self.plot_ref].del_ref(self.uuid)
 
     def __deepcopy__(self, memo):
-        obj = PlotData(self.project, self.plot_ref, plot_hash=self.plot_hash, linedata=deepcopy(self.line_data, memo))
-        for attr in self.attrs:
+        obj = PlotData(self.project, self.plot_ref, plot_hash=self.plot_hash,
+                       linedata=deepcopy(self.line_data, memo),
+                       axesdata=deepcopy(self.axes_data, memo))
+        for attr in self._attrs:
             setattr(obj, attr, getattr(self, attr))
         self.project[self.plot_ref].del_ref(obj.uuid)
         return obj
@@ -67,7 +44,7 @@ class PlotData(object):
         '''
         if other is None:
             return False
-        for attr in self.attrs:
+        for attr in self._attrs:
             if getattr(self, attr) != getattr(other, attr):
                 return False
         return True
@@ -88,8 +65,12 @@ class PlotData(object):
         self.line_data = self.init_line_data(linedata)
         self.axes_data = self.init_axes_data(axesdata)
 
-        for attr, default in zip(self.attrs, self.defaults):
+        for attr, default in zip(self._attrs, self._defaults):
             setattr(self, attr, default)
+
+    def add_secondary(self, plot):
+        self.project[plot].add_ref(self.uuid)
+        print('add secondary plot', plot)
 
     @property
     def figsize(self):
@@ -99,19 +80,25 @@ class PlotData(object):
         self.width, self.height = size
 
     @classmethod
-    def from_xml(cls, project, uid, xmlattrs, xmldata):
-        data = [LineData(*[tp(q) for q,tp in zip(line.split('|'),LineData._in_types)]) for line in xmldata.strip().split('\n')]
-        pd = cls(project, uid, data)
-        for tp,attr,default in zip(cls.types, cls.attrs, cls.defaults):
+    def from_xml(cls, project, uid, xmlattrs, linedata, axesdata):
+        ld = None
+        ad = None
+        if linedata is not None:
+            ld = [LineData(*[tp(q) for q,tp in zip(line.split('|'),LineData._in_types)]) for line in linedata.strip().split('\n')]
+        if axesdata is not None:
+            ad = [AxesData(*[tp(q) for q,tp in zip(line.split('|'),AxesData._in_types)]) for line in axesdata.strip().split('\n')]
+        pd = cls(project, uid, ld, ad)
+        for tp,attr,default in zip(cls._types, cls._attrs, cls._defaults):
             setattr(pd, attr, tp(xmlattrs.get(attr, default)))
         return pd
 
     def to_xml(self):
         settings = {}
-        for attr in self.attrs:
+        for attr in self._attrs:
             settings[attr] = str(getattr(self, attr))
-        data = ['|'.join([str(q) for q in line]) for line in self.line_data]
-        return self.plot_ref,settings, data
+        ld = ['|'.join([str(q) for q in line]) for line in self.line_data]
+        ad = ['|'.join([str(q) for q in ax]) for ax in self.axes_data]
+        return self.plot_ref, settings, ld, ad
 
     @property
     def plot_modified(self):
@@ -124,9 +111,9 @@ class PlotData(object):
     def init_axes_data(self, data=None):
         if data is None:
             data = []
-            data.append(AxesData('x label', '', ''))
-            data.append(AxesData('y label', '', ''))
-            data.append(AxesData('second y', '', ''))
+            data.append(AxesData('xpri', 'x label', 'bottom', '', '', 'linear', False, 3, '', '', 'in'))
+            data.append(AxesData('ypri', 'y label', 'left', '', '', 'log', False, -1, '', '', 'in'))
+            data.append(AxesData('ysec', 'second y', 'right', '', '', 'linear', False, -1, '', '', 'in'))
         return data
 
     def init_line_data(self, data=None):
@@ -155,7 +142,7 @@ class PlotData(object):
         self.plot_hash = self.project[self.plot_ref].hash
 
     def hash(self):
-        return ''.join([repr(getattr(self, q)) for q in self.attrs])
+        return ''.join([repr(getattr(self, q)) for q in self._attrs])
 
     def update_from_view(self, view):
         hash = self.hash()
@@ -165,39 +152,31 @@ class PlotData(object):
         self.legend_fontsize = int(view.spn_legend_fontsize.Value)
         self.legend_position = int(view.spn_legend_position.Value)
         self.fontsize = int(view.spn_fontsize.Value)
-        self.label_x = view.txt_xlabel.Value
-        self.label_y = view.txt_ylabel.Value
-        self.label_title = view.txt_title.Value
+        #self.label_x = view.txt_xlabel.Value
+        #self.label_y = view.txt_ylabel.Value
+        #self.label_title = view.txt_title.Value
 
-        #self.ticks_major_x = view.txt_xtick_major.Value if view.chk_xtick_custom.Value else ''
-        #self.ticks_major_y = view.txt_ytick_major.Value if view.chk_ytick_custom.Value else ''
-        #self.ticks_minor_x = view.txt_xtick_minor.Value if view.chk_xtick_custom.Value else ''
-        #self.ticks_minor_y = view.txt_ytick_minor.Value if view.chk_ytick_custom.Value else ''
+        #self.xticks_hide = view.chk_xticks_hide.Value
+        #self.yticks_hide = view.chk_yticks_hide.Value
 
-        self.xticks_hide = view.chk_xticks_hide.Value
-        self.yticks_hide = view.chk_yticks_hide.Value
+        #self.tdir_x = view.cho_xtickdir.GetStringSelection()
+        #self.tdir_y = view.cho_ytickdir.GetStringSelection()
 
-        #self.xticks_prec = view.cho_xticks_prec.Selection-1
-        #self.yticks_prec = view.cho_yticks_prec.Selection-1
+        #self.tlabel_pos_x = view.cho_xlabel_pos.GetStringSelection()
+        #self.tlabel_pos_y = view.cho_ylabel_pos.GetStringSelection()
 
-        self.tdir_x = view.cho_xtickdir.GetStringSelection()
-        self.tdir_y = view.cho_ytickdir.GetStringSelection()
+        #self.min_x = view.txt_xrng_min.Value
+        #self.min_y = view.txt_yrng_min.Value
+        #self.max_x = view.txt_xrng_max.Value
+        #self.max_y = view.txt_yrng_max.Value
 
-        self.tlabel_pos_x = view.cho_xlabel_pos.GetStringSelection()
-        self.tlabel_pos_y = view.cho_ylabel_pos.GetStringSelection()
+        #self.code = view.editor.Value
 
-        self.min_x = view.txt_xrng_min.Value
-        self.min_y = view.txt_yrng_min.Value
-        self.max_x = view.txt_xrng_max.Value
-        self.max_y = view.txt_yrng_max.Value
+        #self.xscale = view.cmb_scalex.Selection
+        #self.yscale = view.cmb_scaley.Selection
 
-        self.code = view.editor.Value
-
-        self.xscale = view.cmb_scalex.Selection
-        self.yscale = view.cmb_scaley.Selection
-
-        self.symlogthreshx = view.txt_symlogthreshx.Value
-        self.symlogthreshy = view.txt_symlogthreshy.Value
+        #self.symlogthreshx = view.txt_symlogthreshx.Value
+        #self.symlogthreshy = view.txt_symlogthreshy.Value
 
         self.figsize = view.plot_view.canvas.GetSize()
         return hash != self.hash()
@@ -251,16 +230,22 @@ def color(arg):
 
 class AxesData:
     # ex_types are the kwargs understood by figure.plot
-    _ex_types = [str, float, float]
-    # in types are used to parse the xml data
-    _in_types = [str, str, str]
-    _attrs = ['label','min','max']
+    _ex_types = [str, str, str, float, float, str, bool,
+                 int, str, str, str]
 
-    scales = ['linear', 'logarithmic']
+    # in types are used to parse the xml data
+    _in_types = [str, str, str, str, str, str, textbool,
+                 int, str, str, str]
+
+    _attrs = ['type', 'label', 'labelpos', 'min', 'max', 'scale',
+              'ticks_hide', 'ticks_prec',
+              'ticks_major', 'ticks_minor', 'tdir'
+              ]
 
     def __init__(self, *args):
         for n,arg in enumerate(args):
             setattr(self, self._attrs[n], arg)
+
     def __getitem__(self, item):
         return getattr(self, self._attrs[item])
     def __setitem__(self, key, value):
@@ -281,7 +266,7 @@ class LineData:
     _attrs = ['linestyle','marker','linewidth','markersize','color','alpha','label','show']
 
     styles = ['-','--','-.',':']
-    markers = ['.',',','o','v','^','<','>','1','2','3','4','8','s','p','*','h','H','+','x','D','d','|','_']
+    #markers = ['.',',','o','v','^','<','>','1','2','3','4','8','s','p','*','h','H','+','x','D','d','|','_']
     markers = list(MarkerStyle.filled_markers)
     colors = ['black','green','red','blue','magenta','cyan','yellow']
 
@@ -411,7 +396,6 @@ class MultiPlotModel(dict):
         if other is None:
             return False
         for attr in self.attrs:
-            print(attr, getattr(self, attr), getattr(other, attr))
             if getattr(self, attr) != getattr(other, attr):
                 return False
         return True

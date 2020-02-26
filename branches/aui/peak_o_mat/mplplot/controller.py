@@ -127,15 +127,16 @@ class PlotController(object):
         self.__needs_update = True
         self.redraw(force=True)
 
+    def plot_add_secondary(self, plot, pos):
+        self.model[pos].add_secondary(plot)
+
     def select_plot(self, plot, pos):
         if plot == -1:
-            try:
-                self.model.remove(pos)
-            except IOError:
-                pass
+            self.model.remove(pos)
+            #TODO: deselect secondary plot
             self.view.enable_edit(False)
         else:
-            pd = PlotData(self.model.project,plot)
+            pd =  PlotData(self.model.project,plot)
             self.model.add(pd, pos)
             self.view.update_from_model(self.model)
             self.view.enable_edit(True)
@@ -213,19 +214,6 @@ class PlotController(object):
                                 getattr(line, 'set_{}'.format(attr))(value)
                         set_plot_attributes(ax, pm)
 
-                    if pm.code.strip() != '':
-                        tmp = sys.stdout
-                        interpreter = Interpreter(ax)
-                        sys.stdout = interpreter
-                        interpreter.runsource(pm.code, '<buffer>', 'exec')
-                        sys.stdout = tmp
-                        msg, errline = interpreter.getresult()
-                        self.view.txt_result.SetValue(msg+'\n')
-                        if errline is not None:
-                            self.view.editor.SelectLine(errline)
-                        else:
-                            self.view.editor.SelectNone()
-
                     #ax_new_scale = False
                     plotcount += 1
         #self.__plt_cmds = __plt_cmds
@@ -241,41 +229,45 @@ class PlotController(object):
         self.view.plot_view.canvas.needs_update = True
 
 def set_plot_attributes(ax, pm):
-    ax.set_xlabel(pm.label_x)
-    ax.set_ylabel(pm.label_y)
-    ax.set_title(pm.label_title)
 
-    scales = ['linear','log','symlog']
+    scales = ['linear','log']
 
-    if scales[pm.xscale] == 'symlog' and pm.symlogthreshx != '':
-        ax.set_xscale(scales[pm.xscale], linthreshx=float(pm.symlogthreshx))
-    else:
-        ax.set_xscale(scales[pm.xscale])
-    if scales[pm.yscale] == 'symlog' and pm.symlogthreshy != '':
-        ax.set_yscale(scales[pm.yscale], linthreshy=float(pm.symlogthreshy))
-    else:
-        ax.set_yscale(scales[pm.yscale])
+    for ad in pm.axes_data:
+        axis = ad.type[0]
+        level = ad.type[1:]
+        if level == 'pri':
+            getattr(ax, 'set_{}label'.format(axis))(ad.label)
+            getattr(ax, 'set_{}scale'.format(axis))(ad.scale)
+
+            if axis == 'x':
+                ax.tick_params(axis='x', which='both', direction=ad.tdir,
+                               bottom=True if ad.labelpos=='bottom' and not ad.ticks_hide else False,
+                               labelbottom=True if ad.labelpos=='bottom' and not ad.ticks_hide else False,
+                               top=True if ad.labelpos=='top' and not ad.ticks_hide else False,
+                               labeltop=True if ad.labelpos=='top' and not ad.ticks_hide else False)
+                ax.xaxis.set_label_position(ad.labelpos)
+            if axis == 'y':
+                ax.tick_params(axis='y', which='both', direction=ad.tdir,
+                               right=True if ad.labelpos == 'right' and not ad.ticks_hide else False,
+                               labelright=True if ad.labelpos == 'right' and not ad.ticks_hide else False,
+                               left=True if ad.labelpos == 'left' and not ad.ticks_hide else False,
+                               labelleft=True if ad.labelpos == 'left' and not ad.ticks_hide else False)
+                ax.yaxis.set_label_position(ad.labelpos)
 
     if pm.legend_show:
         ax.legend(loc=pm.legend_position, fontsize=pm.legend_fontsize)
     else:
         ax.legend_ = None
 
-    ax.set_xlim(*pm.xrng, auto=True)
-    ax.set_ylim(*pm.yrng, auto=True)
+    def floatOrNone(arg):
+        try:
+            return None if arg == '' else float(arg)
+        except ValueError:
+            return None
 
-    ax.tick_params(axis='x', which='both', direction=pm.tdir_x,
-                   bottom='on' if pm.tlabel_pos_x=='bottom' and not pm.xticks_hide else 'off',
-                   labelbottom='on' if pm.tlabel_pos_x=='bottom' and not pm.xticks_hide else 'off',
-                   top='on' if pm.tlabel_pos_x=='top' and not pm.xticks_hide else 'off',
-                   labeltop='on' if pm.tlabel_pos_x=='top' and not pm.xticks_hide else 'off')
-    ax.xaxis.set_label_position(pm.tlabel_pos_x)
-    ax.tick_params(axis='y', which='both', direction=pm.tdir_y,
-                   right='on' if pm.tlabel_pos_y=='right' and not pm.yticks_hide else 'off',
-                   labelright='on' if pm.tlabel_pos_y=='right' and not pm.yticks_hide else 'off',
-                   left='on' if pm.tlabel_pos_y=='left' and not pm.yticks_hide else 'off',
-                   labelleft='on' if pm.tlabel_pos_y=='left' and not pm.yticks_hide else 'off')
-    ax.yaxis.set_label_position(pm.tlabel_pos_y)
+    for ad,setrng in zip(*(pm.axes_data, [ax.set_xlim, ax.set_ylim])):
+        if ad.min != ad.max:
+            setrng(floatOrNone(ad.min), floatOrNone(ad.max), auto=True)
 
     for item in ([ax.title, ax.xaxis.label, ax.yaxis.label]+ ax.get_xticklabels() + ax.get_yticklabels()):
         item.set_fontsize(pm.fontsize)

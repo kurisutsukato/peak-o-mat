@@ -551,9 +551,13 @@ class Project(LData):
                     settings = {}
                     for elem in sett_elem.iter():
                         settings[elem.tag] = elem.text
-                    data = fig_elem.find('linedata').text
+                    linedata = fig_elem.find('linedata').text
                     try:
-                        self.figure_list[-1].add(PlotData.from_xml(self, plotref, settings, data), gridpos)
+                        axesdata = fig_elem.find('axesdata').text
+                    except AttributeError:
+                        axesdata = None
+                    try:
+                        self.figure_list[-1].add(PlotData.from_xml(self, plotref, settings, linedata, axesdata), gridpos)
                     except KeyError as msg:
                         self.warn.append(msg)
 
@@ -702,14 +706,16 @@ class Project(LData):
                 fig_elem.attrib = {'row':repr(pos[0]), 'col':repr(pos[1])}
 
                 #fig_elem = ET.SubElement(root, 'figure')
-                ref, settings, data = pd.to_xml()
+                ref, settings, linedata, axesdata = pd.to_xml()
                 fig_elem.attrib['plotref'] = ref
                 sett_elem = ET.SubElement(fig_elem, 'settings')
                 for k,v in settings.items():
                     elem = ET.SubElement(sett_elem,k)
                     elem.text = v
                 data_elem = ET.SubElement(fig_elem, 'linedata')
-                data_elem.text = '\n'.join(data)
+                data_elem.text = '\n'.join(linedata)
+                data_elem = ET.SubElement(fig_elem, 'axesdata')
+                data_elem.text = '\n'.join(axesdata)
 
         for d in griddata:
             grid_elem = ET.SubElement(root, 'griddata')

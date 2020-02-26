@@ -213,7 +213,7 @@ class PlotLayout(wx.Panel):
         self.layout()
 
         self.pop.Bind(EVT_RECT_SELECT, self.OnSelect)
-        self.ch_plot.Bind(wx.EVT_CHOICE, self.OnChoice)
+        self.ch_plot_pri.Bind(wx.EVT_CHOICE, self.OnChoice)
         self.ch_rows.Bind(wx.EVT_CHOICE, self.OnShape)
         self.ch_cols.Bind(wx.EVT_CHOICE, self.OnShape)
 
@@ -228,7 +228,8 @@ class PlotLayout(wx.Panel):
         self.ch_cols = wx.Choice(self, choices=[str(q) for q in range(1,6)])
         self.ch_cols.SetSelection(0)
 
-        self.ch_plot = wx.Choice(self, choices=[''])
+        self.ch_plot_pri = wx.Choice(self, choices=[''], name='pri')
+        self.ch_plot_sec = wx.Choice(self, choices=[''], name='sec')
 
     def layout(self):
         b = wx.BoxSizer(wx.VERTICAL)
@@ -243,8 +244,10 @@ class PlotLayout(wx.Panel):
         b.Add(hb, 1, wx.EXPAND)
 
         hb = wx.BoxSizer(wx.HORIZONTAL)
-        hb.Add(wx.StaticText(self, label='Plot'), 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 10)
-        hb.Add(self.ch_plot, 1, wx.EXPAND)
+        hb.Add(wx.StaticText(self, label='Primary axis'), 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        hb.Add(self.ch_plot_pri, 1, wx.EXPAND)
+        hb.Add(wx.StaticText(self, label='Secondary axis'), 0, wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 10)
+        hb.Add(self.ch_plot_sec, 1, wx.LEFT|wx.EXPAND, 5)
         b.Add(hb, 0, wx.EXPAND|wx.ALL, 5)
         self.SetSizer(b)
 
@@ -254,16 +257,17 @@ class PlotLayout(wx.Panel):
         self.ch_cols.SetSelection(cols-1)
 
     def set_plot_choices(self, choices, clientdata, select=None):
-        self.ch_plot.Clear()
-        for c,d in zip(choices,clientdata):
-            self.ch_plot.Append(c,d)
-        if select is not None:
-            if select == '':
-                self.ch_plot.Selection = 0
-            else:
-                for n in range(self.ch_plot.Count):
-                    if self.ch_plot.GetClientData(n) == select:
-                        self.ch_plot.Selection = n
+        for ch in self.ch_plot_pri, self.ch_plot_sec:
+            ch.Clear()
+            for c,d in zip(choices,clientdata):
+                ch.Append(c, d)
+            if select is not None:
+                if select == '':
+                    ch.Selection = 0
+                else:
+                    for n in range(ch.Count):
+                        if ch.GetClientData(n) == select:
+                            ch.Selection = n
 
     @property
     def selection(self):
@@ -277,9 +281,9 @@ class PlotLayout(wx.Panel):
     def OnSelect(self, evt):
         evt.Skip()
         if evt.name != '':
-            self.ch_plot.SetSelection(self.ch_plot.FindString(evt.name))
+            self.ch_plot_pri.SetSelection(self.ch_plot_pri.FindString(evt.name))
         else:
-            self.ch_plot.SetSelection(0)
+            self.ch_plot_pri.SetSelection(0)
 
     def OnChoice(self, evt):
         evt.Skip()
