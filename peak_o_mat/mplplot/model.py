@@ -17,12 +17,24 @@ def s2f(arg):
     except:
         return None
 
+class ListDict(dict):
+    keys = ['x','y','twinx','twiny','inset']
+    def __getitem__(self, item):
+        if type(item) == int:
+            return list(self.values())[item]
+        else:
+            return dict.__getitem__(self, item)
+
+    @classmethod
+    def fromlist(cls, data):
+        return cls([(cls.keys[n], data[n]) for n in range(len(data))])
+
 class PlotData(object):
-    _attrs = ['legend_show', 'legend_fontsize', 'legend_position', 'fontsize', 'label_title']
+    _attrs = ['legend_show', 'legend_fontsize', 'legend_position', 'fontsize', 'label_title', 'legend_frameon']
 
-    _types = [textbool, int, int, int, string]
+    _types = [textbool, int, int, int, string, textbool]
 
-    _defaults = [False, 12, 0, 10, '']
+    _defaults = [False, 12, 0, 10, '', True]
 
     def release(self):
         #TODO: nicer would be to have this done in the desctructor but there is always a reference hanging around
@@ -56,13 +68,12 @@ class PlotData(object):
 
         self.name = name if name != '' else 'p{}'.format(project.index(plot))
         self.plot_uuid = project[plot].uuid
-        #self.name = project[plot].uuid
         self.plot_ref = project[plot].uuid
         self.uuid = uuid.uuid4().hex
         project[plot].add_ref(self.uuid)
 
         self.project = project
-        self.line_data = self.init_line_data(linedata)
+        self.line_data = self.init_line_data(self.plot_ref, linedata)
         self.axes_data = self.init_axes_data(axesdata)
 
         for attr, default in zip(self._attrs, self._defaults):
@@ -70,7 +81,8 @@ class PlotData(object):
 
     def add_secondary(self, plot):
         self.project[plot].add_ref(self.uuid)
-        print('add secondary plot', plot)
+        self.plot_ref_secondary = self.project[plot].uuid
+        self.line_data_secondary = self.init_line_data(self.plot_ref_secondary)
 
     @property
     def figsize(self):
@@ -110,17 +122,19 @@ class PlotData(object):
 
     def init_axes_data(self, data=None):
         if data is None:
-            data = []
-            data.append(AxesData('xpri', 'x label', 'bottom', '', '', 'linear', False, 3, '', '', 'in'))
-            data.append(AxesData('ypri', 'y label', 'left', '', '', 'log', False, -1, '', '', 'in'))
-            data.append(AxesData('ysec', 'second y', 'right', '', '', 'linear', False, -1, '', '', 'in'))
+            data = ListDict({})
+            data['x'] = AxesData('x label', 'bottom', '', '', 'linear', False, 3, '', '', 'in')
+            data['y'] = AxesData('y label', 'left', '', '', 'log', False, -1, '', '', 'in')
+            data['twinx'] = AxesData('right', '', '', 'linear', False, -1, '', '', 'in')
+        else:
+            data = ListDict.fromlist(data)
         return data
 
-    def init_line_data(self, data=None):
+    def init_line_data(self, plot_ref, data=None):
         if data is None:
             data = []
             df = LineDataFactory()
-            for s in self.project[self.plot_ref]:
+            for s in self.project[plot_ref]:
                 data.append(df.next_with_name(s.name))
         return data
 
@@ -151,32 +165,9 @@ class PlotData(object):
         self.legend_show = view.chk_legend.Value
         self.legend_fontsize = int(view.spn_legend_fontsize.Value)
         self.legend_position = int(view.spn_legend_position.Value)
+        self.legend_frameon = bool(view.chk_legend_frameon.Value)
+
         self.fontsize = int(view.spn_fontsize.Value)
-        #self.label_x = view.txt_xlabel.Value
-        #self.label_y = view.txt_ylabel.Value
-        #self.label_title = view.txt_title.Value
-
-        #self.xticks_hide = view.chk_xticks_hide.Value
-        #self.yticks_hide = view.chk_yticks_hide.Value
-
-        #self.tdir_x = view.cho_xtickdir.GetStringSelection()
-        #self.tdir_y = view.cho_ytickdir.GetStringSelection()
-
-        #self.tlabel_pos_x = view.cho_xlabel_pos.GetStringSelection()
-        #self.tlabel_pos_y = view.cho_ylabel_pos.GetStringSelection()
-
-        #self.min_x = view.txt_xrng_min.Value
-        #self.min_y = view.txt_yrng_min.Value
-        #self.max_x = view.txt_xrng_max.Value
-        #self.max_y = view.txt_yrng_max.Value
-
-        #self.code = view.editor.Value
-
-        #self.xscale = view.cmb_scalex.Selection
-        #self.yscale = view.cmb_scaley.Selection
-
-        #self.symlogthreshx = view.txt_symlogthreshx.Value
-        #self.symlogthreshy = view.txt_symlogthreshy.Value
 
         self.figsize = view.plot_view.canvas.GetSize()
         return hash != self.hash()
@@ -195,9 +186,14 @@ class PlotData(object):
     def yrng(self):
         return self.get_range()[1]
 
-    def __iter__(self):
+    def primary(self):
         for p,q in zip(self.project[self.plot_ref],self.line_data):
-            if not p.hide:
+            if not p.hide and q.show:
+                yield p,q
+
+    def secondary(self):
+        for p,q in zip(self.project[self.plot_ref_secondary],self.line_data_secondary):
+            if not p.hide and q.show:
                 yield p,q
 
     def human_readable(self):
@@ -251,16 +247,12 @@ class AxesData:
     def __setitem__(self, key, value):
         setattr(self, self._attrs[key], value)
 
-    def kwargs(self):
-        kw = dict([(q,p(getattr(self,q))) for q,p in zip(self._attrs[:-1], self._ex_types[:-1])])
-        return kw
-
     def __str__(self):
         return str([getattr(self, q) for q in self._attrs])
 
 class LineData:
     # ex_types are the kwargs understood by figure.plot
-    _ex_types = [str, str, float, float, color, float, str, bool]
+    _plt_types = [str, str, float, float, color, float, str, bool]
     # in types are used to parse the xml data
     _in_types = [str, str, str, str, str, str, str, textbool]
     _attrs = ['linestyle','marker','linewidth','markersize','color','alpha','label','show']
@@ -279,9 +271,9 @@ class LineData:
         setattr(self, self._attrs[key], value)
 
     def kwargs(self):
-        kw = dict([(q,p(getattr(self,q))) for q,p in zip(self._attrs[:-1], self._ex_types[:-1])])
-        if not self.show:
-            kw['label'] = '_nolegend_'
+        kw = dict([(q,p(getattr(self,q))) for q,p in zip(self._attrs[:-1], self._plt_types[:-1])])
+        #if not self.show:
+        #    kw['label'] = '_nolegend_'
         return kw
 
     def __str__(self):
@@ -464,20 +456,10 @@ class MultiPlotModel(dict):
         return ret
 
 if __name__ == '__main__':
-    from peak_o_mat.project import Project
-    from copy import copy
-    p = Project()
-    p.load('example.lpj')
-    print(p)
-    m = PlotData(p,p[0].uuid)
-    m2 = copy(m)
-    m.margin_bottom = 0.2
-    print(m2.margin_bottom)
-    print(m.margin_bottom)
-
-    mpm = MultiPlotModel(p)
-    mpm.add((2,1))
-    mpm.add((2,3))
-    mpm.add((1,4))
-    mpm.calculate_shape()
-    print(mpm.shape)
+    a = ListDict({'x':'a','y':'b'})
+    print(a)
+    print(a[0],a['x'])
+    b = ListDict.fromlist([1,2,3])
+    print(b,b[2],b['twinx'])
+    for i in b:
+        print(i)

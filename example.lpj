@@ -5,8 +5,8 @@ ysec|second y|right|||linear|False|-1|||in</axesdata></figure></mpmodel><mpmodel
 -|o|1|3|0.91,0.59,0.77|0.3|1.90RBM|True
 -|o|1|3|0.97,0.97,0.97|0.3|1.91RBM|True
 -|o|1|3|0.60,0.81,0.38|0.3|neu|True
--|o|1|8|0.15,0.39,0.10|0.2|1.93RBM|True</linedata><axesdata>xpri|x label|top||320|linear|False|3|||out
-ypri|y label|left|3e-3||log|False|-1|||in
+-|o|1|8|0.15,0.39,0.10|0.2|1.93RBM|True</linedata><axesdata>xpri|Raman shift (cm-1)|top||320|linear|False|3|||out
+ypri|Intensity (arb. units)|left|3e-3||log|False|-1|||in
 ysec|second y|right|||linear|False|-1|||in</axesdata></figure></mpmodel><griddata collabels="2:::LO1:pos;3:::GA:pos;4:::LO2:pos" name="exported fit parameters" rowlabels="0:::ruby.dat;1:::lali;3:::ruby2.dat" thegrid="True">0 1 6925.47476477136 6929.46699993182 6939.62652311271 0 0 0 0
 0 1.5 6924.27944100342 6929.46699783577 6938.40611336738 0 0 0 0
 0 0 0 0 0 0 0 0 0
