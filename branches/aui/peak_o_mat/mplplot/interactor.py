@@ -50,6 +50,7 @@ class Interactor:
             #getattr(self.view, ctrl).Bind(wx.EVT_MOUSEWHEEL, self.OnIgnore)
 
 
+        self.view.chk_legend_frameon.Bind(wx.EVT_CHECKBOX, self.OnUpdateSelected)
         self.view.chk_legend.Bind(wx.EVT_CHECKBOX, self.OnUpdateSelected)
         #self.view.btn_example.Bind(wx.EVT_BUTTON, self.OnExample)
 
@@ -156,12 +157,6 @@ class Interactor:
 
     def OnUpdateSelected(self, evt):
         obj = evt.GetEventObject()
-        if obj.Name == 'scalex':
-            self.view.txt_symlogthreshx.Enable(obj.Selection == 2)
-            #self.view.lab_symlogthreshx.Enable(obj.Selection == 2) # results invisible on macOS
-        if obj.Name == 'scaley':
-            self.view.txt_symlogthreshy.Enable(obj.Selection == 2)
-            #self.view.lab_symlogthreshy.Enable(obj.Selection == 2) # results invisible on macOS
 
         obj.Validate()
         self.controller.update_model()

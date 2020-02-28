@@ -129,6 +129,8 @@ class PlotController(object):
 
     def plot_add_secondary(self, plot, pos):
         self.model[pos].add_secondary(plot)
+        self.__needs_update = True
+        self.redraw(force=True)
 
     def select_plot(self, plot, pos):
         if plot == -1:
@@ -172,7 +174,7 @@ class PlotController(object):
             self.t.start()
 
     def _redraw(self, update_selected=False, force=False):
-        #print 'redraw', update_selected
+        print('_redraw', update_selected, force)
         self.__needs_update = force
         #if not force and not self.model.update_from_view(self.view):
         #    print 'not modified'
@@ -182,9 +184,7 @@ class PlotController(object):
             self.view.figure.clf()
         self.view.figure.subplots_adjust(**self.model.adjust)
 
-        #__plt_cmds = []
-        #ax_new_scale = False
-        plotcount = 0
+        axes = np.atleast_2d(self.view.figure.subplots(rows, cols))
         for row in range(rows):
             for col in range(cols):
                 try:
@@ -192,31 +192,40 @@ class PlotController(object):
                 except KeyError:
                     continue
                 else:
-                    ax = self.view.figure.add_subplot(rows, cols, row*cols+col+1)
-                    #plotfunc = ['plot','semilogx','semilogy','loglog'][1*pm.logx+2*pm.logy]
-                    #__plt_cmds.append(plotfunc)
-                    #if len(self.__plt_cmds) == len(self.view.figure.axes):
-                    #    if self.__plt_cmds[plotcount] != plotfunc or pm.code.strip() != '':
-                    #        ax_new_scale = True
-                    #        ax.cla()
-                    if len(ax.lines) == 0 or self.__needs_update: # or ax_new_scale:
-                        #print 'clean draw of',pm.name
-                        for s,style in pm:
-                            ax.plot(s.x, s.y, **style.kwargs())
-                            #getattr(ax, plotfunc)
-                        set_plot_attributes(ax, pm)
-                    else:
-                        if update_selected and pm != self.model.selected:
+                    ax = axes[row][col]
+                    for s, style in pm.primary():
+                        ax.plot(s.x, s.y, **style.kwargs())
+                    set_plot_attributes(ax, pm)
+                    set_axis_attributes(ax, 'x', pm.axes_data['x'])
+                    set_axis_attributes(ax, 'y', pm.axes_data['y'])
+                    if 'twinx' in pm.axes_data:
+                        twinx = ax.twinx()
+                        try:
+                            for s,style in pm.secondary():
+                                twinx.plot(s.x, s.y, **style.kwargs())
+                        except AttributeError:
                             continue
-                        #print 'redrawing',pm.name
-                        for line,(s,style) in zip(ax.lines,pm):
-                            for attr,value in style.kwargs().items():
-                                getattr(line, 'set_{}'.format(attr))(value)
-                        set_plot_attributes(ax, pm)
+                        set_axis_attributes(twinx, 'y', pm.axes_data['twinx'])
+                    elif 'twiny' in pm.axes_data:
+                        twiny = ax.twiny()
+                    elif 'inset' in pm.axes_data:
+                        inset = ax.inset_axes(pm.axes_data['inset'].bounds)
 
-                    #ax_new_scale = False
-                    plotcount += 1
-        #self.__plt_cmds = __plt_cmds
+                    # if len(ax.lines) == 0 or self.__needs_update: # or ax_new_scale:
+                    #     print('clean draw of',pm.name)
+                    #     for s,style in pm.primary():
+                    #         ax.plot(s.x, s.y, **style.kwargs())
+                    #         #getattr(ax, plotfunc)
+                    #     set_plot_attributes(pm, ax, twinx, twiny, inset)
+                    # else:
+                    #     if update_selected and pm != self.model.selected:
+                    #         continue
+                    #     print('redrawing',pm.name)
+                    #     for line,(s,style) in zip(ax.lines,pm):
+                    #         for attr,value in style.kwargs().items():
+                    #             getattr(line, 'set_{}'.format(attr))(value)
+                    #     set_plot_attributes(pm, ax, twinx, twiny, inset)
+
         self.__needs_update = False
 
         self.view.figure.canvas.draw()
@@ -229,35 +238,24 @@ class PlotController(object):
         self.view.plot_view.canvas.needs_update = True
 
 def set_plot_attributes(ax, pm):
-
-    scales = ['linear','log']
-
-    for ad in pm.axes_data:
-        axis = ad.type[0]
-        level = ad.type[1:]
-        if level == 'pri':
-            getattr(ax, 'set_{}label'.format(axis))(ad.label)
-            getattr(ax, 'set_{}scale'.format(axis))(ad.scale)
-
-            if axis == 'x':
-                ax.tick_params(axis='x', which='both', direction=ad.tdir,
-                               bottom=True if ad.labelpos=='bottom' and not ad.ticks_hide else False,
-                               labelbottom=True if ad.labelpos=='bottom' and not ad.ticks_hide else False,
-                               top=True if ad.labelpos=='top' and not ad.ticks_hide else False,
-                               labeltop=True if ad.labelpos=='top' and not ad.ticks_hide else False)
-                ax.xaxis.set_label_position(ad.labelpos)
-            if axis == 'y':
-                ax.tick_params(axis='y', which='both', direction=ad.tdir,
-                               right=True if ad.labelpos == 'right' and not ad.ticks_hide else False,
-                               labelright=True if ad.labelpos == 'right' and not ad.ticks_hide else False,
-                               left=True if ad.labelpos == 'left' and not ad.ticks_hide else False,
-                               labelleft=True if ad.labelpos == 'left' and not ad.ticks_hide else False)
-                ax.yaxis.set_label_position(ad.labelpos)
-
     if pm.legend_show:
-        ax.legend(loc=pm.legend_position, fontsize=pm.legend_fontsize)
+        ax.legend(loc=pm.legend_position, fontsize=pm.legend_fontsize, frameon=pm.legend_frameon)
     else:
         ax.legend_ = None
+
+    for item in ([ax.title, ax.xaxis.label, ax.yaxis.label]+ ax.get_xticklabels() + ax.get_yticklabels()):
+        item.set_fontsize(pm.fontsize)
+
+def set_axis_attributes(ax, axis, ad):
+    getattr(ax, 'set_{}label'.format(axis))(ad.label)
+    getattr(ax, 'set_{}scale'.format(axis))(ad.scale)
+
+    ax.tick_params(axis=axis, which='both', direction=ad.tdir,
+                   bottom=True if ad.labelpos=='bottom' and not ad.ticks_hide else False,
+                   labelbottom=True if ad.labelpos=='bottom' and not ad.ticks_hide else False,
+                   top=True if ad.labelpos=='top' and not ad.ticks_hide else False,
+                   labeltop=True if ad.labelpos=='top' and not ad.ticks_hide else False)
+    getattr(ax, '{}axis'.format(axis)).set_label_position(ad.labelpos)
 
     def floatOrNone(arg):
         try:
@@ -265,12 +263,8 @@ def set_plot_attributes(ax, pm):
         except ValueError:
             return None
 
-    for ad,setrng in zip(*(pm.axes_data, [ax.set_xlim, ax.set_ylim])):
-        if ad.min != ad.max:
-            setrng(floatOrNone(ad.min), floatOrNone(ad.max), auto=True)
-
-    for item in ([ax.title, ax.xaxis.label, ax.yaxis.label]+ ax.get_xticklabels() + ax.get_yticklabels()):
-        item.set_fontsize(pm.fontsize)
+    if ad.min != ad.max:
+        getattr(ax, 'set_{}lim'.format(axis))(floatOrNone(ad.min), floatOrNone(ad.max), auto=False)
 
 def new(controller, parent, plotmodel):
     return PlotController(controller, ControlFrame(parent), plotmodel)

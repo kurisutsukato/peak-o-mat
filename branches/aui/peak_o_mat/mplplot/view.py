@@ -200,18 +200,18 @@ class AxesControlPanel(WithMessage, wx.Panel):
         obj = evt.GetEventObject()
         item = obj.Name
 
-        ld = self.__axes_data
+        ad = self.__axes_data
         s = self.selection[0]
-        setattr(ld[s], item, obj.Value)
+        setattr(ad[s], item, obj.Value)
         pub.sendMessage((self.instid, 'axesattrs', 'changed'))
 
     def OnAxesAttrText(self, evt):
         obj = evt.GetEventObject()
         item = obj.Name
 
-        ld = self.__axes_data
+        ad = self.__axes_data
         s = self.selection[0]
-        setattr(ld[s], item, obj.Value)
+        setattr(ad[s], item, obj.Value)
         pub.sendMessage((self.instid, 'axesattrs', 'changed'))
 
     def OnAxesAttrChoice(self, evt):
@@ -290,6 +290,8 @@ class LineControlPanel(WithMessage, wx.Panel):
         self.spn_markersize = wx.SpinCtrl(self, min=2, initial=8, max=50, size=(100,-1), name='markersize')
         self.txt_linecolor = wx.TextCtrl(self, value='', size=(100,-1), name='color')
         self.txt_linecolor.Hide()
+        self.chk_show = wx.CheckBox(self, label='', name='show')
+        self.chk_show.SetValue(True)
 
         self.bmp_linecolor = wx.StaticBitmap(self, bitmap=wx.Bitmap(15,15), size=(15,15), style=wx.NO_BORDER)
         self.spn_alpha = wx.SpinCtrlDouble(self, min=0.1, initial=1, max=1, inc=0.1, name='alpha', size=(100, -1))
@@ -308,6 +310,9 @@ class LineControlPanel(WithMessage, wx.Panel):
 
         grd.Add(wx.StaticText(self, label='Label'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
         grd.Add(self.txt_label, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+
+        grd.Add(wx.StaticText(self, label='Show'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+        grd.Add(self.chk_show, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
 
         grd.Add(wx.StaticText(self, label='Line style'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
         grd.Add(self.cho_linestyle, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
@@ -342,6 +347,7 @@ class LineControlPanel(WithMessage, wx.Panel):
         self.btn_linecolorrange.Bind(wx.EVT_BUTTON, self.OnShowRangeDlg)
         self.Bind(wx.EVT_CHOICE, self.OnLineAttrChoice)
         self.Bind(wx.EVT_TEXT, self.OnLineAttrText)
+        self.Bind(wx.EVT_CHECKBOX, self.OnLineAttrText)
         self.dataset_list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
         self.dataset_list.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnDeSelect)
         self.Bind(wx.EVT_IDLE, self.OnProcess)
@@ -507,6 +513,12 @@ class LineControlPanel(WithMessage, wx.Panel):
             self.spn_linewidth.SetValue(self.__line_data[self.selection[0]].linewidth)
         else:
             self.spn_linewidth.SetValue('')
+
+        if len(set([self.__line_data[q].show for q in self.selection])) == 1:
+            self.chk_show.SetValue(self.__line_data[self.selection[0]].show)
+        else:
+            self.chk_show.SetValue(False)
+
         self.silent = False
 
 class BlitCanvas(wx.Window):
@@ -631,6 +643,7 @@ class ControlFrame(WithMessage,wx.Frame):
             self.spn_legend_position.Value = mpmodel.selected.legend_position
 
             self.spn_fontsize.Value = mpmodel.selected.fontsize
+            self.chk_legend_frameon.Value = mpmodel.selected.legend_frameon
 
     def resize_canvas(self, w, h, dpi):
         self.figure.set_size_inches(w,h,True)
@@ -682,6 +695,8 @@ class ControlFrame(WithMessage,wx.Frame):
         self.chk_legend = wx.CheckBox(self.panel_basic)
         self.spn_legend_fontsize = wx.SpinCtrl(self.panel_basic, size=(80,-1), min=4, max=30, initial=12, value='12', style=wx.TE_PROCESS_ENTER)
         self.spn_legend_position = wx.SpinCtrl(self.panel_basic, size=(80,-1), min=0, max=10, initial=0, value='0', style=wx.TE_PROCESS_ENTER)
+        self.chk_legend_frameon = wx.CheckBox(self.panel_basic, label='')
+        self.chk_legend_frameon.SetValue(True)
 
         self.spn_fontsize = wx.SpinCtrl(self.panel_basic, size=(80,-1), min=0, max=20, initial=10, value='10', style=wx.TE_PROCESS_ENTER)
 
@@ -704,12 +719,12 @@ class ControlFrame(WithMessage,wx.Frame):
         self.spn_legend_position.SetToolTip('0 = auto position, 1-10: try it out')
         self.spn_legend_fontsize.SetToolTip('Font size in points')
         self.chk_legend.SetToolTip('Check to show a legend')
+        self.chk_legend_frameon.SetToolTip('Uncheck to hide the frame around the legend box')
 
         self.spn_bottom.SetToolTip('The plot margins are specified as fraction of the total plot size. Valid values are in the range between 0 and 1')
         self.spn_top.SetToolTip('The plot margins are specified as fraction of the total plot size. Valid values are in the range between 0 and 1')
         self.spn_left.SetToolTip('The plot margins are specified as fraction of the total plot size. Valid values are in the range between 0 and 1')
         self.spn_right.SetToolTip('The plot margins are specified as fraction of the total plot size. Valid values are in the range between 0 and 1')
-
 
     def enable_edit(self, state=True):
         def enable(obj, state=True):
@@ -735,6 +750,8 @@ class ControlFrame(WithMessage,wx.Frame):
         hbox.Add(self.spn_legend_fontsize, 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 20)
         hbox.Add(wx.StaticText(self.panel_basic, label='Position'), 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 10)
         hbox.Add(self.spn_legend_position, 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 20)
+        hbox.Add(wx.StaticText(self.panel_basic, label='Show frame'), 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 10)
+        hbox.Add(self.chk_legend_frameon, 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 20)
         vbox.Add(hbox, 0, wx.EXPAND|wx.ALL, 5)
 
         bx = wx.StaticBox(self.panel_basic, label='Text')
