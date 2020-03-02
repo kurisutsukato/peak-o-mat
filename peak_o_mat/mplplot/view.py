@@ -25,7 +25,7 @@ from ..images import get_bmp
 auto = get_bmp('auto.png')
 
 from .plotlayout import PlotLayout
-from .model import LineData, color as colorcast
+from .model import LineData, color2str, str2color
 
 def validfloat(arg):
     if arg == '':
@@ -190,10 +190,8 @@ class AxesControlPanel(WithMessage, wx.Panel):
         self.__axes_data = axes_data
         self.selection = []
         self.axes_list.ClearAll()
-        self.axes_list.Append(['x axis'])
-        self.axes_list.Append(['y axis'])
-        if len(axes_data) == 3:
-            self.axes_list.Append(['secondary axis'])
+        for ax in axes_data:
+            self.axes_list.Append([ax.type])
         self.axes_list.Select(0)
 
     def OnCheck(self, evt):
@@ -247,10 +245,15 @@ class AxesControlPanel(WithMessage, wx.Panel):
 
         self.silent = True
 
-        labelpos = {'x':['bottom','top'],
-                    'y':['left','right']}
+        labelpos = {'x': ['bottom','top'],
+                    'y': ['left','right'],
+                    'twinx':['left','right'],
+                    'twiny': ['bottom','top'],
+                    'insety': ['left','right'],
+                    'insetx': ['bottom','top'],
+                    }
         self.cho_labelpos.Clear()
-        self.cho_labelpos.AppendItems(labelpos[self.__axes_data[self.selection[0]].type[0]])
+        self.cho_labelpos.AppendItems(labelpos[self.__axes_data[self.selection[0]].type])
 
         self.txt_rng_min.ChangeValue(self.__axes_data[self.selection[0]].min)
 
@@ -399,7 +402,8 @@ class LineControlPanel(WithMessage, wx.Panel):
         ld = self.__line_data
         for n,(sel, ci) in enumerate(zip(*(self.selection, np.linspace(0,1,len(self.selection))))):
             color = mpl.cm.get_cmap(cmap_id)(ci)
-            setattr(ld[sel], 'color', '{:.2f},{:.2f},{:.2f}'.format(*color[:-1]))
+            #setattr(ld[sel], 'color', '{:.2f},{:.2f},{:.2f}'.format(*color[:-1]))
+            setattr(ld[sel], 'color', color2str(color[:-1]))
 
         pub.sendMessage((self.instid, 'lineattrs', 'changed'))
         #color = np.asarray(color, dtype=int)
@@ -411,20 +415,19 @@ class LineControlPanel(WithMessage, wx.Panel):
 
     def OnShowColorDlg(self, evt):
         cd = wx.ColourData()
-        c = (np.asarray(colorcast(self.__line_data[self.selection[0]].color))*255).astype(int)
+        c = (np.asarray(str2color(self.__line_data[self.selection[0]].color))*255).astype(int)
         cd.SetColour(wx.Colour(c))
         dlg  = wx.ColourDialog(self, cd)
 
         if dlg.ShowModal() == wx.ID_OK:
             color = dlg.GetColourData().GetColour()
-            r,g,b,a = np.asarray(color, dtype=float)/255
-            val = '{:.2f},{:.2f},{:.2f}'.format(r,g,b)
-            self.spn_alpha.SetValue(round(a,1))
+            colormpl = np.around(np.asarray(color, dtype=float)/255, 2).tolist()
+            self.spn_alpha.SetValue(round(colormpl[3],1))
 
             ld = self.__line_data
             for s in self.selection:
-                setattr(ld[s], 'color', val)
-                setattr(ld[s], 'alpha', round(a,1))
+                setattr(ld[s], 'color', color2str(colormpl[:3]))
+                setattr(ld[s], 'alpha', '{:.2f}'.format(colormpl[3]))
             self.bmp_linecolor.SetBitmap(self.gen_bitmap(color))
         pub.sendMessage((self.instid, 'lineattrs', 'changed'))
 
@@ -481,15 +484,10 @@ class LineControlPanel(WithMessage, wx.Panel):
             self.cho_linestyle.SetSelection(-1)
 
         if len(set([self.__line_data[q].color for q in self.selection])) == 1:
-            try:
-                color = eval(self.__line_data[self.selection[0]].color)
-            except NameError:
-                #TODO: convert strings with lokkuptable
-                print('name error')
-            else:
-                color = (np.asarray(color)*255).astype(int)
-                self.bmp_linecolor.SetBitmap(self.gen_bitmap(color))
-                self.Refresh()
+            color = str2color(self.__line_data[self.selection[0]].color)
+            color = (np.asarray(color)*255).astype(int)
+            self.bmp_linecolor.SetBitmap(self.gen_bitmap(color))
+            self.Refresh()
         else:
             self.bmp_linecolor.SetBitmap(self.gen_bitmap(None))
 
@@ -635,6 +633,8 @@ class ControlFrame(WithMessage,wx.Frame):
 
             self.plot_layout.update_from_model(mpmodel)
             ds_names = ['s{:d} {}'.format(n, q.name) for n,q in enumerate(mpmodel.project[mpmodel.selected.plot_ref])]
+            if mpmodel.selected.plot_ref_secondary is not None:
+                ds_names.extend(['s{:d} {}'.format(n, q.name) for n,q in enumerate(mpmodel.project[mpmodel.selected.plot_ref_secondary])])
             self.line_control.associate_model(mpmodel.selected.line_data, ds_names)
             self.axes_control.associate_model(mpmodel.selected.axes_data)
 

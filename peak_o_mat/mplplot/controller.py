@@ -129,6 +129,7 @@ class PlotController(object):
 
     def plot_add_secondary(self, plot, pos):
         self.model[pos].add_secondary(plot)
+        self.view.update_from_model(self.model)
         self.__needs_update = True
         self.redraw(force=True)
 
@@ -203,7 +204,7 @@ class PlotController(object):
                         try:
                             for s,style in pm.secondary():
                                 twinx.plot(s.x, s.y, **style.kwargs())
-                        except AttributeError:
+                        except (AttributeError, KeyError): #KeyError happens if second plot was not defined yet but axis exists
                             continue
                         set_axis_attributes(twinx, 'y', pm.axes_data['twinx'])
                     elif 'twiny' in pm.axes_data:
