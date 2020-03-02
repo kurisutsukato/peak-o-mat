@@ -546,6 +546,7 @@ class Project(LData):
                     self.warn.append(msg)
                 for fig_elem in mpm_elem.findall('figure'):
                     plotref = fig_elem.attrib.get('plotref')
+                    plotref_secondary = fig_elem.attrib.get('plotref_secondary')
                     gridpos = tuple([int(fig_elem.attrib.get(q)) for q in ['row','col']])
                     sett_elem = fig_elem.find('settings')
                     settings = {}
@@ -557,7 +558,7 @@ class Project(LData):
                     except AttributeError:
                         axesdata = None
                     try:
-                        self.figure_list[-1].add(PlotData.from_xml(self, plotref, settings, linedata, axesdata), gridpos)
+                        self.figure_list[-1].add(PlotData.from_xml(self, plotref, plotref_secondary, settings, linedata, axesdata), gridpos)
                     except KeyError as msg:
                         self.warn.append(msg)
 
@@ -706,8 +707,9 @@ class Project(LData):
                 fig_elem.attrib = {'row':repr(pos[0]), 'col':repr(pos[1])}
 
                 #fig_elem = ET.SubElement(root, 'figure')
-                ref, settings, linedata, axesdata = pd.to_xml()
+                ref, ref_secondary, settings, linedata, axesdata = pd.to_xml()
                 fig_elem.attrib['plotref'] = ref
+                fig_elem.attrib['plotref_secondary'] = ref_secondary
                 sett_elem = ET.SubElement(fig_elem, 'settings')
                 for k,v in settings.items():
                     elem = ET.SubElement(sett_elem,k)

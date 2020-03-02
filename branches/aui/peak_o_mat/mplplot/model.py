@@ -17,17 +17,48 @@ def s2f(arg):
     except:
         return None
 
-class ListDict(dict):
-    keys = ['x','y','twinx','twiny','inset']
+class KeyList(list):
+    #TODO: remove oldkeys, used only in old project file versions
+    oldkeys = ['xpri','ypri','xsec','ysec']
+    keys = ['x','y','twinx','twiny','insetx','insety']
+    def __contains__(self, item):
+        for i in self:
+            if i.type == item:
+                return True
+        return False
+    def append(self, item):
+        if item.type not in self.keys:
+            item.type = dict([*zip(self.oldkeys,self.keys)])[item.type]
+        assert item.type in self.keys
+        super(KeyList, self).append(item)
     def __getitem__(self, item):
-        if type(item) == int:
-            return list(self.values())[item]
+        if type(item) == str:
+            assert item in self.keys
+            for l in self:
+                if l.type == item:
+                    return l
+            raise KeyError(item)
         else:
-            return dict.__getitem__(self, item)
+            return super(KeyList, self).__getitem__(item)
 
     @classmethod
     def fromlist(cls, data):
         return cls([(cls.keys[n], data[n]) for n in range(len(data))])
+
+class DoubleList(list):
+    def __init__(self, ld_primary=[], ld_secondary=[]):
+        self.pri = ld_primary
+        self.sec = ld_secondary
+
+    def __iter__(self):
+        for n in self.pri+self.sec:
+            yield n
+
+    def __getitem__(self, item):
+        return (self.pri+self.sec)[item]
+
+    def add_second(self, data):
+        self.sec = data
 
 class PlotData(object):
     _attrs = ['legend_show', 'legend_fontsize', 'legend_position', 'fontsize', 'label_title', 'legend_frameon']
@@ -41,12 +72,14 @@ class PlotData(object):
         self.project[self.plot_ref].del_ref(self.uuid)
 
     def __deepcopy__(self, memo):
-        obj = PlotData(self.project, self.plot_ref, plot_hash=self.plot_hash,
+        #print('deepcopy', self.project, self.plot_ref, self.plot_ref_secondary, self.plot_hash)
+        obj = PlotData(self.project, self.plot_ref, self.plot_ref_secondary, plot_hash=self.plot_hash,
                        linedata=deepcopy(self.line_data, memo),
                        axesdata=deepcopy(self.axes_data, memo))
         for attr in self._attrs:
             setattr(obj, attr, getattr(self, attr))
         self.project[self.plot_ref].del_ref(obj.uuid)
+        #self.project[self.plot_ref_secondary].del_ref(obj.uuid)
         return obj
 
     def equals(self, other):
@@ -61,8 +94,9 @@ class PlotData(object):
                 return False
         return True
 
-    def __init__(self, project, plot, linedata=None, axesdata=None, plot_hash=None):
+    def __init__(self, project, plot, plot_secondary=None, linedata=None, axesdata=None, plot_hash=None):
         self.plot_hash = project[plot].hash if plot_hash is None else plot_hash
+        self.plot_ref_secondary = plot_secondary
 
         name = project[plot].name
 
@@ -73,7 +107,7 @@ class PlotData(object):
         project[plot].add_ref(self.uuid)
 
         self.project = project
-        self.line_data = self.init_line_data(self.plot_ref, linedata)
+        self.line_data = DoubleList(self.init_line_data(self.plot_ref, linedata))
         self.axes_data = self.init_axes_data(axesdata)
 
         for attr, default in zip(self._attrs, self._defaults):
@@ -82,7 +116,7 @@ class PlotData(object):
     def add_secondary(self, plot):
         self.project[plot].add_ref(self.uuid)
         self.plot_ref_secondary = self.project[plot].uuid
-        self.line_data_secondary = self.init_line_data(self.plot_ref_secondary)
+        self.line_data.add_second(self.init_line_data(self.plot_ref_secondary))
 
     @property
     def figsize(self):
@@ -92,14 +126,14 @@ class PlotData(object):
         self.width, self.height = size
 
     @classmethod
-    def from_xml(cls, project, uid, xmlattrs, linedata, axesdata):
+    def from_xml(cls, project, uid, uid_secondary, xmlattrs, linedata, axesdata):
         ld = None
         ad = None
         if linedata is not None:
             ld = [LineData(*[tp(q) for q,tp in zip(line.split('|'),LineData._in_types)]) for line in linedata.strip().split('\n')]
         if axesdata is not None:
             ad = [AxesData(*[tp(q) for q,tp in zip(line.split('|'),AxesData._in_types)]) for line in axesdata.strip().split('\n')]
-        pd = cls(project, uid, ld, ad)
+        pd = cls(project, uid, uid_secondary, ld, ad)
         for tp,attr,default in zip(cls._types, cls._attrs, cls._defaults):
             setattr(pd, attr, tp(xmlattrs.get(attr, default)))
         return pd
@@ -110,7 +144,7 @@ class PlotData(object):
             settings[attr] = str(getattr(self, attr))
         ld = ['|'.join([str(q) for q in line]) for line in self.line_data]
         ad = ['|'.join([str(q) for q in ax]) for ax in self.axes_data]
-        return self.plot_ref, settings, ld, ad
+        return self.plot_ref, self.plot_ref_secondary, settings, ld, ad
 
     @property
     def plot_modified(self):
@@ -122,12 +156,12 @@ class PlotData(object):
 
     def init_axes_data(self, data=None):
         if data is None:
-            data = ListDict({})
-            data['x'] = AxesData('x label', 'bottom', '', '', 'linear', False, 3, '', '', 'in')
-            data['y'] = AxesData('y label', 'left', '', '', 'log', False, -1, '', '', 'in')
-            data['twinx'] = AxesData('right', '', '', 'linear', False, -1, '', '', 'in')
+            data = KeyList()
+            data.append(AxesData('x', 'x label', 'bottom', '', '', 'linear', False, 3, '', '', 'in'))
+            data.append(AxesData('y', 'y label', 'left', '', '', 'linear', False, -1, '', '', 'in'))
+            data.append(AxesData('twinx', 'y label', 'left', '', '', 'linear', False, -1, '', '', 'in'))
         else:
-            data = ListDict.fromlist(data)
+            data = KeyList(data)
         return data
 
     def init_line_data(self, plot_ref, data=None):
@@ -187,12 +221,12 @@ class PlotData(object):
         return self.get_range()[1]
 
     def primary(self):
-        for p,q in zip(self.project[self.plot_ref],self.line_data):
+        for p,q in zip(self.project[self.plot_ref],self.line_data.pri):
             if not p.hide and q.show:
                 yield p,q
 
     def secondary(self):
-        for p,q in zip(self.project[self.plot_ref_secondary],self.line_data_secondary):
+        for p,q in zip(self.project[self.plot_ref_secondary],self.line_data.sec):
             if not p.hide and q.show:
                 yield p,q
 
@@ -215,12 +249,14 @@ class LineDataFactory:
 
 import re
 
-def color(arg):
+def color2str(arg):
+    assert len(arg) == 3
+    return '{:.2f},{:.2f},{:.2f}'.format(*arg)
+
+def str2color(arg):
     items = re.findall(r'(?:^|,)([^,]*)(?=,|$)',arg)
     if len(items) in [3,4]:
         return tuple([float(q) for q in items])
-    elif arg in LineData.colors:
-        return 0.6,0.6,0.6
     else:
         return 0,0,0
 
@@ -252,7 +288,8 @@ class AxesData:
 
 class LineData:
     # ex_types are the kwargs understood by figure.plot
-    _plt_types = [str, str, float, float, color, float, str, bool]
+    _plt_types = [str, str, float, float, str2color, float, str, bool]
+
     # in types are used to parse the xml data
     _in_types = [str, str, str, str, str, str, str, textbool]
     _attrs = ['linestyle','marker','linewidth','markersize','color','alpha','label','show']
@@ -260,7 +297,19 @@ class LineData:
     styles = ['-','--','-.',':']
     #markers = ['.',',','o','v','^','<','>','1','2','3','4','8','s','p','*','h','H','+','x','D','d','|','_']
     markers = list(MarkerStyle.filled_markers)
-    colors = ['black','green','red','blue','magenta','cyan','yellow']
+    colors = ['0,0,0',
+              '1,0,0',
+              '0,1,0',
+              '0,0,1',
+              '1,1,0',
+              '0,1,1',
+              '1,0,1',
+              '0.5,0,0',
+              '0.5,0.5,0',
+              '0,0.5,0',
+              '0.5,0,0.5',
+              '0,0.5,0.5',
+              '0,0,0.5']
 
     def __init__(self, *args):
         for n,arg in enumerate(args):
@@ -456,10 +505,8 @@ class MultiPlotModel(dict):
         return ret
 
 if __name__ == '__main__':
-    a = ListDict({'x':'a','y':'b'})
-    print(a)
-    print(a[0],a['x'])
-    b = ListDict.fromlist([1,2,3])
-    print(b,b[2],b['twinx'])
-    for i in b:
-        print(i)
+    a = DoubleList([1,2,3],[6,7,8,9])
+    a.pri = ['a','b','c']
+    for k in a:
+        print(k)
+    print(a[5])
