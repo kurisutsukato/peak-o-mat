@@ -60,6 +60,8 @@ class Interactor:
         self.view.btn_ok.Bind(wx.EVT_BUTTON, self.OnSave)
         self.view.btn_cancel.Bind(wx.EVT_BUTTON, self.OnCancel)
 
+        self.view.axes_control.Bind(wx.EVT_BUTTON, self.OnAddRemoveAxes)
+
         self.view.plot_view.btn_export_code.Bind(wx.EVT_BUTTON, self.OnExportCode)
         self.view.plot_view.btn_export_figure.Bind(wx.EVT_BUTTON, self.OnExportFigure)
 
@@ -85,6 +87,10 @@ class Interactor:
     def OnSelectGridPosition(self, evt):
         evt.Skip()
         self.controller.select_gridposition(evt.pos)
+
+    def OnAddRemoveAxes(self, evt):
+        name = evt.GetEventObject().Name
+        self.controller.add_remove_axes(name, self.view.axes_control.selection[0])
 
     def OnSelectPlot(self, evt):
         evt.Skip()

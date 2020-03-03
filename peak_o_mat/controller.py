@@ -875,8 +875,6 @@ class Controller(object):
 
     def delete_figure(self, fig):
         item = self.project.figure_list.pop(self.project.figure_list.index(fig))
-        k,v = list(item.items())[0]
-        v.release()
         pub.sendMessage((self.view.instid, 'figurelist', 'needsupdate'))
 
     def clone_figure(self, fig):

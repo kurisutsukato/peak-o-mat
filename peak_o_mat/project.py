@@ -30,10 +30,7 @@ import codecs
 import uuid as UUID
 from functools import reduce
 
-try:
-    import xml.etree.cElementTree as ET
-except ImportError:
-    import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET
 
 import textwrap as tw
 
@@ -72,6 +69,21 @@ def deslash(arg): # assure backwards compatibility
     for k,v in chrmap.items():
         arg = arg.replace(v,k)
     return arg
+
+def indent(elem, level=0):
+    i = "\n" + level*"  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            indent(elem, level+1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
 
 class Queue(BytesIO):
     def write(self, arg):
@@ -237,10 +249,8 @@ class Plot(LData):
     rng = property(_get_range, _set_range)
 
     def add_ref(self, ref):
-        #print('project:addref',ref)
         self._references.append(ref)
     def del_ref(self, ref):
-        #print('project:delref',ref)
         self._references.remove(ref)
 
     @property
@@ -552,7 +562,9 @@ class Project(LData):
                     settings = {}
                     for elem in sett_elem.iter():
                         settings[elem.tag] = elem.text
-                    linedata = fig_elem.find('linedata').text
+                    linedata = []
+                    for ld_elem in fig_elem.findall('linedata'):
+                        linedata.append(ld_elem.text)
                     try:
                         axesdata = fig_elem.find('axesdata').text
                     except AttributeError:
@@ -707,7 +719,7 @@ class Project(LData):
                 fig_elem.attrib = {'row':repr(pos[0]), 'col':repr(pos[1])}
 
                 #fig_elem = ET.SubElement(root, 'figure')
-                ref, ref_secondary, settings, linedata, axesdata = pd.to_xml()
+                ref, ref_secondary, settings, linedata_pri, linedata_sec, axesdata = pd.to_xml()
                 fig_elem.attrib['plotref'] = ref
                 fig_elem.attrib['plotref_secondary'] = ref_secondary
                 sett_elem = ET.SubElement(fig_elem, 'settings')
@@ -715,7 +727,9 @@ class Project(LData):
                     elem = ET.SubElement(sett_elem,k)
                     elem.text = v
                 data_elem = ET.SubElement(fig_elem, 'linedata')
-                data_elem.text = '\n'.join(linedata)
+                data_elem.text = '\n'.join(linedata_pri)
+                data_elem = ET.SubElement(fig_elem, 'linedata')
+                data_elem.text = '\n'.join(linedata_sec)
                 data_elem = ET.SubElement(fig_elem, 'axesdata')
                 data_elem.text = '\n'.join(axesdata)
 
@@ -744,6 +758,7 @@ class Project(LData):
                     code_elem.text = slash(data)
 
         tree = ET.ElementTree(root)
+        indent(tree.getroot())
 
         f = Queue()
         try:

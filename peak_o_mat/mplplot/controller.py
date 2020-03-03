@@ -18,7 +18,7 @@ from matplotlib.ticker import FuncFormatter, NullFormatter, ScalarFormatter, Log
 
 from .view import ControlFrame
 from .interactor import Interactor
-from .model import MultiPlotModel, PlotData, LineData
+from .model import MultiPlotModel, PlotData, LineData, AxesData
 
 class Locals(dict):
     def __init__(self, stdout, data={}):
@@ -128,9 +128,31 @@ class PlotController(object):
         self.redraw(force=True)
 
     def plot_add_secondary(self, plot, pos):
-        self.model[pos].add_secondary(plot)
+        if plot == -1:
+            self.model[pos].del_secondary()
+            self.model[pos].axes_data[:] = self.model[pos].axes_data[:2]
+        else:
+            self.model[pos].add_secondary(plot)
         self.view.update_from_model(self.model)
         self.__needs_update = True
+        self.redraw(force=True)
+
+    def add_remove_axes(self, name, selection):
+        ad = self.model.selected.axes_data
+        if name == 'remove':
+            ad.pop(selection)
+        elif name in ['twinx', 'twiny']:
+            tp = name[-1]
+            labelpos = dict([('y', 'top'), ('x', 'right')])
+            ad.append(
+                AxesData('twin{}'.format(tp), 'label', labelpos[tp], '', '', 'linear', False, 3, '', '', 'in'))
+        elif name == 'inset':
+            for axis in ['insetx', 'insety']:
+                tp = axis[-1]
+                labelpos = dict([('x', 'bottom'), ('y', 'left')])
+                ad.append(
+                    AxesData('inset{}'.format(tp), 'label', labelpos[tp], '', '', 'linear', False, 3, '', '', 'in'))
+        self.view.update_from_model(self.model)
         self.redraw(force=True)
 
     def select_plot(self, plot, pos):
@@ -139,7 +161,8 @@ class PlotController(object):
             #TODO: deselect secondary plot
             self.view.enable_edit(False)
         else:
-            pd =  PlotData(self.model.project,plot)
+            pd = PlotData(self.model.project,plot)
+            print('new pd:', plot, pd.plot_ref_secondary)
             self.model.add(pd, pos)
             self.view.update_from_model(self.model)
             self.view.enable_edit(True)
@@ -180,54 +203,55 @@ class PlotController(object):
         #if not force and not self.model.update_from_view(self.view):
         #    print 'not modified'
         #    return
+
         rows,cols = self.model.shape
+        self.view.figure.subplots_adjust(**self.model.adjust)
         if self.__needs_update:
             self.view.figure.clf()
-        self.view.figure.subplots_adjust(**self.model.adjust)
 
-        axes = np.atleast_2d(self.view.figure.subplots(rows, cols))
-        for row in range(rows):
-            for col in range(cols):
-                try:
-                    pm = self.model[(row,col)]
-                except KeyError:
-                    continue
-                else:
-                    ax = axes[row][col]
-                    for s, style in pm.primary():
-                        ax.plot(s.x, s.y, **style.kwargs())
-                    set_plot_attributes(ax, pm)
-                    set_axis_attributes(ax, 'x', pm.axes_data['x'])
-                    set_axis_attributes(ax, 'y', pm.axes_data['y'])
-                    if 'twinx' in pm.axes_data:
-                        twinx = ax.twinx()
-                        try:
-                            for s,style in pm.secondary():
-                                twinx.plot(s.x, s.y, **style.kwargs())
-                        except (AttributeError, KeyError): #KeyError happens if second plot was not defined yet but axis exists
-                            continue
-                        set_axis_attributes(twinx, 'y', pm.axes_data['twinx'])
-                    elif 'twiny' in pm.axes_data:
-                        twiny = ax.twiny()
-                    elif 'inset' in pm.axes_data:
-                        inset = ax.inset_axes(pm.axes_data['inset'].bounds)
+            axes = np.atleast_2d(self.view.figure.subplots(rows, cols))
+            for row in range(rows):
+                for col in range(cols):
+                    try:
+                        pm = self.model[(row,col)]
+                    except KeyError:
+                        continue
+                    else:
+                        ax = axes[row][col]
+                        for s, style in pm.primary():
+                            ax.plot(s.x, s.y, **style.kwargs())
+                        set_plot_attributes(ax, pm)
+                        set_axis_attributes(ax, 'x', pm.axes_data['x'])
+                        set_axis_attributes(ax, 'y', pm.axes_data['y'])
+                        if 'twinx' in pm.axes_data:
+                            twinx = ax.twinx()
+                            try:
+                                for s,style in pm.secondary():
+                                    twinx.plot(s.x, s.y, **style.kwargs())
+                            except (AttributeError, KeyError): #KeyError happens if second plot was not defined yet but axis exists
+                                continue
+                            set_axis_attributes(twinx, 'y', pm.axes_data['twinx'])
+                        elif 'twiny' in pm.axes_data:
+                            twiny = ax.twiny()
+                        elif 'inset' in pm.axes_data:
+                            inset = ax.inset_axes(pm.axes_data['inset'].bounds)
 
-                    # if len(ax.lines) == 0 or self.__needs_update: # or ax_new_scale:
-                    #     print('clean draw of',pm.name)
-                    #     for s,style in pm.primary():
-                    #         ax.plot(s.x, s.y, **style.kwargs())
-                    #         #getattr(ax, plotfunc)
-                    #     set_plot_attributes(pm, ax, twinx, twiny, inset)
-                    # else:
-                    #     if update_selected and pm != self.model.selected:
-                    #         continue
-                    #     print('redrawing',pm.name)
-                    #     for line,(s,style) in zip(ax.lines,pm):
-                    #         for attr,value in style.kwargs().items():
-                    #             getattr(line, 'set_{}'.format(attr))(value)
-                    #     set_plot_attributes(pm, ax, twinx, twiny, inset)
+                        # if len(ax.lines) == 0 or self.__needs_update: # or ax_new_scale:
+                        #     print('clean draw of',pm.name)
+                        #     for s,style in pm.primary():
+                        #         ax.plot(s.x, s.y, **style.kwargs())
+                        #         #getattr(ax, plotfunc)
+                        #     set_plot_attributes(pm, ax, twinx, twiny, inset)
+                        # else:
+                        #     if update_selected and pm != self.model.selected:
+                        #         continue
+                        #     print('redrawing',pm.name)
+                        #     for line,(s,style) in zip(ax.lines,pm):
+                        #         for attr,value in style.kwargs().items():
+                        #             getattr(line, 'set_{}'.format(attr))(value)
+                        #     set_plot_attributes(pm, ax, twinx, twiny, inset)
 
-        self.__needs_update = False
+            self.__needs_update = False
 
         self.view.figure.canvas.draw()
 

@@ -67,9 +67,11 @@ class PlotData(object):
 
     _defaults = [False, 12, 0, 10, '', True]
 
-    def release(self):
-        #TODO: nicer would be to have this done in the desctructor but there is always a reference hanging around
+    def __del__(self):
+        #print('pd destructor')
         self.project[self.plot_ref].del_ref(self.uuid)
+        if self.plot_ref_secondary is not None:
+            self.project[self.plot_ref_secondary].del_ref(self.uuid)
 
     def __deepcopy__(self, memo):
         #print('deepcopy', self.project, self.plot_ref, self.plot_ref_secondary, self.plot_hash)
@@ -78,8 +80,6 @@ class PlotData(object):
                        axesdata=deepcopy(self.axes_data, memo))
         for attr in self._attrs:
             setattr(obj, attr, getattr(self, attr))
-        self.project[self.plot_ref].del_ref(obj.uuid)
-        #self.project[self.plot_ref_secondary].del_ref(obj.uuid)
         return obj
 
     def equals(self, other):
@@ -96,19 +96,27 @@ class PlotData(object):
 
     def __init__(self, project, plot, plot_secondary=None, linedata=None, axesdata=None, plot_hash=None):
         self.plot_hash = project[plot].hash if plot_hash is None else plot_hash
-        self.plot_ref_secondary = plot_secondary
+        self.uuid = uuid.uuid4().hex
+        self.project = project
 
         self.plot_ref = project[plot].uuid
-        self.uuid = uuid.uuid4().hex
+        self.plot_ref_secondary = plot_secondary
 
-        self.project = project
-        self.project[plot].add_ref(self.uuid)
+        self.project[self.plot_ref].add_ref(self.uuid)
+        if self.plot_ref_secondary is not None:
+            self.project[self.plot_ref_secondary].add_ref(self.uuid)
 
         name = project[plot].name
         self.name = name if name != '' else 'p{}'.format(project.index(plot))
 
+        if linedata is None:
+            # init line data for primary axis
+            self.line_data = DoubleList(self.init_line_data(self.plot_ref, linedata))
+        else:
+            # lineadata is a DoubleList
+            self.line_data = linedata
 
-        self.line_data = DoubleList(self.init_line_data(self.plot_ref, linedata))
+        # init standard axes
         self.axes_data = self.init_axes_data(axesdata)
 
         for attr, default in zip(self._attrs, self._defaults):
@@ -118,6 +126,11 @@ class PlotData(object):
         self.project[plot].add_ref(self.uuid)
         self.plot_ref_secondary = self.project[plot].uuid
         self.line_data.add_second(self.init_line_data(self.plot_ref_secondary))
+
+    def del_secondary(self):
+        self.project[self.plot_ref_secondary].del_ref(self.uuid)
+        self.plot_ref_secondary = None
+        self.line_data.sec = []
 
     @property
     def figsize(self):
@@ -131,7 +144,12 @@ class PlotData(object):
         ld = None
         ad = None
         if linedata is not None:
-            ld = [LineData(*[tp(q) for q,tp in zip(line.split('|'),LineData._in_types)]) for line in linedata.strip().split('\n')]
+            ldpri = [LineData(*[tp(q) for q,tp in zip(line.split('|'), LineData._in_types)]) for line in linedata[0].strip().split('\n')]
+            try:
+                ldsec = [LineData(*[tp(q) for q,tp in zip(line.split('|'), LineData._in_types)]) for line in linedata[1].strip().split('\n')]
+            except IndexError:
+                ldsec = []
+            ld = DoubleList(ldpri, ldsec)
         if axesdata is not None:
             ad = [AxesData(*[tp(q) for q,tp in zip(line.split('|'),AxesData._in_types)]) for line in axesdata.strip().split('\n')]
         pd = cls(project, uid, uid_secondary, ld, ad)
@@ -143,9 +161,10 @@ class PlotData(object):
         settings = {}
         for attr in self._attrs:
             settings[attr] = str(getattr(self, attr))
-        ld = ['|'.join([str(q) for q in line]) for line in self.line_data]
+        ldpri = ['|'.join([str(q) for q in line]) for line in self.line_data.pri]
+        ldsec = ['|'.join([str(q) for q in line]) for line in self.line_data.sec]
         ad = ['|'.join([str(q) for q in ax]) for ax in self.axes_data]
-        return self.plot_ref, self.plot_ref_secondary, settings, ld, ad
+        return self.plot_ref, self.plot_ref_secondary, settings, ldpri, ldsec, ad
 
     @property
     def plot_modified(self):
@@ -160,7 +179,7 @@ class PlotData(object):
             data = KeyList()
             data.append(AxesData('x', 'x label', 'bottom', '', '', 'linear', False, 3, '', '', 'in'))
             data.append(AxesData('y', 'y label', 'left', '', '', 'linear', False, -1, '', '', 'in'))
-            data.append(AxesData('twinx', 'y label', 'left', '', '', 'linear', False, -1, '', '', 'in'))
+            #data.append(AxesData('twinx', 'y label', 'left', '', '', 'linear', False, -1, '', '', 'in'))
         else:
             data = KeyList(data)
         return data
@@ -175,20 +194,28 @@ class PlotData(object):
 
     @property
     def modified(self):
-        print('pd checking modified',self.plot_hash,self.project[self.plot_ref].hash)
         if self.plot_hash != self.project[self.plot_ref].hash:
             self.sync_with_plot()
             return True
         return False
 
     def sync_with_plot(self):
-        nlines = len(self.line_data)
+
+        nlines = len(self.line_data.pri)
         diff = len(self.project[self.plot_ref])-nlines
         df = LineDataFactory()
         for n,s in zip(list(range(diff)), self.project[self.plot_ref][nlines:]):
-            self.line_data.append(df.next_with_name(s.name))
-        self.line_data = self.line_data[:len(self.project[self.plot_ref])]
+            self.line_data.pri.append(df.next_with_name(s.name))
+        self.line_data.pri = self.line_data.pri[:len(self.project[self.plot_ref])]
         self.plot_hash = self.project[self.plot_ref].hash
+
+        nlines = len(self.line_data.sec)
+        diff = len(self.project[self.plot_ref_secondary])-nlines
+        df = LineDataFactory()
+        for n,s in zip(list(range(diff)), self.project[self.plot_ref_secondary][nlines:]):
+            self.line_data.sec.append(df.next_with_name(s.name))
+        self.line_data.sec = self.line_data.sec[:len(self.project[self.plot_ref])]
+
 
     def hash(self):
         return ''.join([repr(getattr(self, q)) for q in self._attrs])
@@ -348,11 +375,6 @@ class MultiPlotModel(dict):
         for attr, default in zip(self.attrs, self.defaults):
             setattr(self, attr, default)
 
-    #def __del__(self):
-    #    print('mpm destructor')
-    #    for v in self.values():
-    #        v.release()
-
     def orderediteritems(self):
         for k,v in self.__order.items():
             yield k,self[v]
@@ -395,7 +417,10 @@ class MultiPlotModel(dict):
         #    plotdata = PlotData(self.project, 0)
 
         if pos in self:
-            self[pos].plot_ref = plotdata.plot_ref
+            #TODO:wieso wird nur die plot_Ref ausgetauscht? das gibt doch Aerger mit den referenzen
+            #self[pos].plot_ref = plotdata.plot_ref
+
+            self[pos] = plotdata
         else:
             self.update({pos: plotdata})
         self.__order.update({pos:plotdata.name})
@@ -510,4 +535,7 @@ if __name__ == '__main__':
     a.pri = ['a','b','c']
     for k in a:
         print(k)
-    print(a[5])
+
+    from copy import deepcopy
+    b = deepcopy(a)
+    print(b.pri, b.sec)
