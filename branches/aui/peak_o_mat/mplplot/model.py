@@ -98,15 +98,16 @@ class PlotData(object):
         self.plot_hash = project[plot].hash if plot_hash is None else plot_hash
         self.plot_ref_secondary = plot_secondary
 
-        name = project[plot].name
-
-        self.name = name if name != '' else 'p{}'.format(project.index(plot))
-        self.plot_uuid = project[plot].uuid
         self.plot_ref = project[plot].uuid
         self.uuid = uuid.uuid4().hex
-        project[plot].add_ref(self.uuid)
 
         self.project = project
+        self.project[plot].add_ref(self.uuid)
+
+        name = project[plot].name
+        self.name = name if name != '' else 'p{}'.format(project.index(plot))
+
+
         self.line_data = DoubleList(self.init_line_data(self.plot_ref, linedata))
         self.axes_data = self.init_axes_data(axesdata)
 
