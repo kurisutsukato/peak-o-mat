@@ -172,6 +172,8 @@ class PlotOrderPanel(wx.Panel):
             wx.GetApp().Yield(True)
 
     def RectGotHitLeft(self, Object):
+        if self.selection == Object:
+            return
         self.offset = self.curr_coords-Object.XY
         self.Focus(Object)
         self.selection = Object
@@ -212,7 +214,7 @@ class PlotLayout(wx.Panel):
         self.setup_controls()
         self.layout()
 
-        self.pop.Bind(EVT_RECT_SELECT, self.OnSelect)
+        #self.pop.Bind(EVT_RECT_SELECT, self.OnSelect)
         self.ch_plot_pri.Bind(wx.EVT_CHOICE, self.OnChoice)
         self.ch_rows.Bind(wx.EVT_CHOICE, self.OnShape)
         self.ch_cols.Bind(wx.EVT_CHOICE, self.OnShape)
@@ -252,22 +254,34 @@ class PlotLayout(wx.Panel):
         self.SetSizer(b)
 
     def update_from_model(self, mpmodel):
+        print('plotlayout: update from model')
         rows,cols = mpmodel.shape
-        self.ch_rows.SetSelection(rows-1)
-        self.ch_cols.SetSelection(cols-1)
 
-    def set_plot_choices(self, choices, clientdata, select=None):
+        self.ch_rows.SetSelection(max(0,rows-1))
+        self.ch_cols.SetSelection(max(0,cols-1))
+
+        def select(ctrl, uuid):
+            if uuid is None:
+                ctrl.Selection = 0
+            else:
+                for n in range(ctrl.Count):
+                    if ctrl.GetClientData(n) == uuid:
+                        ctrl.Selection = n
+
+        if mpmodel.selected is not None:
+            pd = mpmodel.selected
+
+            select(self.ch_plot_pri, pd.plot_ref)
+            select(self.ch_plot_sec, pd.plot_ref_secondary)
+        else:
+            select(self.ch_plot_pri, None)
+            select(self.ch_plot_sec, None)
+
+    def set_plot_choices(self, choices, clientdata):
         for ch in self.ch_plot_pri, self.ch_plot_sec:
             ch.Clear()
             for c,d in zip(choices,clientdata):
                 ch.Append(c, d)
-            if select is not None:
-                if select == '':
-                    ch.Selection = 0
-                else:
-                    for n in range(ch.Count):
-                        if ch.GetClientData(n) == select:
-                            ch.Selection = n
 
     @property
     def selection(self):
@@ -279,11 +293,15 @@ class PlotLayout(wx.Panel):
         self.pop.shape = self.ch_rows.GetSelection()+1,self.ch_cols.GetSelection()+1
 
     def OnSelect(self, evt):
+        #TODO: remove
+        print('plotlayout on select should not be called')
         evt.Skip()
         if evt.name != '':
             self.ch_plot_pri.SetSelection(self.ch_plot_pri.FindString(evt.name))
+            self.ch_plot_sec.SetSelection(0)
         else:
             self.ch_plot_pri.SetSelection(0)
+            self.ch_plot_sec.SetSelection(0)
 
     def OnChoice(self, evt):
         evt.Skip()

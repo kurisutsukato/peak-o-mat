@@ -25,7 +25,7 @@ from ..images import get_bmp
 auto = get_bmp('auto.png')
 
 from .plotlayout import PlotLayout
-from .model import LineData, color2str, str2color
+from .model import LineData, color2str, str2color, AxesData
 
 def validfloat(arg):
     if arg == '':
@@ -73,7 +73,7 @@ class CmpDlg(wx.MiniFrame):
             bmp = wx.Bitmap.FromBuffer(w, h, buf)
             ids.append((self.il.Add(bmp),cmap_id))
             ax.cla()
-            if n==4:
+            if n==10:
                 break
 
         self.list = wx.ListCtrl(self, style=wx.LC_REPORT| wx.BORDER_NONE | wx.LC_NO_HEADER)
@@ -104,7 +104,7 @@ class CmpDlg(wx.MiniFrame):
 class AxesControlPanel(WithMessage, wx.Panel):
     def __setattr__(self, attr, val):
         # generate list with all controls
-        if issubclass(val.__class__, wx.Window) and val.Name != 'ignore':
+        if issubclass(val.__class__, wx.Window) and val.__class__ != wx.Button and val.Name != 'ignore':
             self.__ctrls.append(val)
         return super(AxesControlPanel, self).__setattr__(attr, val)
 
@@ -112,6 +112,7 @@ class AxesControlPanel(WithMessage, wx.Panel):
         self.__ctrls = []
         self.selection = []
         self.__process_queue = []
+        self.__axes_data = []
 
         wx.Panel.__init__(self, parent, -1)
         WithMessage.__init__(self)
@@ -137,10 +138,19 @@ class AxesControlPanel(WithMessage, wx.Panel):
         self.cho_tdir = wx.Choice(self, choices=['in', 'out'], name='tdir')
         self.cho_tdir.SetSelection(0)
 
+        self.btn_add_twinx = wx.Button(self, label='Add twin x', name='twinx')
+        self.btn_add_twiny = wx.Button(self, label='Add twin y', name='twiny')
+        self.btn_add_inset = wx.Button(self, label='Add inset', name='inset')
+        self.btn_remove = wx.Button(self, label='Remove axis', name='remove')
+
     def layout(self):
         outer = wx.BoxSizer(wx.HORIZONTAL)
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(self.axes_list, 1)
+        vbox.Add(self.btn_add_twinx, 0, wx.EXPAND|wx.TOP, 5)
+        vbox.Add(self.btn_add_twiny, 0, wx.EXPAND | wx.TOP, 5)
+        vbox.Add(self.btn_add_inset, 0, wx.EXPAND | wx.TOP, 5)
+        vbox.Add(self.btn_remove, 0, wx.EXPAND | wx.TOP, 5)
 
         outer.Add(vbox, 0, wx.ALL | wx.EXPAND, 5)
 
@@ -169,7 +179,7 @@ class AxesControlPanel(WithMessage, wx.Panel):
         Add(wx.StaticText(self, label='Tick direction'), (5,0))
         Add(self.cho_tdir, (5, 1))
 
-        outer.Add(fb, 1, wx.TOP|wx.EXPAND, 5)
+        outer.Add(fb, 1, wx.TOP|wx.LEFT|wx.EXPAND, 5)
 
         self.SetSizer(outer)
         self.Layout()
@@ -186,13 +196,17 @@ class AxesControlPanel(WithMessage, wx.Panel):
         self.SetEvtHandlerEnabled(not state)
     silent = property(fset=_set_silent)
 
-    def associate_model(self, axes_data):
+    def associate_model(self, axes_data, has_second=False):
         self.__axes_data = axes_data
         self.selection = []
         self.axes_list.ClearAll()
         for ax in axes_data:
             self.axes_list.Append([ax.type])
         self.axes_list.Select(0)
+
+        self.btn_add_inset.Enable(has_second and len(self.__axes_data) == 2)
+        self.btn_add_twinx.Enable(has_second and len(self.__axes_data) == 2)
+        self.btn_add_twiny.Enable(has_second and len(self.__axes_data) == 2)
 
     def OnCheck(self, evt):
         obj = evt.GetEventObject()
@@ -224,6 +238,8 @@ class AxesControlPanel(WithMessage, wx.Panel):
         pub.sendMessage((self.instid, 'axesattrs', 'changed'))
 
     def OnProcess(self, evt):
+        self.btn_remove.Enable(self.selection not in [[0],[1]])
+
         if len(self.__process_queue) > 0:
             self.__process_queue[0]()
             self.__process_queue.clear()
@@ -340,7 +356,7 @@ class LineControlPanel(WithMessage, wx.Panel):
         grd.Add(wx.StaticText(self, label='Alpha'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
         grd.Add(self.spn_alpha, 1, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
 
-        outer.Add(grd, 0, wx.ALL|wx.EXPAND, 5)
+        outer.Add(grd, 0, wx.ALL|wx.LEFT|wx.EXPAND, 5)
         self.SetSizer(outer)
         self.Layout()
 
@@ -397,16 +413,16 @@ class LineControlPanel(WithMessage, wx.Panel):
 
     def OnColorRangeSelect(self, evt):
         self.dlg_colorrange.Hide()
+        self.dlg_colorrange.list.Select(evt.Index, 0)
+
         cmap_id = plt.colormaps()[evt.Index*2]
 
         ld = self.__line_data
         for n,(sel, ci) in enumerate(zip(*(self.selection, np.linspace(0,1,len(self.selection))))):
             color = mpl.cm.get_cmap(cmap_id)(ci)
-            #setattr(ld[sel], 'color', '{:.2f},{:.2f},{:.2f}'.format(*color[:-1]))
             setattr(ld[sel], 'color', color2str(color[:-1]))
 
         pub.sendMessage((self.instid, 'lineattrs', 'changed'))
-        #color = np.asarray(color, dtype=int)
         self.bmp_linecolor.SetBitmap(self.gen_bitmap(None))
         pub.sendMessage((self.instid, 'lineattrs', 'changed'))
 
@@ -627,6 +643,7 @@ class ControlFrame(WithMessage,wx.Frame):
         self.spn_height.Value = mpmodel.height
 
         if mpmodel.selected is None:
+            self.plot_layout.update_from_model(mpmodel)
             self.enable_edit(False)
         else:
             self.enable_edit(True)
@@ -636,7 +653,8 @@ class ControlFrame(WithMessage,wx.Frame):
             if mpmodel.selected.plot_ref_secondary is not None:
                 ds_names.extend(['s{:d} {}'.format(n, q.name) for n,q in enumerate(mpmodel.project[mpmodel.selected.plot_ref_secondary])])
             self.line_control.associate_model(mpmodel.selected.line_data, ds_names)
-            self.axes_control.associate_model(mpmodel.selected.axes_data)
+            self.axes_control.associate_model(mpmodel.selected.axes_data,
+                                              has_second=mpmodel.selected.plot_ref_secondary is not None)
 
             self.chk_legend.Value = mpmodel.selected.legend_show
             self.spn_legend_fontsize.Value = mpmodel.selected.legend_fontsize
@@ -653,17 +671,18 @@ class ControlFrame(WithMessage,wx.Frame):
 
     def init_pop(self, mpmodel):
         self.plot_layout.pop.update_from_model(mpmodel)
-        try:
-            sel = mpmodel[self.plot_layout.selection].uuid
-            self.enable_edit(True)
-        except KeyError:
-            sel = ''
-            self.enable_edit(False)
+        # try:
+        #     pd = mpmodel[self.plot_layout.selection]
+        # except KeyError:
+        #     sel = (-1, -1)
+        #     self.enable_edit(False)
+        # else:
+        #     sel = (pd.plot_ref, pd.plot_ref_secondary)
+        #     self.enable_edit(True)
 
         names = [p.name if p.name != '' else 'p{}'.format(n) for n,p in enumerate(mpmodel.project)]
         self.plot_layout.set_plot_choices(['<none>']+names,
-                                          [-1]+[p.uuid for p in mpmodel.project],
-                                          sel)
+                                          [-1]+[p.uuid for p in mpmodel.project])
 
     def Show(self, state):
         super(ControlFrame, self).Show(state)
