@@ -111,6 +111,8 @@ class PlotController(object):
         if modified:
             self.view.show_model_changed()
 
+        self.new_shape((1,1))
+
     def close(self):
         self.model.update_from_view(self.view)
         self.view.save_pos()
@@ -198,60 +200,93 @@ class PlotController(object):
             self.t.start()
 
     def _redraw(self, update_selected=False, force=False):
-        print('_redraw', update_selected, force)
-        self.__needs_update = force
+        print('_redraw, update:{}, force:{}'.format(update_selected, force))
+        #self.__needs_update = force
         #if not force and not self.model.update_from_view(self.view):
         #    print 'not modified'
         #    return
 
         rows,cols = self.model.shape
         self.view.figure.subplots_adjust(**self.model.adjust)
-        if self.__needs_update:
+        if force:
             self.view.figure.clf()
 
+        def getaxes(f):
+            return [ax for ax in f.axes if ax._sharex is None and ax._sharey is None]
+
+        if len(getaxes(self.view.figure)) == rows*cols:
+            axes = np.reshape(np.atleast_2d(getaxes(self.view.figure)), (rows,cols))
+            print('reusing axes')
+        else:
             axes = np.atleast_2d(self.view.figure.subplots(rows, cols))
-            for row in range(rows):
-                for col in range(cols):
-                    try:
-                        pm = self.model[(row,col)]
-                    except KeyError:
-                        continue
-                    else:
-                        ax = axes[row][col]
+            print(axes, len(axes), getaxes(self.view.figure), len(getaxes(self.view.figure)))
+        for row in range(rows):
+            for col in range(cols):
+                try:
+                    pm = self.model[(row,col)]
+                except KeyError:
+                    continue
+                else:
+                    ax = axes[row][col]
+                    if len(ax.lines) == 0 or self.__needs_update:
+                        print('fresh draw')
                         for s, style in pm.primary():
                             ax.plot(s.x, s.y, **style.kwargs())
-                        set_plot_attributes(ax, pm)
-                        set_axis_attributes(ax, 'x', pm.axes_data['x'])
-                        set_axis_attributes(ax, 'y', pm.axes_data['y'])
-                        if 'twinx' in pm.axes_data:
+                    else:
+                        print('redrawing')
+                        if update_selected and pm != self.model.selected:
+                            print('skip non selected')
+                            continue
+                        for line,(s,style) in zip(ax.lines,pm.primary()):
+                            for attr,value in style.kwargs().items():
+                                getattr(line, 'set_{}'.format(attr))(value)
+                    set_plot_attributes(ax, pm)
+                    set_axis_attributes(ax, 'x', pm.axes_data['x'])
+                    set_axis_attributes(ax, 'y', pm.axes_data['y'])
+                    if 'twinx' in pm.axes_data:
+                        if hasattr(ax, 'mytwinx'):
+                            twinx = ax.mytwinx
+                            print('found twin axis')
+                        else:
                             twinx = ax.twinx()
-                            try:
-                                for s,style in pm.secondary():
+                            ax.mytwinx = twinx
+                        try:
+                            if len(twinx.lines) == 0 or self.__needs_update:
+                                print('twinx fresh draw')
+                                for s, style in pm.secondary():
                                     twinx.plot(s.x, s.y, **style.kwargs())
-                            except (AttributeError, KeyError): #KeyError happens if second plot was not defined yet but axis exists
-                                continue
-                            set_axis_attributes(twinx, 'y', pm.axes_data['twinx'])
-                        elif 'twiny' in pm.axes_data:
-                            twiny = ax.twiny()
-                        elif 'inset' in pm.axes_data:
-                            inset = ax.inset_axes(pm.axes_data['inset'].bounds)
+                            else:
+                                print('twinx redrawing')
+                                if update_selected and pm != self.model.selected:
+                                    print('skip non selected')
+                                    continue
+                                for line,(s,style) in zip(twinx.lines,pm.secondary()):
+                                    for attr,value in style.kwargs().items():
+                                        getattr(line, 'set_{}'.format(attr))(value)
+                        except (AttributeError, KeyError): #KeyError happens if second plot was not defined yet but axis exists
+                            continue
+                        set_axis_attributes(twinx, 'y', pm.axes_data['twinx'])
+                    elif 'twiny' in pm.axes_data:
+                        twiny = ax.twiny()
+                    elif 'inset' in pm.axes_data:
+                        inset = ax.inset_axes(pm.axes_data['inset'].bounds)
 
-                        # if len(ax.lines) == 0 or self.__needs_update: # or ax_new_scale:
-                        #     print('clean draw of',pm.name)
-                        #     for s,style in pm.primary():
-                        #         ax.plot(s.x, s.y, **style.kwargs())
-                        #         #getattr(ax, plotfunc)
-                        #     set_plot_attributes(pm, ax, twinx, twiny, inset)
-                        # else:
-                        #     if update_selected and pm != self.model.selected:
-                        #         continue
-                        #     print('redrawing',pm.name)
-                        #     for line,(s,style) in zip(ax.lines,pm):
-                        #         for attr,value in style.kwargs().items():
-                        #             getattr(line, 'set_{}'.format(attr))(value)
-                        #     set_plot_attributes(pm, ax, twinx, twiny, inset)
+                    # if len(ax.lines) == 0 or self.__needs_update: # or ax_new_scale:
+                    #     print('clean draw of',pm.name)
+                    #     for s,style in pm.primary():
+                    #         ax.plot(s.x, s.y, **style.kwargs())
+                    #         #getattr(ax, plotfunc)
+                    #     set_plot_attributes(pm, ax, twinx, twiny, inset)
+                    # else:
+                    #     if update_selected and pm != self.model.selected:
+                    #         continue
+                    #     print('redrawing',pm.name)
+                    #     for line,(s,style) in zip(ax.lines,pm):
+                    #         for attr,value in style.kwargs().items():
+                    #             getattr(line, 'set_{}'.format(attr))(value)
+                    #     set_plot_attributes(pm, ax, twinx, twiny, inset)
 
-            self.__needs_update = False
+        self.__needs_update = False
 
         self.view.figure.canvas.draw()
 
@@ -279,7 +314,11 @@ def set_axis_attributes(ax, axis, ad):
                    bottom=True if ad.labelpos=='bottom' and not ad.ticks_hide else False,
                    labelbottom=True if ad.labelpos=='bottom' and not ad.ticks_hide else False,
                    top=True if ad.labelpos=='top' and not ad.ticks_hide else False,
-                   labeltop=True if ad.labelpos=='top' and not ad.ticks_hide else False)
+                   labeltop=True if ad.labelpos=='top' and not ad.ticks_hide else False,
+                   left = True if ad.labelpos == 'left' and not ad.ticks_hide else False,
+                   labelleft = True if ad.labelpos == 'left' and not ad.ticks_hide else False,
+                   right = True if ad.labelpos == 'right' and not ad.ticks_hide else False,
+                   labelright = True if ad.labelpos == 'right' and not ad.ticks_hide else False)
     getattr(ax, '{}axis'.format(axis)).set_label_position(ad.labelpos)
 
     def floatOrNone(arg):

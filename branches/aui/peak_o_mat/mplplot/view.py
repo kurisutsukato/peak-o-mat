@@ -100,7 +100,6 @@ class CmpDlg(wx.MiniFrame):
     def OnClose(self, evt):
         self.Hide()
 
-
 class AxesControlPanel(WithMessage, wx.Panel):
     def __setattr__(self, attr, val):
         # generate list with all controls
@@ -418,7 +417,7 @@ class LineControlPanel(WithMessage, wx.Panel):
         cmap_id = plt.colormaps()[evt.Index*2]
 
         ld = self.__line_data
-        for n,(sel, ci) in enumerate(zip(*(self.selection, np.linspace(0,1,len(self.selection))))):
+        for n,(sel, ci) in enumerate(zip(*(sorted(self.selection), np.linspace(0,1,len(self.selection))))):
             color = mpl.cm.get_cmap(cmap_id)(ci)
             setattr(ld[sel], 'color', color2str(color[:-1]))
 
