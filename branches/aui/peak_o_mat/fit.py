@@ -178,7 +178,7 @@ class Fit:
                     # 4 == iteration limit reached -> restart odr
                     break
                 out = self.odr.restart(1)
-                time.sleep(0.5)
+                #time.sleep(0.5)
 
         #decoerce parameters if necessary
         pars, errors = self.func.fill(out.beta,out.sd_beta)
