@@ -522,7 +522,7 @@ class BatchWorker(Thread):
             wx.PostEvent(self._notify, event)
             # TODO
             #
-            time.sleep(0.01)
+            #time.sleep(0.01)
 
             if initial == 0 or n == 0:
                 model = base.model
