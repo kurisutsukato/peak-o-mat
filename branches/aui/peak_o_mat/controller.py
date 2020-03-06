@@ -888,6 +888,7 @@ class Controller(object):
                 self.__mpm_edit_combo = model, deepcopy(model)
             else:
                 self.__mpm_edit_combo = None, mplmodel.MultiPlotModel(self.project)
+            #TODO: nicht jedesmal neu erzeugen!
             self.mplplot = mplcontroller.new(self, self.view, self.__mpm_edit_combo[1])
 
             self.mplplot.view.Show(show)
