@@ -67,14 +67,14 @@ class CmpDlg(wx.MiniFrame):
         ids = []
         for n,cmap_id in enumerate(plt.colormaps()[::2]):
             col_map = mpl.cm.get_cmap(cmap_id)
+            if np.alltrue(np.asarray(col_map(1)) > 0.7) or np.alltrue(np.asarray(col_map(0)) > 0.7):
+                continue
             mpl.colorbar.ColorbarBase(ax, cmap=col_map, orientation='horizontal')
             fig.canvas.draw()
             buf = fig.canvas.tostring_rgb()
             bmp = wx.Bitmap.FromBuffer(w, h, buf)
             ids.append((self.il.Add(bmp),cmap_id))
             ax.cla()
-            if n==10:
-                break
 
         self.list = wx.ListCtrl(self, style=wx.LC_REPORT| wx.BORDER_NONE | wx.LC_NO_HEADER)
 
@@ -87,7 +87,7 @@ class CmpDlg(wx.MiniFrame):
         info.Text = "cmap"
         self.list.InsertColumn(0, info)
 
-        for k in range(n):
+        for k in range(len(ids)):
             index = self.list.InsertItem(self.list.GetItemCount(), ids[k][1], ids[k][0])
 
         self.list.SetColumnWidth(0, wx.LIST_AUTOSIZE)
@@ -132,10 +132,12 @@ class AxesControlPanel(WithMessage, wx.Panel):
         self.txt_rng_min.SetValidator(FormatValidator(validfloat))
         self.txt_rng_max.SetValidator(FormatValidator(validfloat))
         self.chk_ticks_hide = wx.CheckBox(self, -1, name='ticks_hide')
-        self.cho_labelpos = wx.Choice(self, choices=['bottom', 'top'], name='labelpos')
+        self.cho_labelpos = wx.Choice(self, size=(80,-1), choices=['bottom', 'top'], name='labelpos')
         self.cho_labelpos.SetSelection(0)
         self.cho_tdir = wx.Choice(self, choices=['in', 'out'], name='tdir')
         self.cho_tdir.SetSelection(0)
+        self.bmp_axiscolor = wx.StaticBitmap(self, bitmap=wx.Bitmap(15, 15), size=(15, 15), style=wx.NO_BORDER)
+        self.btn_axiscolorchooser = wx.Button(self, label='Select')
 
         self.btn_add_twinx = wx.Button(self, label='Add twin x', name='twinx')
         self.btn_add_twiny = wx.Button(self, label='Add twin y', name='twiny')
@@ -178,6 +180,10 @@ class AxesControlPanel(WithMessage, wx.Panel):
         Add(wx.StaticText(self, label='Tick direction'), (5,0))
         Add(self.cho_tdir, (5, 1))
 
+        Add(wx.StaticText(self, label='Line color'), (6,0))
+        Add(self.bmp_axiscolor, (6, 1))
+        Add(self.btn_axiscolorchooser, (6, 2))
+
         outer.Add(fb, 1, wx.TOP|wx.LEFT|wx.EXPAND, 5)
 
         self.SetSizer(outer)
@@ -190,6 +196,7 @@ class AxesControlPanel(WithMessage, wx.Panel):
         self.axes_list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
         self.axes_list.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnDeSelect)
         self.Bind(wx.EVT_IDLE, self.OnProcess)
+        self.btn_axiscolorchooser.Bind(wx.EVT_BUTTON, self.OnShowColorDlg)
 
     def _set_silent(self, state):
         self.SetEvtHandlerEnabled(not state)
@@ -206,6 +213,42 @@ class AxesControlPanel(WithMessage, wx.Panel):
         self.btn_add_inset.Enable(has_second and len(self.__axes_data) == 2)
         self.btn_add_twinx.Enable(has_second and len(self.__axes_data) == 2)
         self.btn_add_twiny.Enable(has_second and len(self.__axes_data) == 2)
+
+    def gen_bitmap(self, color=None):
+        size = self.bmp_axiscolor.GetSize()
+        w, h = size
+        bmp = wx.Bitmap(*size)
+        temp_dc = wx.MemoryDC()
+        temp_dc.SelectObject(bmp)
+        if color is None:
+            temp_dc.SetPen(wx.Pen(wx.WHITE))
+            temp_dc.SetBrush(wx.Brush(wx.WHITE, wx.SOLID))
+            temp_dc.DrawRectangle(0, 0, w, h)
+            temp_dc.SetPen(wx.Pen(wx.LIGHT_GREY))
+            temp_dc.DrawLine(0, 0, w, h)
+            temp_dc.DrawLine(0, h, w, 0)
+        else:
+            temp_dc.SetPen(wx.Pen(wx.Colour(*color)))
+            temp_dc.SetBrush(wx.Brush(wx.Colour(*color), wx.SOLID))
+            temp_dc.DrawRectangle(0, 0, w, h)
+        temp_dc.SelectObject(wx.NullBitmap)
+        return bmp
+
+    def OnShowColorDlg(self, evt):
+        cd = wx.ColourData()
+        c = (np.asarray(str2color(self.__axes_data[self.selection[0]].color))*255).astype(int)
+        cd.SetColour(wx.Colour(c))
+        dlg  = wx.ColourDialog(self, cd)
+
+        if dlg.ShowModal() == wx.ID_OK:
+            color = dlg.GetColourData().GetColour()
+            colormpl = np.around(np.asarray(color, dtype=float)/255, 2).tolist()
+
+            ld = self.__axes_data
+            for s in self.selection:
+                setattr(ld[s], 'color', color2str(colormpl[:3]))
+            self.bmp_axiscolor.SetBitmap(self.gen_bitmap(color))
+        pub.sendMessage((self.instid, 'axesattrs', 'changed'))
 
     def OnCheck(self, evt):
         obj = evt.GetEventObject()
@@ -284,6 +327,11 @@ class AxesControlPanel(WithMessage, wx.Panel):
         self.cho_tdir.SetSelection(self.cho_tdir.FindString(self.__axes_data[self.selection[0]].tdir))
         self.chk_ticks_hide.SetValue(self.__axes_data[self.selection[0]].ticks_hide)
 
+        color = str2color(self.__axes_data[self.selection[0]].color)
+        color = (np.asarray(color)*255).astype(int)
+        self.bmp_axiscolor.SetBitmap(self.gen_bitmap(color))
+        self.Refresh()
+
         self.silent = False
 
 class LineControlPanel(WithMessage, wx.Panel):
@@ -306,13 +354,11 @@ class LineControlPanel(WithMessage, wx.Panel):
         self.spn_linewidth = wx.SpinCtrlDouble(self, min=0.5, initial=1, max=50, inc=0.5, size=(100,-1), name='linewidth')
         self.cho_marker = wx.Choice(self, size=(100,-1), name='marker')
         self.spn_markersize = wx.SpinCtrl(self, min=2, initial=8, max=50, size=(100,-1), name='markersize')
-        self.txt_linecolor = wx.TextCtrl(self, value='', size=(100,-1), name='color')
-        self.txt_linecolor.Hide()
         self.chk_show = wx.CheckBox(self, label='', name='show')
         self.chk_show.SetValue(True)
 
-        self.bmp_linecolor = wx.StaticBitmap(self, bitmap=wx.Bitmap(15,15), size=(15,15), style=wx.NO_BORDER)
         self.spn_alpha = wx.SpinCtrlDouble(self, min=0.1, initial=1, max=1, inc=0.1, name='alpha', size=(100, -1))
+        self.bmp_linecolor = wx.StaticBitmap(self, bitmap=wx.Bitmap(15,15), size=(15,15), style=wx.NO_BORDER)
         self.btn_linecolorchooser = wx.Button(self, label='Select')
         #self.btn_linecolorchooser = PenStyleComboBox(self, choices=penStyles, style=wx.CB_READONLY)
         self.btn_linecolorrange = wx.Button(self, label='Waterfall')
@@ -340,7 +386,6 @@ class LineControlPanel(WithMessage, wx.Panel):
 
         grd.Add(wx.StaticText(self, label='Line color'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
         hb = wx.BoxSizer(wx.HORIZONTAL)
-        hb.Add(self.txt_linecolor, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
         hb.Add(self.bmp_linecolor, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
         hb.Add(self.btn_linecolorchooser, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
         hb.Add(self.btn_linecolorrange, 0, wx.ALIGN_CENTER_VERTICAL)
@@ -413,10 +458,10 @@ class LineControlPanel(WithMessage, wx.Panel):
     def OnColorRangeSelect(self, evt):
         self.dlg_colorrange.Hide()
         self.dlg_colorrange.list.Select(evt.Index, 0)
-
-        cmap_id = plt.colormaps()[evt.Index*2]
+        cmap_id = self.dlg_colorrange.list.GetItemText(evt.Index,0)
 
         ld = self.__line_data
+
         for n,(sel, ci) in enumerate(zip(*(sorted(self.selection), np.linspace(0,1,len(self.selection))))):
             color = mpl.cm.get_cmap(cmap_id)(ci)
             setattr(ld[sel], 'color', color2str(color[:-1]))
@@ -585,6 +630,8 @@ class ControlFrame(WithMessage,wx.Frame):
             style |= wx.FRAME_FLOAT_ON_PARENT
         wx.Frame.__init__(self, parent, style=style, pos=_pos[0])
         WithMessage.__init__(self)
+
+        print('control frame init')
 
         self.setup_controls()
         self.set_tooltips()

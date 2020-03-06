@@ -177,8 +177,8 @@ class PlotData(object):
     def init_axes_data(self, data=None):
         if data is None:
             data = KeyList()
-            data.append(AxesData('x', 'x label', 'bottom', '', '', 'linear', False, 3, '', '', 'in'))
-            data.append(AxesData('y', 'y label', 'left', '', '', 'linear', False, -1, '', '', 'in'))
+            data.append(AxesData('x', 'x label', 'bottom', '', '', 'linear', False, 3, '', '', 'in', '0, 0, 0'))
+            data.append(AxesData('y', 'y label', 'left', '', '', 'linear', False, -1, '', '', 'in', '0, 0, 0'))
             #data.append(AxesData('twinx', 'y label', 'left', '', '', 'linear', False, -1, '', '', 'in'))
         else:
             data = KeyList(data)
@@ -291,15 +291,18 @@ def str2color(arg):
 class AxesData:
     # ex_types are the kwargs understood by figure.plot
     _ex_types = [str, str, str, float, float, str, bool,
-                 int, str, str, str]
+                 int, str, str, str,
+                 str2color]
 
     # in types are used to parse the xml data
     _in_types = [str, str, str, str, str, str, textbool,
-                 int, str, str, str]
+                 int, str, str, str,
+                 str]
 
     _attrs = ['type', 'label', 'labelpos', 'min', 'max', 'scale',
               'ticks_hide', 'ticks_prec',
-              'ticks_major', 'ticks_minor', 'tdir'
+              'ticks_major', 'ticks_minor', 'tdir',
+              'color'
               ]
 
     def __init__(self, *args):
