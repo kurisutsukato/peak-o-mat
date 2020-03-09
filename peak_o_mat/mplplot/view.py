@@ -65,7 +65,7 @@ class CmpDlg(wx.MiniFrame):
         self.il = wx.ImageList(w, h)
 
         ids = []
-        for n,cmap_id in enumerate(plt.colormaps()[::2]):
+        for n,cmap_id in enumerate(plt.colormaps()[:20:2]):
             col_map = mpl.cm.get_cmap(cmap_id)
             if np.alltrue(np.asarray(col_map(1)) > 0.7) or np.alltrue(np.asarray(col_map(0)) > 0.7):
                 continue
@@ -144,6 +144,13 @@ class AxesControlPanel(WithMessage, wx.Panel):
         self.btn_add_inset = wx.Button(self, label='Add inset', name='inset')
         self.btn_remove = wx.Button(self, label='Remove axis', name='remove')
 
+        self.pan_box = wx.Panel(self)
+
+        self.spn_left = wx.SpinCtrl(self.pan_box, value='', min=1, max=99, size=(50,-1), name='left')
+        self.spn_bottom = wx.SpinCtrl(self.pan_box, value='', min=1, max=99, size=(50,-1), name='bottom')
+        self.spn_width = wx.SpinCtrl(self.pan_box, value='', min=1, max=99, size=(50,-1), name='width')
+        self.spn_height = wx.SpinCtrl(self.pan_box, value='', min=1, max=99, size=(50,-1), name='height')
+
     def layout(self):
         outer = wx.BoxSizer(wx.HORIZONTAL)
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -156,7 +163,6 @@ class AxesControlPanel(WithMessage, wx.Panel):
         outer.Add(vbox, 0, wx.ALL | wx.EXPAND, 5)
 
         fb = wx.GridBagSizer(hgap=10, vgap=5)
-
         def Add(*args, **kwargs):
             fb.Add(*args, **kwargs, flag=wx.ALIGN_CENTER_VERTICAL)
 
@@ -184,7 +190,20 @@ class AxesControlPanel(WithMessage, wx.Panel):
         Add(self.bmp_axiscolor, (6, 1))
         Add(self.btn_axiscolorchooser, (6, 2))
 
-        outer.Add(fb, 1, wx.TOP|wx.LEFT|wx.EXPAND, 5)
+        outer.Add(fb, 0, wx.TOP|wx.LEFT|wx.EXPAND, 5)
+
+        fb = wx.GridBagSizer(hgap=10, vgap=5)
+
+        Add(wx.StaticText(self.pan_box, label='Left (%)'), (0,0))
+        Add(self.spn_left, (0,1))
+        Add(wx.StaticText(self.pan_box, label='Bottom (%)'), (1,0))
+        Add(self.spn_bottom, (1,1))
+        Add(wx.StaticText(self.pan_box, label='Width (%)'), (2,0))
+        Add(self.spn_width, (2,1))
+        Add(wx.StaticText(self.pan_box, label='Height (%)'), (3,0))
+        Add(self.spn_height, (3,1))
+        self.pan_box.SetSizer(fb)
+        outer.Add(self.pan_box, 0, wx.TOP|wx.LEFT|wx.EXPAND, 5)
 
         self.SetSizer(outer)
         self.Layout()
@@ -202,8 +221,9 @@ class AxesControlPanel(WithMessage, wx.Panel):
         self.SetEvtHandlerEnabled(not state)
     silent = property(fset=_set_silent)
 
-    def associate_model(self, axes_data, has_second=False):
+    def associate_model(self, axes_data, has_second=False, box=None):
         self.__axes_data = axes_data
+        self.__box = box
         self.selection = []
         self.axes_list.ClearAll()
         for ax in axes_data:
@@ -265,8 +285,12 @@ class AxesControlPanel(WithMessage, wx.Panel):
 
         ad = self.__axes_data
         s = self.selection[0]
-        setattr(ad[s], item, obj.Value)
-        pub.sendMessage((self.instid, 'axesattrs', 'changed'))
+        if item in ['left','bottom','width','height']:
+            setattr(self.__box, item, obj.Value)
+            pub.sendMessage((self.instid, 'plotattrs', 'changed'))
+        else:
+            setattr(ad[s], item, obj.Value)
+            pub.sendMessage((self.instid, 'axesattrs', 'changed'))
 
     def OnAxesAttrChoice(self, evt):
         obj = evt.GetEventObject()
@@ -281,6 +305,7 @@ class AxesControlPanel(WithMessage, wx.Panel):
 
     def OnProcess(self, evt):
         self.btn_remove.Enable(self.selection not in [[0],[1]])
+        self.pan_box.Show(self.axes_list.ItemCount == 4)
 
         if len(self.__process_queue) > 0:
             self.__process_queue[0]()
@@ -310,11 +335,11 @@ class AxesControlPanel(WithMessage, wx.Panel):
                     'insety': ['left','right'],
                     'insetx': ['bottom','top'],
                     }
+
         self.cho_labelpos.Clear()
         self.cho_labelpos.AppendItems(labelpos[self.__axes_data[self.selection[0]].type])
 
         self.txt_rng_min.ChangeValue(self.__axes_data[self.selection[0]].min)
-
         self.txt_rng_max.ChangeValue(self.__axes_data[self.selection[0]].max)
 
         self.txt_label.ChangeValue(self.__axes_data[self.selection[0]].label)
@@ -330,6 +355,9 @@ class AxesControlPanel(WithMessage, wx.Panel):
         color = str2color(self.__axes_data[self.selection[0]].color)
         color = (np.asarray(color)*255).astype(int)
         self.bmp_axiscolor.SetBitmap(self.gen_bitmap(color))
+
+        for dim in ['left','bottom','width','height']:
+            getattr(self, 'spn_{}'.format(dim)).Value = str(getattr(self.__box, dim))
         self.Refresh()
 
         self.silent = False
@@ -631,8 +659,6 @@ class ControlFrame(WithMessage,wx.Frame):
         wx.Frame.__init__(self, parent, style=style, pos=_pos[0])
         WithMessage.__init__(self)
 
-        print('control frame init')
-
         self.setup_controls()
         self.set_tooltips()
         self.layout()
@@ -700,7 +726,7 @@ class ControlFrame(WithMessage,wx.Frame):
                 ds_names.extend(['s{:d} {}'.format(n, q.name) for n,q in enumerate(mpmodel.project[mpmodel.selected.plot_ref_secondary])])
             self.line_control.associate_model(mpmodel.selected.line_data, ds_names)
             self.axes_control.associate_model(mpmodel.selected.axes_data,
-                                              has_second=mpmodel.selected.plot_ref_secondary is not None)
+                                              has_second=mpmodel.selected.plot_ref_secondary is not None, box=mpmodel.selected.box)
 
             self.chk_legend.Value = mpmodel.selected.legend_show
             self.spn_legend_fontsize.Value = mpmodel.selected.legend_fontsize
