@@ -143,7 +143,7 @@ class PlotController(object):
     def add_remove_axes(self, name, selection):
         ad = self.model.selected.axes_data
         if name == 'remove':
-            ad.pop(selection)
+            ad[:] = ad[:2]
         elif name in ['twinx', 'twiny']:
             tp = name[-1]
             labelpos = dict([('y', 'top'), ('x', 'right')])
@@ -288,8 +288,30 @@ class PlotController(object):
                         except (AttributeError, KeyError): #KeyError happens if second plot was not defined yet but axis exists
                             continue
                         set_axis_attributes(twiny, 'x', pm.axes_data['twiny'])
-                    elif 'inset' in pm.axes_data:
-                        inset = ax.inset_axes(pm.axes_data['inset'].bounds)
+                    elif 'insetx' in pm.axes_data:
+                        if hasattr(ax, 'myinset'):
+                            print('found inset')
+                            inset = ax.myinset
+                            print(pm.box.bnds())
+                            inset.position = pm.box.bnds()
+                        else:
+                            inset = ax.inset_axes(pm.box.bnds())
+                            ax.myinset = inset
+                        try:
+                            if len(inset.lines) == 0 or self.__needs_update:
+                                for s, style in pm.secondary():
+                                    inset.plot(s.x, s.y, **style.kwargs())
+                            else:
+                                if update_selected and pm != self.model.selected:
+                                    print('skip non selected')
+                                    continue
+                                for line,(s,style) in zip(inset.lines,pm.secondary()):
+                                    for attr,value in style.kwargs().items():
+                                        getattr(line, 'set_{}'.format(attr))(value)
+                        except (AttributeError, KeyError): #KeyError happens if second plot was not defined yet but axis exists
+                            continue
+                        set_axis_attributes(inset, 'x', pm.axes_data['insetx'])
+                        set_axis_attributes(inset, 'y', pm.axes_data['insety'])
 
         self.__needs_update = False
 

@@ -76,9 +76,13 @@ class Interactor:
 
         Publisher.subscribe(self.pubOnRedraw, (self.view.instid, 'lineattrs','changed'))
         Publisher.subscribe(self.pubOnRedraw, (self.view.instid, 'axesattrs','changed'))
+        Publisher.subscribe(self.pubOnRedrawForce, (self.view.instid, 'plotattrs','changed'))
 
     def pubOnRedraw(self):
         self.controller.redraw(update_selected=True, force=False)
+
+    def pubOnRedrawForce(self):
+        self.controller.redraw(update_selected=True, force=True)
 
     def OnReorderPlots(self, evt):
         evt.Skip()

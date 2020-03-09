@@ -60,12 +60,32 @@ class DoubleList(list):
     def add_second(self, data):
         self.sec = data
 
+class Box:
+    def __init__(self, *args):
+        if len(args) == 4:
+            self.left, self.bottom, self.width, self.height = args
+        else:
+            self.left, self.bottom, self.width, self.height = 60, 60, 35, 35
+
+    def to_xml(self):
+        return ','.join([str(q) for q in [self.left, self.bottom, self.width, self.height]])
+
+    @classmethod
+    def from_xml(cls, xmlattr):
+        try:
+            return cls(*[int(q) for q in xmlattr.split(',')])
+        except AttributeError:
+            return cls()
+
+    def bnds(self):
+        return [self.left/100, self.bottom/100, self.width/100, self.height/100]
+
 class PlotData(object):
-    _attrs = ['legend_show', 'legend_fontsize', 'legend_position', 'fontsize', 'label_title', 'legend_frameon']
+    _attrs = ['legend_show', 'legend_fontsize', 'legend_position', 'fontsize', 'label_title', 'legend_frameon', 'box']
 
-    _types = [textbool, int, int, int, string, textbool]
+    _types = [textbool, int, int, int, string, textbool, Box.from_xml]
 
-    _defaults = [False, 12, 0, 10, '', True]
+    _defaults = [False, 12, 0, 10, '', True, None]
 
     def __del__(self):
         #print('pd destructor')
@@ -160,7 +180,11 @@ class PlotData(object):
     def to_xml(self):
         settings = {}
         for attr in self._attrs:
-            settings[attr] = str(getattr(self, attr))
+            if attr == 'box':
+                if len(self.axes_data) == 4:
+                    settings[attr] = getattr(self, attr).to_xml()
+            else:
+                settings[attr] = str(getattr(self, attr))
         ldpri = ['|'.join([str(q) for q in line]) for line in self.line_data.pri]
         ldsec = ['|'.join([str(q) for q in line]) for line in self.line_data.sec]
         ad = ['|'.join([str(q) for q in ax]) for ax in self.axes_data]
@@ -287,6 +311,13 @@ def str2color(arg):
         return tuple([float(q) for q in items])
     else:
         return 0,0,0
+
+def str2tupleorNone(arg):
+    items = re.findall(r'(?:^|,)([^,]*)(?=,|$)',arg)
+    if len(items) > 1:
+        return tuple([float(q) for q in items])
+    else:
+        return None
 
 class AxesData:
     # ex_types are the kwargs understood by figure.plot
@@ -534,11 +565,12 @@ class MultiPlotModel(dict):
         return ret
 
 if __name__ == '__main__':
-    a = DoubleList([1,2,3],[6,7,8,9])
-    a.pri = ['a','b','c']
-    for k in a:
-        print(k)
+    from peak_o_mat.project import Project
+    p = Project()
+    p.load('../../tata.lpj')
 
-    from copy import deepcopy
-    b = deepcopy(a)
-    print(b.pri, b.sec)
+
+
+
+
+
