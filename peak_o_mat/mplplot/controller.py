@@ -102,7 +102,7 @@ class PlotController(object):
         self.model = model
 
         modified = model.modified
-
+        print('plot controller __init__ model.shape',self.model.shape)
         self.view.update_from_model(self.model)
         self.view.init_pop(self.model)
 
@@ -111,7 +111,8 @@ class PlotController(object):
         if modified:
             self.view.show_model_changed()
 
-        self.new_shape((1,1))
+        if self.model.shape == (0,0):
+            self.new_shape((1,1))
 
     def close(self):
         self.model.update_from_view(self.view)
@@ -201,7 +202,7 @@ class PlotController(object):
             self.t.start()
 
     def _redraw(self, update_selected=False, force=False):
-        print('_redraw, update:{}, force:{}'.format(update_selected, force))
+        #print('_redraw, update:{}, force:{}'.format(update_selected, force))
         #self.__needs_update = force
         #if not force and not self.model.update_from_view(self.view):
         #    print 'not modified'

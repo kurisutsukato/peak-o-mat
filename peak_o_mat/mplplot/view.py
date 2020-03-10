@@ -222,6 +222,7 @@ class AxesControlPanel(WithMessage, wx.Panel):
     silent = property(fset=_set_silent)
 
     def associate_model(self, axes_data, has_second=False, box=None):
+        assert box is not None
         self.__axes_data = axes_data
         self.__box = box
         self.selection = []
@@ -715,11 +716,12 @@ class ControlFrame(WithMessage,wx.Frame):
         self.spn_height.Value = mpmodel.height
 
         if mpmodel.selected is None:
+            print('controlframe update_from_model no selection model.shape', mpmodel.shape)
             self.plot_layout.update_from_model(mpmodel)
             self.enable_edit(False)
         else:
             self.enable_edit(True)
-
+            print('controlframe update_from_model model.shape', mpmodel.shape)
             self.plot_layout.update_from_model(mpmodel)
             ds_names = ['s{:d} {}'.format(n, q.name) for n,q in enumerate(mpmodel.project[mpmodel.selected.plot_ref])]
             if mpmodel.selected.plot_ref_secondary is not None:
