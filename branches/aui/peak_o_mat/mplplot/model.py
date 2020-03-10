@@ -141,6 +141,7 @@ class PlotData(object):
 
         for attr, default in zip(self._attrs, self._defaults):
             setattr(self, attr, default)
+        self.box = Box()
 
     def add_secondary(self, plot):
         self.project[plot].add_ref(self.uuid)

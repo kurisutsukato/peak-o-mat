@@ -721,15 +721,17 @@ class Project(LData):
                 #fig_elem = ET.SubElement(root, 'figure')
                 ref, ref_secondary, settings, linedata_pri, linedata_sec, axesdata = pd.to_xml()
                 fig_elem.attrib['plotref'] = ref
-                fig_elem.attrib['plotref_secondary'] = ref_secondary
+                if ref_secondary is not None:
+                    fig_elem.attrib['plotref_secondary'] = ref_secondary
                 sett_elem = ET.SubElement(fig_elem, 'settings')
                 for k,v in settings.items():
                     elem = ET.SubElement(sett_elem,k)
                     elem.text = v
                 data_elem = ET.SubElement(fig_elem, 'linedata')
                 data_elem.text = '\n'.join(linedata_pri)
-                data_elem = ET.SubElement(fig_elem, 'linedata')
-                data_elem.text = '\n'.join(linedata_sec)
+                if ref_secondary is not None:
+                    data_elem = ET.SubElement(fig_elem, 'linedata')
+                    data_elem.text = '\n'.join(linedata_sec)
                 data_elem = ET.SubElement(fig_elem, 'axesdata')
                 data_elem.text = '\n'.join(axesdata)
 

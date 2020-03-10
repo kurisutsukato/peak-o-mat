@@ -254,7 +254,7 @@ class PlotLayout(wx.Panel):
         self.SetSizer(b)
 
     def update_from_model(self, mpmodel):
-        print('plotlayout: update from model')
+        print('plotlayout: update from model, mpmodel.shape',mpmodel.shape)
         rows,cols = mpmodel.shape
 
         self.ch_rows.SetSelection(max(0,rows-1))
