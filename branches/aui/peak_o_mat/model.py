@@ -18,7 +18,7 @@ from .symbols import pom_globals
 class UnknownToken(Exception):
     pass
 
-tokre = re.compile(r"([+*\s]*)([A-Z]+[0-9]*)")
+tokre = re.compile(r"([,+*\s]*)([A-Z]+[0-9]*)")
 
 def ireduce(func, iterable, init=None):
     iterable = iter(iterable)
@@ -110,7 +110,7 @@ class ModelTableProxy(list):
         return len(self),6
     shape = property(_get_shape)
 
-class Model(list):
+class BaseModel(list):
     """
     List type class to store the fit model and parameters. The list items are
     the model's 'components', e.g. CB, GA, etc.
@@ -121,7 +121,7 @@ class Model(list):
 tokens: a space separated list of valid function symbols
 """
         list.__init__(self)
-        self.ok = False
+        self.ok = False # True if analyze() was succesful
         self.parser = None
         self.parsed = False
         self.func = None
@@ -130,7 +130,7 @@ tokens: a space separated list of valid function symbols
 
         if tokens.isupper() or tokens == '' or lineshapebase.lineshapes.known(tokens):
             self.predefined = True
-            self.tokens = tokens
+            self.tokens = tokens.strip()
         else:
             self.predefined = False
             self.tokens = 'CUSTOM'
@@ -167,11 +167,10 @@ tokens: a space separated list of valid function symbols
     def __getattr__(self, attr):
         if attr.startswith('__') and attr.endswith('__'):
             return super(Model, self).__getattr__(attr)
-        if hasattr(self, 'tokens') and self.tokens is not None and attr in self.tokens.split(' '):
-            self.parse()
-            return list.__getitem__(self,self.tokens.split(' ').index(attr))
-        else:
-            raise AttributeError('%s has no Attribute \'%s\''%(repr(self),attr))
+        for q in self:
+            if q.name == attr:
+                return q
+        raise AttributeError('%s has no Attribute \'%s\''%(repr(self),attr))
 
     def __getitem__(self, item):
         if type(item) in (int,slice):
@@ -199,7 +198,7 @@ tokens: a space separated list of valid function symbols
 
     @property
     def coupled_model(self):
-        commas_found = reduce(lambda a, b: a + b, [q.num_coupling for q in self])
+        commas_found = reduce(lambda a, b: a + b, [q.num_coupling for q in self], 0)
         return commas_found+1 if commas_found > 0 else 0
 
     def analyze(self):
@@ -324,7 +323,7 @@ tokens: a space separated list of valid function symbols
                     return False
             return True
 
-    def parse(self):
+    def _parse(self):
         """\
         Starts the parser. Needed before every other operation.
         """
@@ -497,11 +496,157 @@ Update the model with the results from a fit.
 
         return lines
 
-class TokParser(object):
-    def __init__(self, model, pstr, fstr=None):
+class CustomModel(BaseModel):
+    predefined = False
+
+    def __init__(self, tokens, listener=None):
+        self.tokens = 'CUSTOM'
+        self.func = tokens.strip()
+        self.ok = False
+
+    def __str__(self):
+        return 'custom model: {}'.format(self.func)
+
+    def analyze(self):
+        names = []
+        txt = ''
+        self.ok = False
+
+        try:
+            self.parse()
+        except SyntaxError:    # raises only if forbidden characters are encountered
+            txt = 'Invalid model (SyntaxError)'
+        else:
+            names = self.get_parameter_names()
+            try:
+                ev = QuickEvaluate(self)
+                out = ev(np.array([-2,1]),np.zeros(len(names)))
+            except SyntaxError:
+                txt = 'Incomplete or invalid model.'
+            except TypeError as err:
+                tpe, val, tb = sys.exc_info()
+                if str(val).find('bad operand') != -1:
+                    txt = 'Incomplete or invalid model.'
+                else:
+                    txt = 'TypeError: %s'%err
+            except NameError as err:
+                txt = 'NameError: %s'%err
+            except AttributeError as err:
+                txt = 'AttributeError: %s'%err
+                pass
+            except ValueError as err:
+                txt = 'ValueError: %s'%err
+            else:
+                if len(list(self['CUSTOM'].keys())) > 0 and self['CUSTOM'].has_x:
+                    txt = 'Model valid.'
+                    self.ok = True
+                elif not self['CUSTOM'].has_x:
+                    txt = "'x' is missing from model definition."
+                else:
+                    txt = 'No fit parameters found.'
+        self.parsed = False
+        self[:] = []
+        return txt,names
+
+    def parse(self):
+        self.append(Component(self.func, '+', 0))
+        self.parsed = True
+
+class CoupledModel(BaseModel):
+    func = None
+    predefined = True
+
+    def __init__(self, tokens, listener=None):
+        self.ok = False  # True if analyze() was succesful
+        self.parsed = False
+        self.listener = listener
+
+        self.tokens = tokens.strip()
+
+    def __str__(self):
+        return ' '.join([str(q) for q in self])
+
+    def parse(self):
+        if self.parsed or self.tokens == '':
+            return
+
+        self[:] = []
+        count = 0
+        comp = None
+        for op, token in tokre.findall(self.tokens):
+            if op.strip() == '':
+                op = '+'
+            syms = {} if comp is None else comp.symbol_map
+            comp = Component(token, op, count, repeated_symbols=syms)
+            self.append(comp)
+            count += len(comp)
+
+    def analyze(self):
+        names = []
+        self.ok = False
+
+        if self.tokens != '' and not lineshapebase.lineshapes.known(self.tokens):
+            txt = 'Unknown tokens.'
+        else:
+            txt = 'Model valid.'
+            self.ok = True
+
+        return txt, names
+
+class TokenModel(BaseModel):
+    func = None
+    predefined = False
+
+    def __init__(self, tokens, listener=None):
+        self.ok = False  # True if analyze() was succesful
+        self.parsed = False
+        self.listener = listener
+
+        self.tokens = tokens.strip()
+
+    def __str__(self):
+        return ' '.join([str(q) for q in self])
+
+    def parse(self):
+        if self.parsed or self.tokens == '':
+            return
+
+        self[:] = []
+        count = 0
+        comp = None
+        for op, token in tokre.findall(self.tokens):
+            if op.strip() == '':
+                op = '+'
+            comp = Component(token, op, count)
+            self.append(comp)
+            count += len(comp)
+
+    def analyze(self):
+        names = []
+        self.ok = False
+
+        if self.tokens != '' and not lineshapebase.lineshapes.known(self.tokens):
+            txt = 'Unknown tokens.'
+        else:
+            txt = 'Model valid.'
+            self.ok = True
+
+        return txt, names
+
+def Model(modelstring):
+    if tokre.match(modelstring) is None:
+        #print('creating custommodel')
+        return CustomModel(modelstring)
+    elif lineshapebase.lineshapes.known(modelstring):
+        if modelstring.find(',') != -1:
+            return CoupledModel(modelstring)
+        else:
+          return TokenModel(modelstring)
+
+class _TokParser(object):
+    def __init__(self, model, pstr):
         self.model = model
         self.pstr = pstr
-        self.fstr = fstr
         self.ntok = 0
         self.parse()
         self.parsed = True
@@ -512,17 +657,14 @@ class TokParser(object):
         if op in ['',' ']:
             op = '+'
         self.ntok += 1
-        if not tok.isupper() or tok == 'CUSTOM':
-            return self.fstr,op
-        else:
-            return tok,op
+        return tok,op
 
     def parse(self):
         self.function = ''
         
         scanner = Scanner([
-            (r"[\+\*\s]*[A-Z]+[0-9]*", self.funcstr),
-            (r"\+|\*", lambda y,x: x),
+            (r"[,+*\s]*[A-Z]+[0-9]*", self.funcstr),
+            (r"\+|\*\,", lambda y,x: x),
             (r"\s+", None),
             ])
 
@@ -538,10 +680,9 @@ class TokParser(object):
             count += len(comp)
         
 class Component(dict):
-    def __init__(self, tok, op, count):
-        dict.__init__(self)
-
+    def __init__(self, tok, op, count, repeated_symbols={}):
         self.has_x = False
+        self.repeated_symbols = repeated_symbols
 
         self._plevel = 0
         self.num_coupling = 0
@@ -563,13 +704,11 @@ class Component(dict):
         self.parse()
 
     def __str__(self):
-        #pars = ', '.join(['{}={:.4g}'.format(q,p.value) for q,p in self.items()])
-        #return '{}: {}'.format(self.name,pars)
         return self.name
 
-    #@property
-    #def coupled_model(self):
-    #    return self.num_coupling
+    @property
+    def symbol_map(self):
+        return dict([(q, self[q].count) for q in self.keys()])
 
     def clear(self):
         for k in self.keys():
@@ -577,13 +716,15 @@ class Component(dict):
             self[k].error = 0.0
 
     def var_found(self,scanner,name):
-        if name not in list(self.keys()):
+        if name not in list(self.keys())+list(self.repeated_symbols.keys()):
             self[name] = Var(np.nan, count=self.count)
             self.dummy.append(name)
             ret = 'a[%d]'%self.count
             self.count += 1
-        else:
-            ret = 'a[%d]'%(self.dummy.index(name)+self.par_count_start)
+        elif name in self.keys():
+            ret = 'a[{:d}]'.format(self.dummy.index(name)+self.par_count_start)
+        elif name in self.repeated_symbols.keys():
+            ret = 'a[{:d}]'.format(self.repeated_symbols[name])
         return ret
 
     def x_found(self, p, x):
@@ -741,6 +882,7 @@ class QuickEvaluate(object):
     def pre_fit(self):
         func = ''
         replace = re.compile(r'(c)(?=[^a-zA-Z0-9])')
+        print('quickevaluate prefit', self.model)
         for component in self.model:
             func += component.op+component.code
        
@@ -817,8 +959,28 @@ def dm():
     import numpy as np
     print(m.evaluate(np.linspace(0,10,5)))
 
+def commamodels():
+    a = Model('CB GA LO')
+    a.analyze()
+    a.parse()
+    for q in a:
+        print(q.name, q.code)
+    print(a.coupled_model)
+    a = Model('CB,GA,LO')
+    a.analyze()
+    a.parse()
+    for q in a:
+        print(q.name, q.code)
+    print(a.coupled_model)
+    a = Model('a*x,b*x+a')
+    a.analyze()
+    a.parse()
+    for q in a:
+        print(q.name, q.code)
+    print(a.coupled_model)
+
 if __name__ == '__main__':
-    dm()
+    commamodels()
 
 
 

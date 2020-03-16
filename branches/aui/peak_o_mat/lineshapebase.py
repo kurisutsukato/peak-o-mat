@@ -83,7 +83,9 @@ class LineShapes(StripDict):
         return StripList(out)
 
     def known(self, tokens):
-        for i in re.split('\s+|\*|\+', tokens.strip()):
+        if tokens == '':
+            return True
+        for i in re.split('\s+|\*|\+|,', tokens.strip()):
             if i not in self:
                 return False
         return True

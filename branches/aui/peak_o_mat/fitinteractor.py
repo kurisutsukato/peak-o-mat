@@ -42,6 +42,7 @@ class FitInteractor(object):
         self.view.Bind(misc_ui.EVT_GOTPARS, self.OnGotPars)
         #TODO: ist das in Ordnung so?
         wx.GetTopLevelParent(self.view).Bind(misc_ui.EVT_GOTPARS, self.OnGotPars)
+
         self.view.Bind(misc_ui.EVT_RESULT, self.OnFitResult)
         self.view.Bind(misc_ui.EVT_BATCH_STEP, self.OnBatchfitStep)
 
