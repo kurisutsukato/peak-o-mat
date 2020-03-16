@@ -273,9 +273,11 @@ class PlotLayout(wx.Panel):
 
             select(self.ch_plot_pri, pd.plot_ref)
             select(self.ch_plot_sec, pd.plot_ref_secondary)
+            self.ch_plot_sec.Enable(pd.plot_ref is not None)
         else:
             select(self.ch_plot_pri, None)
             select(self.ch_plot_sec, None)
+            self.ch_plot_sec.Enable(False)
 
     def set_plot_choices(self, choices, clientdata):
         for ch in self.ch_plot_pri, self.ch_plot_sec:
