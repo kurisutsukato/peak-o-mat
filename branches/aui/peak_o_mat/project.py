@@ -370,7 +370,7 @@ def xmlmod2mod(element, lastmod=None):
             model = Model(tokens)
             model.parse()
             model.evaluate([-1,1])
-        except (KeyError, NameError, UnknownToken) as err:
+        except (KeyError, UnknownToken) as err:
             warn.append(err)
             model = None
             return model, warn
@@ -515,7 +515,6 @@ class Project(LData):
 
                     for set_elem in elem.findall('set'):
                         self.lastset = self[self.lastplot].add(xmlset2set(set_elem))
-
 
                         for trafo_elem in set_elem.findall('trafo'):
                             name, attrs = trafo_elem.tag, trafo_elem.attrib

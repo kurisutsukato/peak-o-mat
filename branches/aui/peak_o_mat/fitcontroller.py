@@ -211,14 +211,14 @@ class FitController(object):
         if self.model is not None:
             msg, pars = self.model.analyze()
             if not self.model.predefined:
-                self.message('custom model')
+                self.message('Custom model')
                 if len(pars) > 0:
                     msg += '\n\nFit parameters: '+', '.join(pars)
                 self.view.pan_model.lab_peakinfo.Value = msg
             else:
                 self.view.pan_model.lab_peakinfo.Value = msg
-                self.message(msg)
-        
+                self.message('')
+
     def new_tokens(self, tokens):
         #print 'new tokens', tokens
         mod = model.Model(tokens)
