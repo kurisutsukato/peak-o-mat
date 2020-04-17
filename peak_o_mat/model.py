@@ -18,7 +18,7 @@ from .symbols import pom_globals
 class UnknownToken(Exception):
     pass
 
-tokre = re.compile(r"([,+*\s]*)([A-Z]+[0-9]*)")
+tokre = re.compile(r"([,+\s]*)([A-Z]+[0-9]*)")
 
 def ireduce(func, iterable, init=None):
     iterable = iter(iterable)
@@ -121,7 +121,7 @@ class BaseModel(list):
 tokens: a space separated list of valid function symbols
 """
         list.__init__(self)
-        self.ok = False # True if analyze() was succesful
+        self.ok = False # True if check_model() was succesful
         self.parser = None
         self.parsed = False
         self.func = None
@@ -156,7 +156,7 @@ tokens: a space separated list of valid function symbols
         return cp.deepcopy(self)
 
     def __deepcopy__(self, memo):
-        m = Model('')
+        m = self.__class__('')
         for f in self:
             m.append(cp.deepcopy(f))
         m.tokens = self.tokens
@@ -166,7 +166,7 @@ tokens: a space separated list of valid function symbols
 
     def __getattr__(self, attr):
         if attr.startswith('__') and attr.endswith('__'):
-            return super(Model, self).__getattr__(attr)
+            return super(BaseModel, self).__getattr__(attr)
         for q in self:
             if q.name == attr:
                 return q
@@ -411,9 +411,9 @@ Update the model with the results from a fit.
 
         background = None
         
-        if self.parsed is False:
-            self.parse()
-            self.parsed = True
+        #if self.parsed is False:
+        #    self.parse()
+        #    self.parsed = True
 
         evaly = np.zeros((0,len(x)))
         newy = []
@@ -435,7 +435,7 @@ Update the model with the results from a fit.
                 continue #does never happen
             else:
                 if type(newy) == tuple:
-                    # double-y model
+                    # coupled model
                     return newy
                 if single and np.isfinite(newy).all():
                     if component.name in lineshapebase.lineshapes.background:
@@ -524,11 +524,12 @@ class CustomModel(BaseModel):
             except SyntaxError:
                 txt = 'Incomplete or invalid model.'
             except TypeError as err:
-                tpe, val, tb = sys.exc_info()
-                if str(val).find('bad operand') != -1:
-                    txt = 'Incomplete or invalid model.'
-                else:
-                    txt = 'TypeError: %s'%err
+                txt = 'Incomplete or invalid model.'
+                #tpe, val, tb = sys.exc_info()
+                #if str(val).find('bad operand') != -1:
+                #    txt = 'Incomplete or invalid model.'
+                #else:
+                #    txt = 'TypeError: %s'%err
             except NameError as err:
                 txt = 'NameError: %s'%err
             except AttributeError as err:
@@ -552,12 +553,13 @@ class CustomModel(BaseModel):
         self.append(Component(self.func, '+', 0))
         self.parsed = True
 
-class CoupledModel(BaseModel):
+class CoupledTokenModel(BaseModel):
     func = None
     predefined = True
+    coupled_model = True
 
     def __init__(self, tokens, listener=None):
-        self.ok = False  # True if analyze() was succesful
+        self.ok = False  # True if check_model() was succesful
         self.parsed = False
         self.listener = listener
 
@@ -580,25 +582,59 @@ class CoupledModel(BaseModel):
             comp = Component(token, op, count, repeated_symbols=syms)
             self.append(comp)
             count += len(comp)
+        self.parsed = True
 
     def analyze(self):
-        names = []
         self.ok = False
 
-        if self.tokens != '' and not lineshapebase.lineshapes.known(self.tokens):
-            txt = 'Unknown tokens.'
+        tokens = [p for q,p in tokre.findall(self.tokens)]
+        if self.tokens != '' and not lineshapebase.lineshapes.known(tokens):
+            txt = 'Coupled model.\n\nUnknown tokens.'
         else:
-            txt = 'Model valid.'
+            txt = 'Coupled model.\n\nModel valid.'
             self.ok = True
 
-        return txt, names
+        return txt, [] # empty list because this is a token model
+
+    def evaluate(self, x, restrict=None):
+        """\
+        Evaluate the current model at positions x.
+        single: if True, returns a list of all peaks evaluated
+                separately
+		restrict: list of tokens to be evaluated or None
+        """
+
+        x = np.atleast_1d(x)
+
+        if self.parsed is False:
+           self.parse()
+
+        evaly = np.zeros((0, len(x)))
+        newy = []
+
+        locs = {'x': x}
+
+        func = ','.join([comp.func for comp in self])
+
+        #qe = QuickEvaluate(self)
+
+        for component in self:
+            if restrict is not None and component.name not in restrict:
+                continue
+            for key, val in component.items():
+                locs[key] = val.value
+        try:
+            newy = eval(func, pom_globals, locs)
+        except (ValueError, TypeError, ZeroDivisionError) as msg:
+            pass
+        return newy
 
 class TokenModel(BaseModel):
     func = None
-    predefined = False
+    predefined = True
 
     def __init__(self, tokens, listener=None):
-        self.ok = False  # True if analyze() was succesful
+        self.ok = False  # True if check_model() was succesful
         self.parsed = False
         self.listener = listener
 
@@ -613,35 +649,98 @@ class TokenModel(BaseModel):
 
         self[:] = []
         count = 0
-        comp = None
         for op, token in tokre.findall(self.tokens):
             if op.strip() == '':
                 op = '+'
             comp = Component(token, op, count)
             self.append(comp)
             count += len(comp)
+        self.parsed = True
 
     def analyze(self):
-        names = []
         self.ok = False
 
-        if self.tokens != '' and not lineshapebase.lineshapes.known(self.tokens):
+        tokens = [p for q,p in tokre.findall(self.tokens)]
+        if self.tokens != '' and not lineshapebase.lineshapes.known(tokens):
             txt = 'Unknown tokens.'
         else:
             txt = 'Model valid.'
             self.ok = True
 
-        return txt, names
+        return txt, [] # empty list because this is a token model
+
+    def evaluate(self, x, single=False, addbg=False, restrict=None):
+        """\
+        Evaluate the current model at positions x.
+        single: if True, returns a list of all peaks evaluated
+                separately
+		restrict: list of tokens to be evaluated or None
+        """
+
+        x = np.atleast_1d(x)
+
+        background = None
+
+        if self.parsed is False:
+           self.parse()
+
+        evaly = np.zeros((0, len(x)))
+        newy = []
+
+        locs = {'x': x}
+
+        func = [','.join(comp.code for comp in self)]
+
+        for component in self:
+            if restrict is not None and component.name not in restrict:
+                continue
+            for key, val in component.items():
+                locs[key] = val.value
+            try:
+                newy = eval(component.func, pom_globals, locs)
+            except (ValueError, TypeError, ZeroDivisionError) as msg:
+                continue  # does never happen
+            else:
+                if single and np.isfinite(newy).all():
+                    if component.name in lineshapebase.lineshapes.background:
+                        background = newy
+                    evaly = np.vstack((np.asarray(evaly), newy))
+                    continue
+                if np.logical_not(np.isfinite(newy)).any():
+                    try:
+                        tmpy = np.zeros(newy.shape, float)
+                    except AttributeError:
+                        raise
+                    np.put(tmpy, np.isfinite(newy), np.compress(np.isfinite(newy), newy))
+                    newy = tmpy
+                if len(evaly) == 0:
+                    evaly = newy
+                else:
+                    evaly += newy
+
+        if single:
+            evaly = np.atleast_2d(evaly)
+
+        if single and addbg:
+            for n in range(evaly.shape[0]):
+                if background is not None:
+                    evaly[n] = evaly[n] + background
+            if background is not None:
+                evaly = evaly[1:]
+
+        return None if len(evaly) == 0 else evaly
 
 def Model(modelstring):
     if tokre.match(modelstring) is None:
-        #print('creating custommodel')
+        print('creating custommodel')
         return CustomModel(modelstring)
-    elif lineshapebase.lineshapes.known(modelstring):
+    else:
         if modelstring.find(',') != -1:
-            return CoupledModel(modelstring)
+            print('creating coupled model', tokre.findall(modelstring))
+            return CoupledTokenModel(modelstring)
         else:
-          return TokenModel(modelstring)
+            print('creating token model', tokre.findall(modelstring))
+            return TokenModel(modelstring)
 
 class _TokParser(object):
     def __init__(self, model, pstr):
@@ -681,6 +780,7 @@ class _TokParser(object):
         
 class Component(dict):
     def __init__(self, tok, op, count, repeated_symbols={}):
+        assert tok is not None
         self.has_x = False
         self.repeated_symbols = repeated_symbols
 
@@ -882,7 +982,6 @@ class QuickEvaluate(object):
     def pre_fit(self):
         func = ''
         replace = re.compile(r'(c)(?=[^a-zA-Z0-9])')
-        print('quickevaluate prefit', self.model)
         for component in self.model:
             func += component.op+component.code
        
@@ -959,25 +1058,33 @@ def dm():
     import numpy as np
     print(m.evaluate(np.linspace(0,10,5)))
 
+def check_model(a):
+    a.analyze()
+    a.parse()
+    for q in a:
+        print(q.name, q.code)
+    print(a.coupled_model)
+    return a
+
 def commamodels():
-    a = Model('CB GA LO')
-    a.analyze()
-    a.parse()
-    for q in a:
-        print(q.name, q.code)
-    print(a.coupled_model)
-    a = Model('CB,GA,LO')
-    a.analyze()
-    a.parse()
-    for q in a:
-        print(q.name, q.code)
-    print(a.coupled_model)
-    a = Model('a*x,b*x+a')
-    a.analyze()
-    a.parse()
-    for q in a:
-        print(q.name, q.code)
-    print(a.coupled_model)
+    a = check_model(Model('CB GA LO'))
+    a.CB.const.value = 1.0
+    a.GA.pos.value = 5.0
+    a.GA.fwhm.value = 2.0
+    a.GA.amp.value = 2.0
+    a.LO.pos.value = 5.0
+    a.LO.fwhm.value = 2.0
+    a.LO.amp.value = 2.0
+    print(a.evaluate([2.2,3.3,4.5,5.5]))
+
+    a = check_model(Model('CB,GA,LO'))
+    a.CB.const.value = 1.0
+    a.GA.pos.value = 5.0
+    a.GA.fwhm.value = 2.0
+    a.GA.amp.value = 2.0
+    print(a.evaluate([2.2,3.3,4.5,5.5]))
+
+    check_model(Model('a*x,b*x+a'))
 
 if __name__ == '__main__':
     commamodels()
