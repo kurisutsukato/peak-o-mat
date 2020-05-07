@@ -160,19 +160,19 @@ class Interactor:
         dlg = wx.TextEntryDialog(self.view,'New Name','Rename',self.view.editor.name)
         if dlg.ShowModal() == wx.ID_OK:
             self.view.editor.name = dlg.GetValue()
-            pub.sendMessage((self.view.id, 'code','changed') , msg=None)
+            pub.sendMessage((self.view.instid, 'code','changed') , msg=None)
 
     def OnCloseEditor(self, evt):
         self.view.editor.close()
-        pub.sendMessage((self.view.id, 'code','changed') , msg=None)
+        pub.sendMessage((self.view.instid, 'code','changed') , msg=None)
 
     def OnNewEditor(self, evt):
         self.controller.new_editor()
-        pub.sendMessage((self.view.id, 'code','changed') , msg=None)
+        pub.sendMessage((self.view.instid, 'code','changed') , msg=None)
 
     def OnEditCode(self, evt):
         if evt.GetModificationType()&3: # char added or removed
-            pub.sendMessage((self.view.id, 'code','changed') , msg=None)
+            pub.sendMessage((self.view.instid, 'code','changed') , msg=None)
 
     def OnExecute(self, evt):
         wx.BeginBusyCursor()

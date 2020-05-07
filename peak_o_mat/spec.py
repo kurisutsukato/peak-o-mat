@@ -348,6 +348,15 @@ bbox : boundingbox of points to be removed
         peaks = mod.loadpeaks(self.x, addbg=addbg)
         return peaks
 
+    def __gt__(self, other):
+        return self.x > other
+
+    def __lt__(self, other):
+        return self.x < other
+
+    def __getitem__(self, item):
+        return Spec(self.x[item], self.y[item], '{} subset'.format(self.name))
+
     def _getxrange(self):
         return np.minimum.reduce(self.x),np.maximum.reduce(self.x)
     xrng = property(_getxrange, doc='data\'s xrange as 2-tuple')
@@ -547,7 +556,7 @@ bbox : boundingbox of points to be removed
         if not isinstance(other, Spec):
             return Spec(self.x, self.y/other, '%s/%s'%(self.name,other))
         if not np.alltrue(self.x == other.x):
-            a, b = self._overlap(self.x, other.x)
+            a, b = overlap(self.x, other.x)
             interpolate = interp1d(other.x,other.y)
             interp = interpolate(self.x[a:b])
             ret = Spec(self.x[a:b], np.divide(self.y[a:b],interp), '%s/%s'%(self.name,other.name))
@@ -563,7 +572,7 @@ bbox : boundingbox of points to be removed
                 name = 'array'
             return Spec(self.x, self.y*other, '%s*%s'%(self.name,name))
         if not np.alltrue(self.x == other.x):
-            a, b = self._overlap(self.x, other.x)
+            a, b = overlap(self.x, other.x)
             interpolate = interp1d(other.x,other.y)
             interp = interpolate(self.x[a:b])
             ret = Spec(self.x[a:b], np.multiply(self.y[a:b],interp), '%s*%s'%(self.name,other.name))
@@ -580,7 +589,7 @@ bbox : boundingbox of points to be removed
             return Spec(self.x, self.y+other, '%s+%s'%(self.name,name))
         else:
             if not np.alltrue(self.x == other.x):
-                a, b = self._overlap(self.x, other.x)
+                a, b = overlap(self.x, other.x)
                 interpolate = interp1d(other.x,other.y)
                 interp = interpolate(self.x[a:b])
                 ret = Spec(self.x[a:b], self.y[a:b]+interp, '%s+%s'%(self.name,other.name))
@@ -591,6 +600,9 @@ bbox : boundingbox of points to be removed
     def __neg__(self):
         return Spec(self.x, -self.y, '-%s'%self.name)
 
+    def shifted(self, x):
+        return Spec(self.x-x, self.y, '{} shifted'.format(self.name))
+
     def join(self, other):
         if self.x[0] < other.x[0] and self.x[-1] < other.x[0]:
             res = Spec(np.concatenate((self.x,other.x)),np.concatenate((self.y,other.y)),self.name+'&'+other.name)
@@ -600,19 +612,6 @@ bbox : boundingbox of points to be removed
             return res
         else:
             raise Exception('Sets cannot be joined because of overlapping x-values.')
-
-    def _overlap(self, a, b):
-        if np.alltrue(a == b):
-            return a[0],a[-1]
-        min_x, max_x = [max(a.min(),b.min()),min(a.max(),b.max())]
-
-        sortindex = np.argsort(a)
-        asorted = np.take(a, sortindex)
-        lower, upper = np.searchsorted(asorted, [min_x,max_x])
-        if max_x in self.x:
-            upper += 1
-
-        return lower,upper
 
     def __isub__(self, other):
         if not isinstance(other, Spec):
@@ -636,7 +635,7 @@ bbox : boundingbox of points to be removed
                 name = 'array'
             return Spec(self.x, self.y-other, '%s-%s'%(self.name,name))
         if not np.alltrue(self.x == other.x):
-            a, b = self._overlap(self.x, other.x)
+            a, b = overlap(self.x, other.x)
             interpolate = interp1d(other.x,other.y)
             interp = interpolate(self.x[a:b])
             ret = Spec(self.x[a:b], self.y[a:b]-interp, '%s-%s'%(self.name,other.name))
@@ -653,7 +652,7 @@ bbox : boundingbox of points to be removed
     def __str__(self):
         return 'set name: %s'%(self.name)
 
-def savitzky_golay(y, window_size, order, deriv=0):
+def savitzky_golay(ds, window_size, order):
     r"""Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
     The Savitzky-Golay filter removes high frequency noise from data.
     It has the advantage of preserving the original shape and
@@ -695,6 +694,49 @@ def savitzky_golay(y, window_size, order, deriv=0):
     lastvals = y[-1] + np.abs(y[-half_window-1:-1][::-1] - y[-1])
     y = np.concatenate((firstvals, y, lastvals))
     return np.convolve( m, y, mode='valid')
+
+def overlap(a, b):
+    if np.alltrue(a == b):
+        return 0, len(a)
+    min_x, max_x = [max(a.min(), b.min()), min(a.max(), b.max())]
+
+    sortindex = np.argsort(a)
+    asorted = np.take(a, sortindex)
+    lower, upper = np.searchsorted(asorted, [min_x, max_x])
+    if max_x in a:
+        upper += 1
+    return lower, upper
+
+def merge(s0in, s1in, mergeat=0.5, fitx=False):
+    import numpy as np
+    from scipy.optimize import minimize
+
+    s0 = s0in if s0in.x.min() < s1in.x.min() else s1in
+    s1 = s1in if s0in.x.min() < s1in.x.min() else s0in
+
+    def f(pars):
+        if fitx:
+            a, b, c = pars
+            return (s0.shifted(c) * a - b)
+        else:
+            a, b = pars
+            return (s0 * a - b)
+
+    def res(pars):
+        return np.power((f(pars) - s1).y, 2).sum()
+
+    if fitx:
+        out = minimize(res, [1, 0, 0])
+    else:
+        out = minimize(res, [1, 0])
+
+    s0_mergeable = f(out.x)
+    a,b = overlap(s0_mergeable.x, s1.x)
+    threshold = s0_mergeable.x[int(((b - a) * mergeat) + a)]
+    s0b = s0_mergeable[s0_mergeable<threshold]
+    s1b = s1[s1>threshold]
+
+    return Spec(np.hstack([s0b.x, s1b.x]), np.hstack([s0b.y, s1b.y]), 'test')
 
 import unittest
 
