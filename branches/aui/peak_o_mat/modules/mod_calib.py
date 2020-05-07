@@ -19,31 +19,32 @@ class Panel(ScrolledPanel):
         self.SetupScrolling(scrollToTop=False, scrollIntoView=False)
 
     def setup_controls(self):
-        self.xrc_grid = CalibGrid(self, self.calib, size=(200,-1))
-        self.xrc_btn_elem = wx.Button(self)
-        self.xrc_ch_unit = wx.Choice(self)
-        self.xrc_chk_speclines = wx.CheckBox(self)
-        self.xrc_txt_tol = wx.TextCtrl(self, value='4.0', size=(50,-1), style=wx.TE_RIGHT)
-        self.xrc_txt_offset = wx.TextCtrl(self, value='0.0', size=(50,-1), style=wx.TE_RIGHT)
-        self.xrc_spin_order = wx.SpinCtrl(self, size=(60,-1), value='0', min=0, max=2)
-        self.xrc_btn_dispersion = wx.Button(self, label='Plot dispersion')
-        self.xrc_btn_store = wx.Button(self, label='Save')
-        self.xrc_btn_applystored = wx.Button(self, label='Restore')
-        self.xrc_chk_applytogroup = wx.CheckBox(self, label='Apply yo group')
-        self.xrc_btn_apply = wx.Button(self, label='Apply')
+        self.grid = CalibGrid(self, self.calib, size=(200,-1))
+        self.btn_elem = wx.Button(self)
+        self.ch_unit = wx.Choice(self)
+        self.chk_speclines = wx.CheckBox(self)
+        self.txt_tol = wx.TextCtrl(self, value='2.0', style=wx.TE_RIGHT)
+        self.txt_offset = wx.TextCtrl(self, value='0.0', style=wx.TE_RIGHT)
+        self.spin_order = wx.SpinCtrl(self, size=(60,-1), value='0', min=0, max=2)
+        self.btn_dispersion = wx.Button(self, label='Plot dispersion')
+        self.btn_storesearch = wx.Button(self, label='Store')
+        self.btn_restoresearch = wx.Button(self, label='Restore')
+        self.lab_calibration = wx.StaticText(self, label='<empty>')
+        self.btn_storecalibration = wx.Button(self, label='Store')
+        self.btn_calibrate = wx.Button(self, label='Calibrate')
 
     def layout(self):
         outer = wx.BoxSizer(wx.VERTICAL)
         inner = wx.BoxSizer(wx.HORIZONTAL)
         left = wx.BoxSizer(wx.VERTICAL)
-        left.Add(self.xrc_grid, 1, flag=wx.ALL|wx.EXPAND, border=5)
+        left.Add(self.grid, 1, flag=wx.ALL|wx.EXPAND, border=5)
 
         row = wx.BoxSizer(wx.HORIZONTAL)
 
         row.Add(wx.StaticText(self, label='Tolerance '), 0, wx.RIGHT|wx.EXPAND, 5)
-        row.Add(self.xrc_txt_tol, 1, wx.RIGHT|wx.EXPAND, 10)
+        row.Add(self.txt_tol, 1, wx.RIGHT|wx.EXPAND, 10)
         row.Add(wx.StaticText(self, label='Offset'), 0, wx.RIGHT|wx.EXPAND, 5)
-        row.Add(self.xrc_txt_offset, 1, wx.ALL|wx.EXPAND)
+        row.Add(self.txt_offset, 1, wx.ALL|wx.EXPAND)
         left.Add(row, 0, wx.EXPAND|wx.ALL, 5)
 
         inner.Add(left, 1, wx.EXPAND)
@@ -51,34 +52,38 @@ class Panel(ScrolledPanel):
         col = wx.BoxSizer(wx.VERTICAL)
         grd = wx.FlexGridSizer(cols=2, hgap=15,vgap=5)
         grd.Add(wx.StaticText(self, label='Element'), 1, flag=wx.ALL|wx.EXPAND)
-        grd.Add(self.xrc_btn_elem, 1, flag=wx.ALL|wx.EXPAND)
+        grd.Add(self.btn_elem, 1, flag=wx.ALL|wx.EXPAND)
         grd.Add(wx.StaticText(self, label='Unit'), 1, flag=wx.ALL|wx.EXPAND)
-        grd.Add(self.xrc_ch_unit, 1, flag=wx.ALL|wx.EXPAND)
+        grd.Add(self.ch_unit, 1, flag=wx.ALL|wx.EXPAND)
         grd.Add(wx.StaticText(self, label='Show lines'), 1, flag=wx.ALL|wx.EXPAND)
-        grd.Add(self.xrc_chk_speclines, 1, flag=wx.ALL|wx.EXPAND)
+        grd.Add(self.chk_speclines, 1, flag=wx.ALL|wx.EXPAND)
         col.Add(grd, 1, wx.EXPAND|wx.ALL, 5)
 
         row = wx.BoxSizer(wx.HORIZONTAL)
-        row.Add(wx.StaticText(self, label='Order of regression'), 1, flag=wx.ALL|wx.EXPAND, border=5)
-        row.Add(self.xrc_spin_order, 1, flag=wx.ALL|wx.EXPAND, border=5)
+        row.Add(wx.StaticText(self, label='Order of regression'), 0, flag=wx.ALL|wx.EXPAND, border=5)
+        row.Add(self.spin_order, 0, flag=wx.ALL|wx.EXPAND, border=5)
+        row.Add(wx.Window(self), 1, wx.LEFT, 20)
+        row.Add(self.btn_dispersion, 0, flag=wx.ALL|wx.EXPAND, border=5)
         col.Add(row, 0, wx.EXPAND)
-
-        row = wx.BoxSizer(wx.HORIZONTAL)
-        row.Add(wx.Window(self), 1)
-        row.Add(self.xrc_btn_dispersion, 0, flag=wx.ALL|wx.EXPAND)
-        col.Add(row, 0, wx.EXPAND|wx.ALL, 5)
 
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(wx.StaticText(self, label='Search pattern'), 1, flag=wx.ALL|wx.EXPAND, border=5)
-        row.Add(self.xrc_btn_store, 1, flag=wx.ALL|wx.EXPAND, border=5)
-        row.Add(self.xrc_btn_applystored, 1, flag=wx.ALL|wx.EXPAND, border=5)
+        row.Add(self.btn_storesearch, 1, flag=wx.ALL | wx.EXPAND, border=5)
+        row.Add(self.btn_restoresearch, 1, flag=wx.ALL | wx.EXPAND, border=5)
+        col.Add(row, 0, wx.EXPAND)
+
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        #row.Add(self.chk_applytogroup, 1, flag=wx.ALL|wx.EXPAND, border=5)
+        row.Add(wx.StaticText(self, label='Calibration'), 0, flag=wx.ALL|wx.EXPAND, border=5)
+        row.Add(self.btn_storecalibration, 0, flag=wx.ALL | wx.EXPAND, border=5)
+        row.Add(self.lab_calibration, 0, flag=wx.ALL|wx.EXPAND, border=5)
         col.Add(row, 0, wx.EXPAND)
 
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(wx.Window(self), 1)
-        row.Add(self.xrc_chk_applytogroup, 1, flag=wx.ALL|wx.EXPAND, border=5)
-        row.Add(self.xrc_btn_apply, 1, flag=wx.ALL|wx.EXPAND, border=5)
+        row.Add(self.btn_calibrate, 0, flag=wx.ALL | wx.EXPAND, border=5)
         col.Add(row, 0, wx.EXPAND)
+
         inner.Add(col, 0, wx.EXPAND)
         outer.Add(inner, 1, wx.EXPAND)
         self.SetSizer(outer)
@@ -96,6 +101,7 @@ class Panel(ScrolledPanel):
 class Module(module.BaseModule):
     title = 'Calibration'
     lastsearch = None
+    calibration = None
     _busy = False
     need_attention = True
 
@@ -117,37 +123,46 @@ class Module(module.BaseModule):
         self.view = Panel(self.parent_view, self.calib)
         super(Module, self).init()
 
+        #self.calib = Calibration()
+        #self.xmlres.AttachUnknownControl('xrc_grid', CalibGrid(self.panel, self.calib))
+        #self.grid.GetParent().SetMinSize(self.grid.GetMinSize())
+        #self.grid.GetParent().Refresh()
+        #self.panel.Layout()
+
         self.init_ctrls()
         
-        self.view.Bind(wx.EVT_TEXT, self.OnTol, self.view.xrc_txt_tol)
-        self.view.Bind(wx.EVT_TEXT, self.OnOffset, self.view.xrc_txt_offset)
+        self.view.Bind(wx.EVT_TEXT, self.OnTol, self.view.txt_tol)
+        self.view.Bind(wx.EVT_TEXT, self.OnOffset, self.view.txt_offset)
 
-        self.view.Bind(wx.EVT_BUTTON, self.OnElement, self.view.xrc_btn_elem)
+        #self.panel.Bind(wx.EVT_CHOICE, self.OnElement, self.panel.ch_elem)
+        self.view.Bind(wx.EVT_BUTTON, self.OnElement, self.view.btn_elem)
 
-        self.view.Bind(wx.EVT_CHOICE, self.OnUnit, self.view.xrc_ch_unit)
-        self.view.Bind(wx.EVT_BUTTON, self.OnApply, self.view.xrc_btn_apply)
-        self.view.Bind(wx.EVT_BUTTON, self.OnStore, self.view.xrc_btn_store)
-        self.view.Bind(wx.EVT_BUTTON, self.OnRestore, self.view.xrc_btn_applystored)
-        self.view.Bind(wx.EVT_BUTTON, self.OnDispersion, self.view.xrc_btn_dispersion)
-        #self.panel.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.OnCellChanged, self.panel.xrc_grid)
-        self.view.Bind(dv.EVT_DATAVIEW_ITEM_VALUE_CHANGED, self.OnDataChanged, self.view.xrc_grid)
-        self.view.Bind(wx.EVT_CHECKBOX, self.OnShow, self.view.xrc_chk_speclines)
+        self.view.Bind(wx.EVT_CHOICE, self.OnUnit, self.view.ch_unit)
+        self.view.Bind(wx.EVT_BUTTON, self.OnApply, self.view.btn_calibrate)
+        self.view.Bind(wx.EVT_BUTTON, self.OnStore, self.view.btn_storesearch)
+        self.view.Bind(wx.EVT_BUTTON, self.OnRestore, self.view.btn_restoresearch)
+        self.view.Bind(wx.EVT_BUTTON, self.OnDispersion, self.view.btn_dispersion)
+        #self.panel.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.OnCellChanged, self.panel.grid)
+        self.view.Bind(dv.EVT_DATAVIEW_ITEM_VALUE_CHANGED, self.OnDataChanged, self.view.grid)
+        self.view.Bind(wx.EVT_CHECKBOX, self.OnShow, self.view.chk_speclines)
+        self.view.Bind(wx.EVT_BUTTON, self.OnStoreCalibration, self.view.btn_storecalibration)
 
-        self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToImport, self.view.xrc_ch_unit)
-        #self.panel.Bind(wx.EVT_UPDATE_UI, self.OnReadyToImport, self.panel.xrc_ch_elem)
-        self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApply, self.view.xrc_btn_apply)
-        self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApply, self.view.xrc_btn_store)
-        self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApply, self.view.xrc_btn_dispersion)
-        self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApplyStored, self.view.xrc_btn_applystored)
+        self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToImport, self.view.ch_unit)
+        #self.panel.Bind(wx.EVT_UPDATE_UI, self.OnReadyToImport, self.panel.ch_elem)
+        self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToCalibrate, self.view.btn_calibrate)
+        self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApply, self.view.btn_storesearch)
+        self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApply, self.view.btn_dispersion)
+        self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApply, self.view.btn_storecalibration)
+        self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToRestoreSearch, self.view.btn_restoresearch)
         
         pub.subscribe(self.OnUpdate, (self.instid, 'setattrchanged'))
 
     def update_from_model(self):
-        #it = self.panel.xrc_ch_unit.FindString(self.calib.unit)
-        #self.panel.xrc_ch_unit.SetSelection(it)
+        #it = self.panel.ch_unit.FindString(self.calib.unit)
+        #self.panel.ch_unit.SetSelection(it)
         self.view.SetEvtHandlerEnabled(False)
-        self.view.xrc_txt_tol.Value = str(self.calib.tol)
-        self.view.xrc_txt_offset.Value = str(self.calib.offset)
+        self.view.txt_tol.Value = str(self.calib.tol)
+        self.view.txt_offset.Value = str(self.calib.offset)
         self.view.SetEvtHandlerEnabled(True)
 
     def OnShow(self, evt):
@@ -160,44 +175,57 @@ class Module(module.BaseModule):
     def OnReadyToImport(self, evt):
         set = self.parent_controller.active_set
         if not (set is not None and set.mod is not None and set.mod.is_filled()):
-            self.view.xrc_chk_speclines.Value = False
+            self.view.chk_speclines.Value = False
             self.plotme = None
         evt.Enable(set is not None and set.mod is not None and set.mod.is_filled())
         
+    def OnReadyToCalibrate(self, evt):
+        evt.Enable(self.calibration is not None)
+
     def OnReadyToApply(self, evt):
         evt.Enable(len(self.calib.selection) > 0)
 
-    def OnReadyToApplyStored(self, evt):
+    def OnReadyToRestoreSearch(self, evt):
         evt.Enable(self.lastsearch is not None)
+
+    def OnStoreCalibration(self, evt):
+        self.calibration = self.calib.trafo(self.calib.selection, int(self.view.spin_order.Value))
+        n = len(self.calib.selection)
+        regrtypes = {0: 'zero-order', 1: '1st order', 2: '2nd order'}
+        if n == 1:
+            lab = '1 line, zero-order'
+        else:
+            lab = '{} lines, {}'.format(n, regrtypes[self.view.spin_order.Value])
+        self.view.lab_calibration.Label = lab
 
     def init_ctrls(self):
         label = '/'.join(self.calib.element)
-        self.view.xrc_btn_elem.SetLabel(label)
-        self.view.xrc_spin_order.SetRange(0,0)
+        self.view.btn_elem.SetLabel(label)
+        self.view.spin_order.SetRange(0,0)
 
         #for e in self.calib.element_list():
-        #    self.panel.xrc_ch_elem.Append(e)
-        #self.panel.xrc_ch_elem.SetStringSelection(self.calib.element)
+        #    self.panel.ch_elem.Append(e)
+        #self.panel.ch_elem.SetStringSelection(self.calib.element)
         for u in self.calib.unit_list():
-            self.view.xrc_ch_unit.Append(u)
-        self.view.xrc_ch_unit.SetStringSelection(self.calib.unit)
-        self.view.xrc_txt_tol.Value = str(self.calib.tol)
-        self.view.xrc_txt_offset.Value = str(self.calib.offset)
+            self.view.ch_unit.Append(u)
+        self.view.ch_unit.SetStringSelection(self.calib.unit)
+        self.view.txt_tol.Value = str(self.calib.tol)
+        self.view.txt_offset.Value = str(self.calib.offset)
 
     def selection_changed(self):
         self.OnUpdate(None)
-        #self.panel.xrc_btn_update.Enable(self.parent_controller.active_set is not None)
+        #self.panel.btn_update.Enable(self.parent_controller.active_set is not None)
 
     def focus_changed(self, newfocus=None):
         if newfocus != self:
             self.plotme = None
-            self.view.xrc_chk_speclines.Value = False
+            self.view.chk_speclines.Value = False
             pub.sendMessage((self.instid, 'updateplot'))
         else:
             self.OnUpdate()
 
     def OnDispersion(self, evt):
-        trafo = self.calib.trafo(self.calib.selection, int(self.view.xrc_spin_order.Value))
+        trafo = self.calib.trafo(self.calib.selection, int(self.view.spin_order.Value))
         x, y = np.transpose(np.take(np.atleast_2d(self.calib.data), self.calib.selection, axis=0)[:,2:4]).astype(float)
         data = spec.Spec(x,y,'data')
         a = x[0]-x[0]/1000.0
@@ -210,11 +238,11 @@ class Module(module.BaseModule):
         self.parent_controller.add_set(regr,plot)
 
     def OnUnit(self, evt):
-        self.calib.unit = self.view.xrc_ch_unit.GetStringSelection()
+        self.calib.unit = self.view.ch_unit.GetStringSelection()
         self.OnUpdate(None)
         self.lastsearch = None
 
-        if self.view.xrc_chk_speclines.Value:
+        if self.view.chk_speclines.Value:
             self.plotme = 'Spikes',spec.Spec(*self.calib.spectrum)
             pub.sendMessage((self.instid, 'updateplot'))
 
@@ -225,10 +253,10 @@ class Module(module.BaseModule):
         if dlg.ShowModal() == wx.ID_OK:
             self.calib.element = dlg.selection
             label = '/'.join(self.calib.element)
-            self.view.xrc_btn_elem.SetLabel(label)
+            self.view.btn_elem.SetLabel(label)
 
-            #self.calib.element = self.panel.xrc_ch_elem.GetStringSelection()
-            self.view.xrc_grid.enable_edit(self.calib.element == ['Custom'])
+            #self.calib.element = self.panel.ch_elem.GetStringSelection()
+            self.view.grid.enable_edit(self.calib.element == ['Custom'])
 
             aset = self.parent_controller.active_set
             if aset is not None and aset.mod is not None:
@@ -242,7 +270,7 @@ class Module(module.BaseModule):
                 self.calib.findmatch(np.empty((0,2)))
             self.calib.update()
 
-            if self.view.xrc_chk_speclines.Value:
+            if self.view.chk_speclines.Value:
                 self.plotme = 'Spikes',spec.Spec(*self.calib.spectrum)
                 pub.sendMessage((self.instid, 'updateplot'))
 
@@ -250,7 +278,7 @@ class Module(module.BaseModule):
 
     def OnTol(self, evt):
         try:
-            self.calib.tol = abs(float(self.view.xrc_txt_tol.GetValue()))
+            self.calib.tol = abs(float(self.view.txt_tol.GetValue()))
         except:
             return
         else:
@@ -258,7 +286,7 @@ class Module(module.BaseModule):
 
     def OnOffset(self, evt):
         try:
-            self.calib.offset = float(self.view.xrc_txt_offset.GetValue())
+            self.calib.offset = float(self.view.txt_offset.GetValue())
         except:
             return
         else:
@@ -275,15 +303,15 @@ class Module(module.BaseModule):
                         meas.append([f.name,f.pos.value])
                 self.calib.findmatch(meas, recalc=True)
 
-            if self.view.xrc_chk_speclines.Value:
+            if self.view.chk_speclines.Value:
                 self.plotme = 'Spikes',spec.Spec(*self.calib.spectrum)
 
                 pub.sendMessage((self.instid, 'updateplot'))
 
         if evt.GetColumn() == 0:
-            coerced = min(int(self.view.xrc_spin_order.Value),max(0,len(self.calib.selection)-1))
-            self.view.xrc_spin_order.SetValue(coerced)
-            self.view.xrc_spin_order.SetRange(0,max(0,min(len(self.calib.selection)-1,2)))
+            coerced = min(int(self.view.spin_order.Value),max(0,len(self.calib.selection)-1))
+            self.view.spin_order.SetValue(coerced)
+            self.view.spin_order.SetRange(0,max(0,min(len(self.calib.selection)-1,2)))
 
     def OnUpdate(self, evt=None):
         #if len(self.calib.selection) > 0:
@@ -315,12 +343,11 @@ class Module(module.BaseModule):
         #    self.message('NaN found in custom calibration data')
         if 1:
             ### TODO: remplace by message
-            trafo = self.calib.trafo(self.calib.selection, int(self.view.xrc_spin_order.Value))
+            #trafo = self.calib.trafo(self.calib.selection, int(self.view.spin_order.Value))
+            trafo = self.calibration
+
             plot,sets = self.parent_controller.selection
-            if self.view.xrc_chk_applytogroup.IsChecked():
-                sets = range(len(self.parent_controller.project[plot]))
-            else:
-                sets = sets[:1]
+
             for ds in sets:
                 self.parent_controller.project[plot][ds].trafo.append(('x',trafo,'calib, %d lines'%len(self.calib.selection)))
             pub.sendMessage((self.instid, 'updateplot'))
