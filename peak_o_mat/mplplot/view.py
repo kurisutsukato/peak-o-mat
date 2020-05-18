@@ -229,7 +229,8 @@ class AxesControlPanel(WithMessage, wx.Panel):
         self.axes_list.ClearAll()
         for ax in axes_data:
             self.axes_list.Append([ax.type])
-        self.axes_list.Select(0)
+        if self.axes_list.ItemCount > 0:
+            self.axes_list.Select(0)
 
         self.btn_add_inset.Enable(has_second and len(self.__axes_data) == 2)
         self.btn_add_twinx.Enable(has_second and len(self.__axes_data) == 2)
@@ -305,10 +306,10 @@ class AxesControlPanel(WithMessage, wx.Panel):
         pub.sendMessage((self.instid, 'axesattrs', 'changed'))
 
     def OnProcess(self, evt):
-        self.btn_remove.Enable(self.selection not in [[0],[1]])
-        self.pan_box.Show(self.axes_list.ItemCount == 4)
-
         if len(self.__process_queue) > 0:
+            self.btn_remove.Enable(len(self.selection) > 0 and self.selection not in [[0],[1]])
+            self.pan_box.Show(self.axes_list.ItemCount == 4)
+
             self.__process_queue[0]()
             self.__process_queue.clear()
 
@@ -456,7 +457,8 @@ class LineControlPanel(WithMessage, wx.Panel):
         self.dataset_list.ClearAll()
         for ld in ds_names:
             self.dataset_list.Append([ld])
-        self.dataset_list.Select(0)
+        if self.dataset_list.ItemCount > 0:
+            self.dataset_list.Select(0)
 
         self.cho_linestyle.Clear()
         self.cho_linestyle.AppendItems(['None']+LineData.styles)
@@ -719,6 +721,9 @@ class ControlFrame(WithMessage,wx.Frame):
             print('controlframe update_from_model no selection model.shape', mpmodel.shape)
             self.plot_layout.update_from_model(mpmodel)
             self.enable_edit(False)
+            self.line_control.associate_model([], [])
+            self.axes_control.associate_model([], box=[])
+
         else:
             self.enable_edit(True)
             print('controlframe update_from_model model.shape', mpmodel.shape)

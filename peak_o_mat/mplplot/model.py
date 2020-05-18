@@ -4,6 +4,7 @@ import wx.dataview as dv
 import uuid
 import types
 import hashlib
+import gc
 
 from matplotlib.markers import MarkerStyle
 import matplotlib._color_data as mcd
@@ -87,8 +88,7 @@ class PlotData(object):
 
     _defaults = [False, 12, 0, 10, '', True, None]
 
-    def __del__(self):
-        #print('pd destructor')
+    def release(self):
         self.project[self.plot_ref].del_ref(self.uuid)
         if self.plot_ref_secondary is not None:
             self.project[self.plot_ref_secondary].del_ref(self.uuid)
@@ -423,6 +423,11 @@ class MultiPlotModel(dict):
                     return self.pop(pos)
         return d
 
+    def __del__(self):
+        vals = self.values()
+        for v in vals:
+            v.release()
+
     def __deepcopy__(self, memo):
         mpm = copy(self)
         mpm.selected = None
@@ -444,7 +449,10 @@ class MultiPlotModel(dict):
                     return self[k]
             raise KeyError(item)
         else:
-            return super(MultiPlotModel, self).__getitem__(item)
+            if item in self.keys():
+                return super(MultiPlotModel, self).__getitem__(item)
+            else:
+                return None
 
     def add(self, plotdata, pos):
         #plotdata = PlotData(self.project, plot)
@@ -462,15 +470,9 @@ class MultiPlotModel(dict):
         self.select(pos)
 
     def remove(self, pos):
-        self.pop(pos)
-
-    def old_select(self, pos):
-        if pos in self.__order:
-            self.selected = self[self.__order[pos]]
-            return True
-        else:
-            self.selected = None
-            return False
+        item = self[pos]
+        self[pos] = None
+        item.release()
 
     def select(self, pos):
         if pos in self:
@@ -533,6 +535,7 @@ class MultiPlotModel(dict):
             if k[0] >= shape[0] or k[1] >= shape[1]:
                 self.remove(k)
         self.__shape = shape
+        print('newshape',shape,self.keys())
 
     @property
     def modified(self):

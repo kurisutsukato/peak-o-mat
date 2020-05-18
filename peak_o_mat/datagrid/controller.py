@@ -132,7 +132,7 @@ class Controller(object):
         self.gridcontrollers.remove(gc)
         return True
         
-class GridController(object):
+class GridController(misc_ui.WithMessage):
     def __init__(self, parent_controller, view, interactor, name, data=None, the_grid=False):
         self.parent_controller = parent_controller
         self.view = view
@@ -263,7 +263,7 @@ class GridController(object):
             
     def create_set(self, col0isX):
         self.col0_is_x = col0isX
-        Publisher.sendMessage((self.view.id, 'grid', 'newset'), data=self.get_selected_data)
+        Publisher.sendMessage((self.view.instid, 'grid', 'newset'), data=self.get_selected_data)
 
     def selection_changed(self, sel):
         self.selection = sel

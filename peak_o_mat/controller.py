@@ -875,6 +875,7 @@ class Controller(object):
 
     def delete_figure(self, fig):
         item = self.project.figure_list.pop(self.project.figure_list.index(fig))
+        del item
         pub.sendMessage((self.view.instid, 'figurelist', 'needsupdate'))
 
     def clone_figure(self, fig):
@@ -898,9 +899,12 @@ class Controller(object):
             if not discard:
                 if self.__mpm_edit_combo[0] in self.project.figure_list:
                     self.figure_list_controller.model.update(*self.__mpm_edit_combo)
+                    #morig, mcopy = self.__mpm_edit_combo
+                    #del mcopy
                 else:
                     self.figure_list_controller.model.data.append(self.__mpm_edit_combo[1])
             self.__mpm_edit_combo = None
+
             pub.sendMessage((self.view.instid, 'figurelist', 'needsupdate'))
 
     def show_datagrid(self, show=False):
