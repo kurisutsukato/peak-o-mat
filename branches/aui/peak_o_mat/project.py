@@ -249,9 +249,14 @@ class Plot(LData):
     rng = property(_get_range, _set_range)
 
     def add_ref(self, ref):
+        print('plot {} add ref {}'.format(self.uuid, ref))
         self._references.append(ref)
     def del_ref(self, ref):
-        self._references.remove(ref)
+        print('plot {} del ref {}'.format(self.uuid, ref))
+        try:
+            self._references.remove(ref)
+        except ValueError:
+            print('tried to remove reference twice')
 
     @property
     def has_ref(self):

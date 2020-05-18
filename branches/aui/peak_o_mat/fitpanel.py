@@ -574,6 +574,22 @@ class FitPanel(WithMessage,wx.Panel):
                 #index = self.pan_model.lst_features.AppendItem(n, ptype.lower())
                 #self.pan_model.lst_features.SetStringItem(index, 1, name)
 
+class dlg_find_peaks(wx.Frame):
+    def __init__(self, parent):
+        super(dlg_find_peaks, self).__init__(parent, style=wx.DEFAULT_FRAME_STYLE)
+
+        self.setup_controls()
+        self.layout()
+
+    def setup_controls(self):
+        self.p = wx.Panel(self)
+        self.spn_max = wx.SpinCtrl(self.p, min=1, max=100, initial=20)
+        self.sl_prom = wx.Slider(self.p, min=1, max=100, initial=20)
+
+    def layout(self):
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        self.p.SetSizer(vbox)
+
 if __name__ == '__main__':
 
     import wx.lib.mixins.inspection as wit

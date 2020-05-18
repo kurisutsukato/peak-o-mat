@@ -7,11 +7,10 @@ import re
 import time
 
 import numpy as np
+from scipy.signal import find_peaks
 
 from threading import Thread, Event
-from queue import Queue
 
-from functools import reduce
 
 from . import misc_ui
 from . import model
@@ -19,10 +18,8 @@ from . import lineshapebase as lb
 from . import fit
 
 from . import weights
-from .spec import Spec
 from functools import reduce
 
-from .findpeaks import indexes
 from .lineshapebase import lineshapes as ls
 
 class FitController(object):
@@ -183,8 +180,8 @@ class FitController(object):
         if len(s) == 1 and self.model is not None:
             dset = s[0]
             width = (dset.x[-1]-dset.x[0])/200.0
-
-            idx = indexes(dset.y)
+            th = (dset.y.max()-dset.y.min())
+            idx,_ = find_peaks(dset.y, prominence=(th*0.05,th*1.01))
 
             numpeaks = len([True for f in self.model if str(f) in ls.peak])
             if numpeaks == len(idx):

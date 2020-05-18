@@ -615,6 +615,7 @@ class ListModel(dv.DataViewIndexListModel):
         self._data[idx] = value
         #TODO: next line releases the plot references, obj is a multiplotmodel
         #obj.release()
+        print('update mpm, releasing original', obj)
         del obj
         self.Cleared()
 

@@ -132,9 +132,11 @@ class PlotController(object):
         self.redraw(force=True)
 
     def plot_add_secondary(self, plot, pos):
+        print('controller plot_add_secondary',plot,pos)
         if plot == -1:
-            self.model[pos].del_secondary()
-            self.model[pos].axes_data[:] = self.model[pos].axes_data[:2]
+            if self.model[pos].plot_ref_secondary is not None:
+                self.model[pos].del_secondary()
+                self.model[pos].axes_data[:] = self.model[pos].axes_data[:2]
         else:
             self.model[pos].add_secondary(plot)
         self.view.update_from_model(self.model)
@@ -163,8 +165,12 @@ class PlotController(object):
         if plot == -1:
             self.model.remove(pos)
             #TODO: deselect secondary plot
+            self.model.selected = None
+            self.view.update_from_model(self.model)
             self.view.enable_edit(False)
         else:
+            if self.model[pos] is not None and self.model[pos].plot_ref == plot:#
+                return
             pd = PlotData(self.model.project,plot)
             print('new pd:', plot, pd.plot_ref_secondary)
             self.model.add(pd, pos)
@@ -227,6 +233,8 @@ class PlotController(object):
                 except KeyError:
                     continue
                 else:
+                    if pm is None:
+                        continue
                     ax = axes[row,col]
                     if len(ax.lines) == 0 or self.__needs_update:
                         print('ax fresh draw')

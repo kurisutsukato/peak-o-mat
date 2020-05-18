@@ -596,7 +596,7 @@ class CoupledTokenModel(BaseModel):
 
         return txt, [] # empty list because this is a token model
 
-    def evaluate(self, x, restrict=None):
+    def evaluate(self, x, single=True, restrict=None):
         """\
         Evaluate the current model at positions x.
         single: if True, returns a list of all peaks evaluated
