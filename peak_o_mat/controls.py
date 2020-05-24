@@ -647,6 +647,7 @@ class FigureListController:
         pub.subscribe(self.refresh_view, (self.view.instid, 'figurelist','needsupdate'))
 
     def refresh_view(self):
+        print('refresh figure list')
         self.model.Reset(len(self.model.data))
 
     def create_ui(self):

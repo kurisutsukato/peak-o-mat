@@ -236,6 +236,8 @@ class PlotController(object):
                     if pm is None:
                         continue
                     ax = axes[row,col]
+                    ax.relim()
+                    ax.autoscale()
                     if len(ax.lines) == 0 or self.__needs_update:
                         print('ax fresh draw')
                         for s, style in pm.primary():
@@ -366,8 +368,11 @@ def set_axis_attributes(ax, axis, ad):
         except ValueError:
             return None
 
+    if floatOrNone(ad.min) is None or floatOrNone(ad.max) is None:
+        if getattr(ax, '{}axis_inverted'.format(axis))():
+            getattr(ax, 'invert_{}axis'.format(axis))()
     if ad.min != ad.max:
-        getattr(ax, 'set_{}lim'.format(axis))(floatOrNone(ad.min), floatOrNone(ad.max), auto=False)
+        print('set axis limits', getattr(ax, 'set_{}lim'.format(axis))(floatOrNone(ad.min), floatOrNone(ad.max)))
 
 def new(controller, parent, plotmodel):
     return PlotController(controller, ControlFrame(parent), plotmodel)

@@ -140,7 +140,7 @@ class FitInteractor(object):
         self.view.pan_batch.btn_export.Enable(complete)
 
     def OnBatchfitStep(self, evt):
-        _,_,msg = evt.result
+        _,msg = evt.result
         self.controller.batch_step_result(evt.ds, evt.result)
 
     def OnBatchfitStop(self, evt):

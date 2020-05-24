@@ -114,8 +114,10 @@ class PlotData(object):
                 return False
         return True
 
-    def __init__(self, project, plot, plot_secondary=None, linedata=None, axesdata=None, plot_hash=None):
+    def __init__(self, project, plot, plot_secondary=None, linedata=None, axesdata=None, plot_hash=None, plot_hash_secondary=None):
         self.plot_hash = project[plot].hash if plot_hash is None else plot_hash
+        self.plot_hash_secondary = project[plot_secondary].hash if plot_secondary is not None and plot_hash_secondary is None else plot_hash_secondary
+        print('pd init hahes:',self.plot_hash, self.plot_hash_secondary)
         self.uuid = uuid.uuid4().hex
         self.project = project
 
@@ -219,7 +221,8 @@ class PlotData(object):
 
     @property
     def modified(self):
-        if self.plot_hash != self.project[self.plot_ref].hash:
+        if self.plot_hash != self.project[self.plot_ref].hash or (self.plot_ref_secondary is not None and \
+                        self.plot_hash_secondary != self.project[self.plot_ref_secondary].hash):
             self.sync_with_plot()
             return True
         return False
@@ -235,12 +238,13 @@ class PlotData(object):
         self.plot_hash = self.project[self.plot_ref].hash
 
         nlines = len(self.line_data.sec)
-        diff = len(self.project[self.plot_ref_secondary])-nlines
-        df = LineDataFactory()
-        for n,s in zip(list(range(diff)), self.project[self.plot_ref_secondary][nlines:]):
-            self.line_data.sec.append(df.next_with_name(s.name))
-        self.line_data.sec = self.line_data.sec[:len(self.project[self.plot_ref])]
-
+        if self.plot_ref_secondary is not None:
+            diff = len(self.project[self.plot_ref_secondary])-nlines
+            df = LineDataFactory()
+            for n,s in zip(list(range(diff)), self.project[self.plot_ref_secondary][nlines:]):
+                self.line_data.sec.append(df.next_with_name(s.name))
+            self.line_data.sec = self.line_data.sec[:len(self.project[self.plot_ref])]
+            self.plot_hash_secondary = self.project[self.plot_ref_secondary].hash
 
     def hash(self):
         return ''.join([repr(getattr(self, q)) for q in self._attrs])

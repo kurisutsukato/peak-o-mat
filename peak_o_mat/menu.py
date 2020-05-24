@@ -28,7 +28,7 @@ class MenuFactory(object):
         count = menu.GetMenuItemCount()-4
         self.module_menu_ids[menu.Append(wx.ID_ANY, '{}\tCTRL-{}'.format(name,count), kind=wx.ITEM_CHECK).GetId()] = name
 
-    def create(self, plotserver=False):
+    def create(self):
         mb = wx.MenuBar()
 
         def append(menu, mi_desc, **kwargs):
@@ -61,10 +61,6 @@ class MenuFactory(object):
         mb.Append(data_menu, 'Data')
         mb.Append(view_menu, 'View')
 
-        if plotserver:
-            tools_menu = wx.Menu()
-            append(tools_menu,'Start plot server')
-            mb.Append(tools_menu, 'Tools')
         mb.Append(help_menu, "&Help")
 
         return mb
