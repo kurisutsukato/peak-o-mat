@@ -51,45 +51,15 @@ def new_controller(path=None, silent=True, startapp=False):
     if startapp:
         app = wx.App()
         app.locale = wx.Locale(wx.LANGUAGE_ENGLISH)
-    from .controller import Controller, PLOTSERVER
+    from .controller import Controller
     from .interactor import Interactor
     from .project import Project
     from .mainframe import MainFrame
 
-    v = MainFrame(silent, plotserver=PLOTSERVER)
+    v = MainFrame(silent)
     c = Controller(Project(),v,Interactor(),path)
 
     c.view.start(startapp=startapp)
-
-def open_project(path):
-    #if self.project_modified:
-    #    if not self.view.confirm_open_project_dialog():
-    #        return
-
-    if path is not None:
-        msg = self.project.load(path, datastore=self.datagrid)
-
-        if msg is not None:
-            if msg.type == 'warn':
-                wx.CallAfter(self.view.msg_dialog, '\n'.join([str(q) for q in msg]))
-            else:
-                wx.CallAfter(self.view.error_dialog, '\n'.join([str(q) for q in msg]))
-                return
-
-        self.view.title = self.project.name
-        self.view.annotations = self.project.annotations
-
-        self.codeeditor.data = self.project.code
-
-        self.view.tree.build(self.project)
-        if self.project.path is not None:
-            #print 'added to history',self.project.path
-            self.view.filehistory.AddFileToHistory(os.path.abspath(path))
-            self.save_filehistory()
-        self.project_modified = False
-        wx.CallAfter(pub.sendMessage, (self.view.id, 'figurelist','needsupdate'))
-        misc.set_cwd(path)
-
 
 pub.subscribe(new_controller, ('new'))
 

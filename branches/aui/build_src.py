@@ -32,7 +32,6 @@ peak_o_mat/pargrid.py
 peak_o_mat/pickers.py
 peak_o_mat/plot.py
 peak_o_mat/plotcanvas.py
-peak_o_mat/plotserver.py
 peak_o_mat/pomio.py
 peak_o_mat/project.py
 peak_o_mat/spec.py

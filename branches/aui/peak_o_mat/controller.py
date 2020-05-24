@@ -55,15 +55,6 @@ from .controls import FigureListController
 
 from .main import new_controller
 
-#TODO:
-#try:
-#    from .plotserver import PlotServer
-#    PLOTSERVER = True
-#except ImportError:
-#    print('plotserver not started, pyzmq was not found')
-#    PLOTSERVER = False
-PLOTSERVER = False
-
 from .appdata import configdir, logfile
 
 if hasattr(sys, 'frozen') and sys.frozen == 'windows_exe':
@@ -99,7 +90,7 @@ class ModulesContainer(dict):
 class Controller(object):
     def __init__(self, proj, view, interactor, lpj_path):
         self.datagrid = None
-        self.app_path = os.path.abspath(sys.argv[0])
+        #self.app_path = os.path.abspath(sys.argv[0])
 
         self.project = proj
         self.view = view
@@ -154,7 +145,6 @@ class Controller(object):
                 wx.CallAfter(self.view._mgr.LoadPerspective, perspective, True)
 
             interactor.Install(self, self.view)
-            wx.CallAfter(pub.sendMessage, (self.view.instid, 'figurelist','needsupdate'))
 
     def message(self, msg, blink=False, forever=False):
         event = misc_ui.ShoutEvent(self.view.GetId(), msg=msg, target=1, blink=blink, time=5000, forever=forever)
@@ -216,32 +206,12 @@ class Controller(object):
 
             self.view.tree.build(self.project)
             if self.project.path is not None:
-                #print 'added to history',self.project.path
                 self.view.filehistory.AddFileToHistory(os.path.abspath(path))
                 self.save_filehistory()
             self.project_modified = False
-            wx.CallAfter(pub.sendMessage, (self.view.instid, 'figurelist','needsupdate'))
-            pub.sendMessage((self.view.instid, 'plot_added'), plotlist=['p{}'.format(n) for n in range(len(self.project))])
-
             misc.set_cwd(path)
-
-    def start_plot_server(self):
-        if not PLOTSERVER:
-            return
-        if hasattr(self, 'plot_server'):
-            self.plot_server.stop()
-            pub.sendMessage((self.view.instid, 'message'), msg='Plot server stopped.')
-            del self.plot_server
-            return False
-        else:
-            self.plot_server = PlotServer(self.view.instid)
-            if self.plot_server.start():
-                print('starting plot server')
-                pub.sendMessage((self.view.instid, 'message'), msg='Plot server started.')
-                return True
-            else:
-                pub.sendMessage((self.view.instid, 'message'), msg='Plot server: address in use.')
-                del self.plot_server
+            self.selection = (0,None) # needed because is loading a project on th ecommand line, nothing will be selected
+            pub.sendMessage((self.view.instid, 'figurelist','needsupdate'))
 
     def open_recent(self, num):
         path = self.view.filehistory.GetHistoryFile(num)
@@ -713,17 +683,18 @@ class Controller(object):
     def _get_selection(self):
         return self._selection
     def _set_selection(self, selection):
+        print('calles set seleciton')
         class Selection(tuple):
             plot = False
-        plot, sel = selection
-        if sel is None:
-            sel = list(range(len(self.project[plot])))
-            self._selection = Selection((plot, sel))
+        plot, ds = selection
+        if ds is None:
+            ds = list(range(len(self.project[plot])))
+            self._selection = Selection((plot, ds))
             self._selection.plot = True
         else:
-            self._selection = Selection((plot, sel))
+            self._selection = Selection((plot, ds))
         plot_sel = self.project[plot]
-        dataset_sel = [self.project[plot][s] for s in sel]
+        dataset_sel = [self.project[plot][s] for s in ds]
         wx.CallAfter(pub.sendMessage,(self.view.instid, 'selection', 'changed'),
                      plot=plot_sel, dataset=dataset_sel)
         self.update_plot()
@@ -954,8 +925,7 @@ class Controller(object):
         def Line(data, colour, skipbb=False):
             if self.app_state.line_style == 0:
                 return plotcanvas.Line(data, colour=colour, skipbb=skipbb)
-            else:
-                return plotcanvas.Marker(data, colour=colour, fillcolour=colour, marker='square', size=0.7, skipbb=skipbb)
+            return plotcanvas.Marker(data, colour=colour, fillcolour=colour, marker='square', size=0.7, skipbb=skipbb)
 
         if self.freeze_canvas and fit is not None:
             xr = self.view.canvas.GetXCurrentRange()

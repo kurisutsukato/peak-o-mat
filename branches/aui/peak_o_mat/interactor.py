@@ -34,10 +34,6 @@ class Interactor(object):
         self.view.Bind(wx.EVT_MENU, self.OnShowCodeeditor, id=menu_ids['Code Editor'])
         self.view.Bind(wx.EVT_MENU, self.OnShowDatagrid, id=menu_ids['Data Grid'])
         self.view.Bind(wx.EVT_MENU, self.OnShowNotes, id=menu_ids['Notepad'])
-        try:
-            self.view.Bind(wx.EVT_MENU, self.OnStartServer, id=menu_ids['Start plot server'])
-        except KeyError: #'no plotserver available'
-            pass
 
         self.view.Bind(wx.EVT_MENU, self.OnAbout, id=menu_ids['About'])
 
@@ -208,7 +204,7 @@ class Interactor(object):
             if self.controller.virgin:
                 self.controller.open_project(path)
             else:
-                pub.sendMessage(('new'),path=path)
+                pub.sendMessage((self.view.instid, 'new'),path=path)
         else:
             self.view.msg_dialog('File not found: \'{}\''.format(path), 'Error')
 

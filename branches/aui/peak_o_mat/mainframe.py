@@ -57,7 +57,7 @@ class MainFrame(wx.Frame):
     _import_filetype = 0
 
 
-    def __init__(self, silent=False, plotserver=False):
+    def __init__(self, silent=False):
         super(MainFrame, self).__init__(None)
         self.instid = 'ID'+str(id(self)) # needed for the message system
 
@@ -68,7 +68,7 @@ class MainFrame(wx.Frame):
                                    aui.AUI_MGR_ALLOW_FLOATING|aui.AUI_MGR_TRANSPARENT_HINT)
         #self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClosePane)
 
-        self.create_menus(plotserver)
+        self.create_menus()
         self.setup_controls()
         self.layout_controls()
 
@@ -164,9 +164,9 @@ class MainFrame(wx.Frame):
         self.SetIcon(ico)
         self.frame_annotations.SetIcon(ico)
 
-    def create_menus(self, plotserver=False):
+    def create_menus(self):
         self.menu_factory = menu.MenuFactory()
-        mb = self.menu_factory.create(plotserver=plotserver)
+        mb = self.menu_factory.create()
         self.menubar = mb
         self.SetMenuBar(mb)
 
