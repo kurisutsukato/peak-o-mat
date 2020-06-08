@@ -14,7 +14,6 @@ class Panel(ScrolledPanel):
         self.calib = model
         self.setup_controls()
         self.layout()
-        self.Fit()
 
         self.SetupScrolling(scrollToTop=False, scrollIntoView=False)
 

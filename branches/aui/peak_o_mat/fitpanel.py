@@ -1,6 +1,7 @@
 
 import wx
 from wx import xrc
+from wx.lib.scrolledpanel import ScrolledPanel
 import re
 
 from . import pargrid
@@ -443,22 +444,24 @@ class FitOptionsPanel(wx.Panel):
         self.SetSizer(outer)
         self.Fit()
 
-class FitPanel(WithMessage,wx.Panel):
+class FitPanel(WithMessage,ScrolledPanel):
     def __init__(self, parent, canvas):
         self.canvas = canvas
         self.parent = parent
-        wx.Panel.__init__(self, parent)
+        ScrolledPanel.__init__(self, parent)
         #self.instid = parent.instid
         WithMessage.__init__(self)
 
         self.setup_controls()
         self.layout()
-        self.Fit()
+
+        self.SetupScrolling(scrollToTop=False, scrollIntoView=False)
 
     def layout(self):
         box = wx.BoxSizer(wx.VERTICAL)
-        box.Add(self.nb_fit)
+        box.Add(self.nb_fit, 1, wx.EXPAND)
         self.SetSizer(box)
+        self.Fit()
 
     def setup_controls(self):
         self.nb_fit = wx.Notebook(self)

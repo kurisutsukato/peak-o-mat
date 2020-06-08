@@ -99,7 +99,7 @@
               <value>dat</value>
             </object>
             <option>1</option>
-            <flag>wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+            <flag>wxEXPAND</flag>
           </object>
         </object>
         <flag>wxBOTTOM|wxLEFT|wxRIGHT|wxEXPAND</flag>
@@ -127,13 +127,13 @@
               <size>300,-1</size>
             </object>
             <option>1</option>
-            <flag>wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+            <flag>wxEXPAND</flag>
           </object>
           <object class="sizeritem">
             <object class="wxButton" name="xrc_btn_dir">
               <label>select</label>
             </object>
-            <flag>wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+            <flag>wxEXPAND</flag>
           </object>
         </object>
         <flag>wxBOTTOM|wxLEFT|wxRIGHT|wxEXPAND</flag>

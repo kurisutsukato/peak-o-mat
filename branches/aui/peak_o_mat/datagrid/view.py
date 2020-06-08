@@ -129,7 +129,7 @@ class GridContainer(WithMessage,wx.Frame):
 
         self.selection_menu = {}
         for mi in menu.GetMenuItems():
-            self.selection_menu[mi.GetLabel()] = mi
+            self.selection_menu[mi.GetItemLabelText()] = mi
 
         menu = wx.Menu()
         menu.Append(ID_PLOTY, "Plot Y", "Create dataset from selected column and x-values from column 0", wx.ITEM_NORMAL)
@@ -138,7 +138,7 @@ class GridContainer(WithMessage,wx.Frame):
 
         self.plot_menu = {}
         for mi in menu.GetMenuItems():
-            self.plot_menu[mi.GetLabel()] = mi
+            self.plot_menu[mi.GetItemLabelText()] = mi
 
         self.SetMenuBar(menubar)
 
