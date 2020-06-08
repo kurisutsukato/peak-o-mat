@@ -20,7 +20,7 @@
               <object class="sizeritem">
                 <object class="unknown" name="xrc_op"/>
                 <option>1</option>
-                <flag>wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+                <flag>wxALL|wxEXPAND</flag>
                 <border>2</border>
               </object>
               <object class="sizeritem">

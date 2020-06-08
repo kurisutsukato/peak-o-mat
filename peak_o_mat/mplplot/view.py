@@ -65,7 +65,7 @@ class CmpDlg(wx.MiniFrame):
         self.il = wx.ImageList(w, h)
 
         ids = []
-        for n,cmap_id in enumerate(plt.colormaps()[:20:2]):
+        for n,cmap_id in enumerate(plt.colormaps()[:50:2]):
             col_map = mpl.cm.get_cmap(cmap_id)
             if np.alltrue(np.asarray(col_map(1)) > 0.7) or np.alltrue(np.asarray(col_map(0)) > 0.7):
                 continue
@@ -146,10 +146,10 @@ class AxesControlPanel(WithMessage, wx.Panel):
 
         self.pan_box = wx.Panel(self)
 
-        self.spn_left = wx.SpinCtrl(self.pan_box, value='', min=1, max=99, size=(50,-1), name='left')
-        self.spn_bottom = wx.SpinCtrl(self.pan_box, value='', min=1, max=99, size=(50,-1), name='bottom')
-        self.spn_width = wx.SpinCtrl(self.pan_box, value='', min=1, max=99, size=(50,-1), name='width')
-        self.spn_height = wx.SpinCtrl(self.pan_box, value='', min=1, max=99, size=(50,-1), name='height')
+        self.spn_left = wx.SpinCtrl(self.pan_box, value='', min=0, max=100, size=(50,-1), name='left')
+        self.spn_bottom = wx.SpinCtrl(self.pan_box, value='', min=0, max=100, size=(50,-1), name='bottom')
+        self.spn_width = wx.SpinCtrl(self.pan_box, value='', min=10, max=100, size=(50,-1), name='width')
+        self.spn_height = wx.SpinCtrl(self.pan_box, value='', min=10, max=100, size=(50,-1), name='height')
 
     def layout(self):
         outer = wx.BoxSizer(wx.HORIZONTAL)

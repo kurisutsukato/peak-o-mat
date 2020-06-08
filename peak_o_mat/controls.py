@@ -227,6 +227,7 @@ class Toolbar(misc_ui.WithMessage, wx.Panel):
         ['scalex.png','btn_autox', 'autoscale x', 0, False],
         ['scaley.png','btn_autoy', 'autoscale y', 0, False],
         ['auto2fit.png','btn_auto2fit', 'autoscale to fit region', 0, False],
+        ['fast.png', 'btn_fast', 'toggle fast display', 1, False],
         ]
 
     def __init__(self, parent):

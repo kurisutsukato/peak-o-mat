@@ -315,11 +315,17 @@ class Interactor(object):
                    'btn_auto':self.OnCanvasButtonAuto,
                    'btn_autox':self.OnCanvasButtonAutoX,
                    'btn_autoy':self.OnCanvasButtonAutoY,
-                   'btn_auto2fit':self.OnCanvasButtonAuto2Fit}
+                   'btn_auto2fit':self.OnCanvasButtonAuto2Fit,
+                   'btn_fast':self.OnCanvasButtonFast}
 
         tid = evt.GetEventObject().GetName()
         callmap[tid](evt.GetEventObject(), evt.GetId())
         evt.Skip()
+
+    def OnCanvasButtonFast(self, tb, id):
+        state = tb.GetValue()
+        self.controller.app_state.fast_display = state
+        self.controller.update_plot()
 
     def OnCanvasButtonAuto(self, *args):
         self.controller.autoscale()

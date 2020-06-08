@@ -309,6 +309,7 @@ class PlotController(object):
                             inset = ax.inset_axes(pm.box.bnds())
                             ax.myinset = inset
                         try:
+                            inset.patch.set_alpha(0.0)
                             if len(inset.lines) == 0 or self.__needs_update:
                                 for s, style in pm.secondary():
                                     inset.plot(s.x, s.y, **style.kwargs())

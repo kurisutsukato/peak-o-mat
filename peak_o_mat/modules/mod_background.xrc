@@ -32,7 +32,7 @@
               <style>wxSL_HORIZONTAL|wxSL_LABELS</style>
             </object>
             <option>0</option>
-            <flag>wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+            <flag>wxEXPAND</flag>
           </object>
           <orient>wxHORIZONTAL</orient>
         </object>

@@ -84,7 +84,8 @@ images/dataset_hide.png
 images/dataset_model.png
 images/dataset_model_hide.png
 images/eraser.png
-images/hand.png
+images/fast.png
+iimages/hand.png
 images/linestyle.png
 images/logo.icns
 images/logo.png
