@@ -684,7 +684,6 @@ class Controller(object):
     def _get_selection(self):
         return self._selection
     def _set_selection(self, selection):
-        print('calles set seleciton')
         class Selection(tuple):
             plot = False
         plot, ds = selection

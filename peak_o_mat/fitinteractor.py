@@ -144,6 +144,8 @@ class FitInteractor(object):
         self.controller.batch_step_result(evt.ds, evt.result)
 
     def OnBatchfitStop(self, evt):
+        self.view.pan_batch.btn_stop.Disable()
+        self.view.pan_batch.btn_run.Enable()
         self.controller.stop_batch_fit()
 
     def OnBatchfitStart(self, evt):
@@ -152,6 +154,7 @@ class FitInteractor(object):
 
 
         self.view.pan_batch.btn_stop.Enable()
+        self.view.pan_batch.btn_run.Disable()
         self.controller.start_batchfit(self.view.pan_batch.ch_base.GetStringSelection(),
                                        self.view.pan_batch.ch_initial.GetSelection(),
                                        self.view.pan_batch.ch_order.GetSelection(),
