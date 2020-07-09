@@ -168,22 +168,21 @@ class Fit:
             wx.PostEvent(notify, event)
 
         out = self.odr.run()
-        if True:
-            for k in range(self.maxiter):
-                if self.stopflag is not None and self.stopflag.is_set():
-                    return None,['Fit cancelled by user']
-                if notify is not None:
-                    message(iteration=(k + 2, out.info, out.res_var))
-                if out.info != 4:
-                    # 4 == iteration limit reached -> restart odr
-                    break
-                out = self.odr.restart(1)
-                #time.sleep(0.5)
+        for k in range(self.maxiter):
+            if self.stopflag is not None and self.stopflag.is_set():
+                return None,['Fit cancelled by user']
+            if notify is not None:
+                message(iteration=(k + 2, out.info, out.res_var))
+            #print(out.info, out.stopreason)
+            if out.info%10 != 4:
+                # 4 == iteration limit reached -> restart odr
+                break
+            out = self.odr.restart(1)
 
         #decoerce parameters if necessary
         pars, errors = self.func.fill(out.beta,out.sd_beta)
 
-        msg = pprint(out)
+        msg = out.stopreason
         return (pars,errors),msg
 
 def test1():

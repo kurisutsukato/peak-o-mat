@@ -417,9 +417,9 @@ class FitController(object):
         ds.limits = batchds.limits
         self._batchfit_basemodel.update_from_fit(result)
         ds.model = copy.deepcopy(self._batchfit_basemodel)
-        self.view.pan_batch.txt_log.AppendText(ds.name+'\n')
-        self.view.pan_batch.txt_log.AppendText('\n'.join(result[-1]))
-        #self.view.pan_batch.txt_log.AppendText('\n\n')
+        pub.sendMessage((self.view.instid, 'updateview'))
+        self.view.pan_batch.txt_log.AppendText(
+            '{}: {}\n'.format(ds.name,result[-1]))
 
     def stop_batch_fit(self):
         if hasattr(self, '_worker'):
