@@ -68,9 +68,8 @@ class BatchParameters(dict):
     def as_spec(self, item):
         xvalues = list(range(len(self[item].values)))
         for n,idx in enumerate(self[item].index):
+            print(n,idx)
             xvalues[n] = self.x[idx]
-        #print(len(xvalues),xvalues)
-        #print(len([q.value for q in self[item].values]), [q.value for q in self[item].values])
         return Spec(xvalues, [q.value for q in self[item].values], '{}:{}:{}'.format(self.name,item,self.par))
 
     def __str__(self):
