@@ -239,13 +239,13 @@ class PlotController(object):
                     ax.relim()
                     ax.autoscale()
                     if len(ax.lines) == 0 or self.__needs_update:
-                        print('ax fresh draw')
+                        #print('ax fresh draw')
                         for s, style in pm.primary():
                             ax.plot(s.x, s.y, **style.kwargs())
                     else:
-                        print('ax redrawing')
+                        #print('ax redrawing')
                         if update_selected and pm != self.model.selected:
-                            print('skip non selected')
+                            #print('skip non selected')
                             continue
                         for line,(s,style) in zip(ax.lines,pm.primary()):
                             for attr,value in style.kwargs().items():
@@ -256,19 +256,21 @@ class PlotController(object):
                     if 'twinx' in pm.axes_data:
                         if hasattr(ax, 'mytwinx'):
                             twinx = ax.mytwinx
-                            print('found twinx axis')
+                            #print('found twinx axis')
                         else:
                             twinx = ax.twinx()
                             ax.mytwinx = twinx
+                        twinx.relim()
+                        twiny.autoscale()
                         try:
                             if len(twinx.lines) == 0 or self.__needs_update:
-                                print('twinx fresh draw')
+                                #print('twinx fresh draw')
                                 for s, style in pm.secondary():
                                     twinx.plot(s.x, s.y, **style.kwargs())
                             else:
-                                print('twinx redrawing')
+                                #print('twinx redrawing')
                                 if update_selected and pm != self.model.selected:
-                                    print('skip non selected')
+                                    #print('skip non selected')
                                     continue
                                 for line,(s,style) in zip(twinx.lines,pm.secondary()):
                                     for attr,value in style.kwargs().items():
@@ -279,19 +281,21 @@ class PlotController(object):
                     elif 'twiny' in pm.axes_data:
                         if hasattr(ax, 'mytwiny'):
                             twiny = ax.mytwiny
-                            print('found twiny axis')
+                            #print('found twiny axis')
                         else:
                             twiny = ax.twiny()
                             ax.mytwiny = twiny
+                        twiny.relim()
+                        twiny.autoscale()
                         try:
                             if len(twiny.lines) == 0 or self.__needs_update:
-                                print('twiny fresh draw')
+                                #print('twiny fresh draw')
                                 for s, style in pm.secondary():
                                     twiny.plot(s.x, s.y, **style.kwargs())
                             else:
-                                print('twiny redrawing')
+                                #print('twiny redrawing')
                                 if update_selected and pm != self.model.selected:
-                                    print('skip non selected')
+                                    #print('skip non selected')
                                     continue
                                 for line,(s,style) in zip(twiny.lines,pm.secondary()):
                                     for attr,value in style.kwargs().items():
@@ -301,13 +305,15 @@ class PlotController(object):
                         set_axis_attributes(twiny, 'x', pm.axes_data['twiny'])
                     elif 'insetx' in pm.axes_data:
                         if hasattr(ax, 'myinset'):
-                            print('found inset')
+                            #print('found inset')
                             inset = ax.myinset
-                            print(pm.box.bnds())
+                            #print(pm.box.bnds())
                             inset.position = pm.box.bnds()
                         else:
                             inset = ax.inset_axes(pm.box.bnds())
                             ax.myinset = inset
+                        inset.relim()
+                        inset.autoscale()
                         try:
                             inset.patch.set_alpha(0.0)
                             if len(inset.lines) == 0 or self.__needs_update:
@@ -315,7 +321,7 @@ class PlotController(object):
                                     inset.plot(s.x, s.y, **style.kwargs())
                             else:
                                 if update_selected and pm != self.model.selected:
-                                    print('skip non selected')
+                                    #print('skip non selected')
                                     continue
                                 for line,(s,style) in zip(inset.lines,pm.secondary()):
                                     for attr,value in style.kwargs().items():
