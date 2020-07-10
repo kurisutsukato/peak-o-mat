@@ -706,7 +706,8 @@ class Controller(object):
             self.view.Bind(wx.EVT_IDLE, lambda x: self._update(x, *args, **kwargs))
             self._updating = True
         else:
-            print('still updating')
+            pass
+            #still updating
 
     def _update(self, evt, *args, **kwargs):
         self._updating = False

@@ -144,8 +144,8 @@ class FitInteractor(object):
         self.controller.batch_step_result(evt.ds, evt.result)
 
     def OnBatchfitStop(self, evt):
-        self.view.pan_batch.btn_stop.Disable()
-        self.view.pan_batch.btn_run.Enable()
+        #self.view.pan_batch.btn_stop.Disable()
+        #self.view.pan_batch.btn_run.Enable()
         self.controller.stop_batch_fit()
 
     def OnBatchfitStart(self, evt):
@@ -155,6 +155,8 @@ class FitInteractor(object):
 
         self.view.pan_batch.btn_stop.Enable()
         self.view.pan_batch.btn_run.Disable()
+        self.view.pan_batch.txt_log.AppendText('Batch fit started.\n')
+
         self.controller.start_batchfit(self.view.pan_batch.ch_base.GetStringSelection(),
                                        self.view.pan_batch.ch_initial.GetSelection(),
                                        self.view.pan_batch.ch_order.GetSelection(),
@@ -169,7 +171,13 @@ class FitInteractor(object):
         elif hasattr(evt, 'endbatch'):
             self.controller.sync_gui(fit_in_progress=False, batch=True)
             self.view.pan_batch.btn_stop.Disable()
-            pub.sendMessage((self.view.instid,'message'),msg='Batch fit finished.')
+            self.view.pan_batch.btn_run.Enable()
+            if evt.endbatch == 'finished':
+                self.view.pan_batch.txt_log.AppendText('Batch fit finished.\n')
+                pub.sendMessage((self.view.instid,'message'),msg='Batch fit finished.')
+            else:
+                self.view.pan_batch.txt_log.AppendText('Abort: batch fit cancelled.\n')
+                pub.sendMessage((self.view.instid, 'message'), msg='Abort: batch fit cancelled.')
             pub.sendMessage((self.view.instid,'updateview'))
         elif hasattr(evt, 'end'):
             self.controller.fit_finished(evt.end)

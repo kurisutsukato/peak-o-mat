@@ -97,14 +97,13 @@ class FitController(object):
         self.sync_gui(batch=True)
 
     def sync_gui(self, **kwargs):
-        if 'fit_in_progress' in kwargs:
-            self._fit_in_progress = kwargs['fit_in_progress']
+        self._fit_in_progress = kwargs.get('fit_in_progress', False)
         self.view.enable_stop(self._fit_in_progress)
         #self.view.enable_fit(not self._fit_in_progress and self.model is not None and self.model.is_filled() and self._current_fititem is not None)
         self.view.enable_pick(not self._fit_in_progress and self.model is not None and self._current_ds is not None and self.model.is_autopickable())
         self.view.pan_pars.Enable(self.model is not None and not self.model.is_empty())
 
-        if 'batch' in kwargs and kwargs['batch']:
+        if kwargs.get('batch', False):
             self.view.pan_batch.bf_update(self._current_pl, keep_selection=False)
 
     def selection_changed(self, plot, ds):
@@ -363,7 +362,8 @@ class FitController(object):
         # TODO
         # handle case when txt input is not list nor regexp
 
-        for n,ds in enumerate(pl):
+        count = 0
+        for ds in pl:
             if ds.model is not None:
                 if x_from_regexp:
                     try:
@@ -379,7 +379,8 @@ class FitController(object):
                     except KeyError:
                         continue
                     else:
-                        data[comp].append(n,val) # first access to item creates item if not existent
+                        data[comp].append(count,val) # first access to item creates item if not existent
+                        count += 1
                 else:
                     for c in [q.name for q in ds.model]:
                         try:
@@ -387,7 +388,8 @@ class FitController(object):
                         except KeyError:
                             continue
                         else:
-                            data[c].append(n, val)
+                            data[c].append(count, val)
+                    count += 1
 
         #pub.sendMessage((self.view.instid, 'generate_grid'),
         #                data=data.as_table(), name='{}:{}'.format(data.name, data.par))
@@ -502,8 +504,6 @@ class BatchWorker(Thread):
 
     def join(self):
         self.stopreason.set()
-        event = misc_ui.ResultEvent(self._notify.GetId(), endbatch='canceled')
-        wx.PostEvent(self._notify, event)
         super(BatchWorker, self).join()
 
     cancel = join
@@ -514,21 +514,18 @@ class BatchWorker(Thread):
         datasets, base, initial, order, fitopts = self._job
         for n,ds in enumerate(datasets):
             if self.stopreason.is_set():
+                event = misc_ui.ResultEvent(self._notify.GetId(), endbatch='canceled')
+                wx.PostEvent(self._notify, event)
                 return
             event = misc_ui.ResultEvent(self._notify.GetId(), name=ds.name)
             wx.PostEvent(self._notify, event)
-            # TODO
-            #
-            #time.sleep(0.01)
 
             if initial == 0 or n == 0:
                 model = base.model
             ds.limits = base.limits
             f = fit.Fit(ds, model, **fitopts)
             res = f.run()
-            #mod.update_from_fit(res)
-            #pl[setnum].model = mod.copy()
-            #TODO: das geht nicht, falscher thread
+
             event = misc_ui.BatchStepEvent(self._notify.GetId(), ds=ds, result=res)
             wx.PostEvent(self._notify, event)
 			
