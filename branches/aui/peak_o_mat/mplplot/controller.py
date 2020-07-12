@@ -155,7 +155,7 @@ class PlotController(object):
         elif name == 'inset':
             for axis in ['insetx', 'insety']:
                 tp = axis[-1]
-                labelpos = dict([('x', 'bottom'), ('y', 'left')])
+                labelpos = dict([('x', 'top'), ('y', 'right')])
                 ad.append(
                     AxesData('inset{}'.format(tp), 'label', labelpos[tp], '', '', 'linear', False, 3, '', '', 'in', '0, 0, 0'))
         self.view.update_from_model(self.model)

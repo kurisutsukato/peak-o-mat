@@ -998,7 +998,6 @@ class Controller(object):
                             for i in ds.loadpeaks(ds.model, addbg=True):
                                 lines.append(plotcanvas.Line(i, colour='blue', skipbb=True))
                 else:
-                    #if config.getboolean('display','fast_display', fallback=False):
                     if self.app_state.fast_display:
                         skip = max(1,int(len(ds.x)/config.getint('display', 'fast_max_pts', fallback=200)+.5))
                     else:

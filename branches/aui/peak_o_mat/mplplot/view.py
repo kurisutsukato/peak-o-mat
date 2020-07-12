@@ -805,8 +805,8 @@ class ControlFrame(WithMessage,wx.Frame):
         self.spn_hspace = wx.SpinCtrlDouble(self.panel, size=(80,-1),min=0.0, max=1.0, inc=0.05, value='0.1', style=wx.TE_PROCESS_ENTER, name='hspace')
         self.spn_wspace = wx.SpinCtrlDouble(self.panel, size=(80,-1),min=0.0, max=1.0, inc=0.05, value='0.1', style=wx.TE_PROCESS_ENTER, name='wspace')
 
-        self.spn_width = wx.SpinCtrlDouble(self.panel, size=(100,-1), min=1, max=10, inc=1, value='5', style=wx.TE_PROCESS_ENTER, name='width')
-        self.spn_height = wx.SpinCtrlDouble(self.panel, size=(100,-1), min=1, max=10, inc=1, value='4', style=wx.TE_PROCESS_ENTER, name='height')
+        self.spn_width = wx.SpinCtrlDouble(self.panel, size=(-1,-1), min=1, max=20, inc=1, value='5', style=wx.TE_PROCESS_ENTER, name='width')
+        self.spn_height = wx.SpinCtrlDouble(self.panel, size=(-1,-1), min=1, max=20, inc=1, value='4', style=wx.TE_PROCESS_ENTER, name='height')
 
         self.btn_ok = wx.Button(self.panel, label='Save and close')
         self.btn_cancel = wx.Button(self. panel, label='Discard')
@@ -893,9 +893,9 @@ class ControlFrame(WithMessage,wx.Frame):
         vbox.Add(hbox, 0, wx.EXPAND|wx.ALL, 5)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(wx.StaticText(self.panel, label='Width'), 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 10)
+        hbox.Add(wx.StaticText(self.panel, label='Width (in.)'), 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 10)
         hbox.Add(self.spn_width, 0, wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 20)
-        hbox.Add(wx.StaticText(self.panel, label='Height'), 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 10)
+        hbox.Add(wx.StaticText(self.panel, label='Height (in.)'), 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 10)
         hbox.Add(self.spn_height, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
         hbox.Add(wx.Window(self.panel, size=(1,1)), 1)
         hbox.Add(wx.StaticText(self.panel, label='Identifier'),0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)

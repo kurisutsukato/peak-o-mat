@@ -493,6 +493,9 @@ class Project(LData):
 
             self.clear()
 
+            root = tree.getroot()
+            self.version = root.attrib.get('version','pre2')
+
             for elem in tree.iter(tag='plot'):
                 name, attrs, data = elem.tag, elem.attrib, elem.text
                 if name == 'plot':
@@ -633,7 +636,8 @@ class Project(LData):
         def a2unicode(text):
             return tw.fill(' '.join([repr(x) for x in text]))
 
-        root = ET.Element('root')
+        root = ET.Element('pom')
+        root.attrib['version'] = '2.0alpha1'
         for p in range(len(self)):
             plot_elem = ET.SubElement(root, 'plot')
             if self[p].xrng is not None:

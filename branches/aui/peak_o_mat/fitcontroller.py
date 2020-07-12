@@ -417,6 +417,7 @@ class FitController(object):
     def batch_step_result(self, batchds, result):
         ds = self._batchfit_plot[batchds.uuid]
         ds.limits = batchds.limits
+        ds.weights = batchds.weights
         self._batchfit_basemodel.update_from_fit(result)
         ds.model = copy.deepcopy(self._batchfit_basemodel)
         pub.sendMessage((self.view.instid, 'updateview'))
@@ -450,6 +451,7 @@ class FitController(object):
             if limit:
                 xr = self.view.canvas.GetXCurrentRange()
                 ds.limits = xr
+            self.model.detach_bounded()
             job = (ds, self.model, fitopts)
             self._fitobject = ds
 
@@ -512,6 +514,7 @@ class BatchWorker(Thread):
         msg = []
 
         datasets, base, initial, order, fitopts = self._job
+        weights = copy.deepcopy(base.weights)
         for n,ds in enumerate(datasets):
             if self.stopreason.is_set():
                 event = misc_ui.ResultEvent(self._notify.GetId(), endbatch='canceled')
@@ -523,6 +526,8 @@ class BatchWorker(Thread):
             if initial == 0 or n == 0:
                 model = base.model
             ds.limits = base.limits
+            ds.weights = weights
+            model.detach_bounded()
             f = fit.Fit(ds, model, **fitopts)
             res = f.run()
 

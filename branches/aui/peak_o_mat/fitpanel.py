@@ -405,15 +405,18 @@ class FitOptionsPanel(wx.Panel):
     def setup_controls(self):
 
         self.cb_limitfitrange = wx.CheckBox(self, label='Limit fit to visible range')
+        self.cb_limitfitrange.Value = False
         self.cb_autostep = wx.CheckBox(self, label='Default')
         self.txt_stepsize = wx.TextCtrl(self, value='1e-10', size=(70,-1), style=wx.TE_RIGHT)
         self.cb_autostep.SetValue(True)
         self.txt_stepsize.Enable(False)
 
-        self.txt_maxiter = wx.TextCtrl(self, value='200', validator=controls.InputValidator(controls.INT_ONLY), size=(70,-1), style=wx.TE_RIGHT)
+        self.txt_maxiter = wx.TextCtrl(self, value='500', validator=controls.InputValidator(controls.INT_ONLY), size=(70,-1), style=wx.TE_RIGHT)
         self.txt_fitlog = wx.TextCtrl(self, style=wx.TE_MULTILINE|wx.TE_READONLY)
         self.ch_fittype  = wx.Choice(self, choices=['LeastSQ', 'ODR'])
         self.ch_fittype.Select(0)
+        self.ch_fittype.Hide()
+        #TODO: eliminiate ODR
 
     def layout(self):
         rowstyle = wx.ALIGN_CENTER_VERTICAL
@@ -421,10 +424,10 @@ class FitOptionsPanel(wx.Panel):
         outer = wx.BoxSizer(wx.HORIZONTAL)
         col = wx.BoxSizer(wx.VERTICAL)
 
-        row = wx.BoxSizer(wx.HORIZONTAL)
-        row.Add(wx.StaticText(self, label='Fit type'), 0, rowstyle|wx.RIGHT, 2)
-        row.Add(self.ch_fittype, 0, rowstyle)
-        col.Add(row, 0, wx.EXPAND|wx.BOTTOM, 10)
+        #row = wx.BoxSizer(wx.HORIZONTAL)
+        #row.Add(wx.StaticText(self, label='Fit type'), 0, rowstyle|wx.RIGHT, 2)
+        #row.Add(self.ch_fittype, 0, rowstyle)
+        #col.Add(row, 0, wx.EXPAND|wx.BOTTOM, 10)
 
         col.Add(self.cb_limitfitrange, 0, wx.BOTTOM, 10)
 
