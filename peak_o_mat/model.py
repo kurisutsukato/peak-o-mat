@@ -398,7 +398,16 @@ Update the model with the results from a fit.
                     var.error = b[var.count]
         if self.listener is not None:
             self.listener()
-                    
+
+    def detach_bounded(self):
+        for comp in self:
+            for var in comp.values():
+                if var.constr == 2:
+                    if np.isclose(var.value,var.amin):
+                        var.value += var.value*1e-6
+                    elif np.isclose(var.value,var.amax):
+                        var.value -= var.value*1e-6
+
     def evaluate(self, x, single=False, addbg=False, restrict=None):
         """\
         Evaluate the current model at positions x.
@@ -949,16 +958,21 @@ class Var(object):
         if self.constr != 2:
             return self.value
         else:
+            #ret = np.arcsin(2*(self.value - self.amin)/(self.amax - self.amin) - 1)
             t = (self.value - (self.amin+self.amax)/2.0)/((self.amax-self.amin)/2.0)
-            return (-1/(t-1*(2*(t>0)-1))-1*(2*(t>0)-1))
+            ret = (-1/(t-1*(2*(t>0)-1))-1*(2*(t>0)-1))
+            #print('coerce from {} to {}'.format(self.value,ret))
+            return ret
 
     def _decoerce(self, arg):
         if self.constr != 2:
             self.value = arg
         else:
+            #self.value = self.amin + (np.sin(self.value) + 1) * (self.amax - self.amin) / 2.0
             t = arg/(abs(arg)+1.0)
             self.value = (self.amin+self.amax)/2.0+(self.amax-self.amin)/2.0*t
-        
+            #print('decoerce from {} to {}'.format(arg,self.value))
+
     value_mapped = property(_coerce, _decoerce)
 
     def __str__(self):
@@ -968,10 +982,13 @@ class curry_var(object):
     def __init__(self, var):
         self.amin = var.amin
         self.amax = var.amax
+
     def __call__(self, arg):
+        #ret = self.amin + (np.sin(arg) + 1) * (self.amax - self.amin) / 2.0
         t = arg/(abs(arg)+1.0)
-        out = (self.amin+self.amax)/2.0+(self.amax-self.amin)/2.0*t
-        return out
+        ret = (self.amin+self.amax)/2.0+(self.amax-self.amin)/2.0*t
+        #print('decorce from {} to {}'.format(arg, ret))
+        return ret
     
 class QuickEvaluate(object):
     def __init__(self, model):
