@@ -837,7 +837,7 @@ class ControlFrame(WithMessage,wx.Frame):
         bx = wx.StaticBox(self.panel_basic, label='Labels')
         hbox = wx.StaticBoxSizer(bx, wx.HORIZONTAL)
         hbox.Add(wx.StaticText(self.panel_basic, label='Title'), 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 10)
-        hbox.Add(self.txt_title, 1, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 20)
+        hbox.Add(self.txt_title, 1, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 20)
         vbox.Add(hbox, 0, wx.EXPAND|wx.ALL, 5)
 
         bx = wx.StaticBox(self.panel_basic, label='Legend')
@@ -894,9 +894,9 @@ class ControlFrame(WithMessage,wx.Frame):
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(wx.StaticText(self.panel, label='Width (in.)'), 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 10)
-        hbox.Add(self.spn_width, 0, wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 20)
+        hbox.Add(self.spn_width, 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 20)
         hbox.Add(wx.StaticText(self.panel, label='Height (in.)'), 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 10)
-        hbox.Add(self.spn_height, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
+        hbox.Add(self.spn_height, 0, wx.ALIGN_CENTER_VERTICAL)
         hbox.Add(wx.Window(self.panel, size=(1,1)), 1)
         hbox.Add(wx.StaticText(self.panel, label='Identifier'),0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
         hbox.Add(self.txt_identifier, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT,10)

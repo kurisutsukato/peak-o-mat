@@ -92,9 +92,9 @@ API-MS-Win-Security-Base-L1-1-0.dll
 
     if sys.argv[1] != 'sdist':
         if sys.platform == 'win32':
-            if not os.path.exists('Microsoft.VC90.CRT'):
-                print('Microsoft.VC90.CRT folder not found. aborting.')
-                sys.exit(0)
+            #if not os.path.exists('Microsoft.VC90.CRT'):
+            #    print('Microsoft.VC90.CRT folder not found. aborting.')
+            #    sys.exit(0)
 
             configdict['setup_requires'] = ['py2exe'],
             configdict['cmdclass'] = {"py2exe": build_installer}

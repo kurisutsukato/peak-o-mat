@@ -73,8 +73,8 @@ def build():
         if os.path.exists(d):
             shutil.rmtree(d)
 
-    from subprocess import call
-    call([r'C:\Program Files (x86)\Python37-32\Scripts\pyinstaller.exe','peak-o-mat.spec'])
+    from subprocess import run
+    run([r'pyinstaller.exe','peak-o-mat.spec'], shell=True)
 
 def package_win():
     tmp = []
