@@ -261,7 +261,7 @@ class PlotController(object):
                             twinx = ax.twinx()
                             ax.mytwinx = twinx
                         twinx.relim()
-                        twiny.autoscale()
+                        twinx.autoscale()
                         try:
                             if len(twinx.lines) == 0 or self.__needs_update:
                                 #print('twinx fresh draw')

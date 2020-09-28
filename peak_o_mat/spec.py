@@ -408,10 +408,6 @@ bbox : boundingbox of points to be removed
         return self._mask
     mask = property(_get_mask, _set_mask, doc='mask storing deleted points')
 
-    @property
-    def has_second_y(self):
-        return self.data.shape[0] == 3
-
     def _get_data(self, axis, unmasked=False, limited=False):
         ind = ['x','y'].index(axis)
         data = np.copy(self.data)
