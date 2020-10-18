@@ -45,6 +45,8 @@ class BaseModule(misc_ui.WithMessage, Module):
         self.plotme = None
         self.parent_view = view
         self.parent_controller = controller
+        self.project = controller.project
+
         self.name = os.path.splitext(os.path.basename(__file__))[0]
         self.view = None
 
@@ -78,6 +80,7 @@ class BaseModule(misc_ui.WithMessage, Module):
         pass
 
     def show(self, state=True):
+        #TODO: check which modules are visible on startup
         self.visible = state
         self.focus_changed(self)
 

@@ -560,6 +560,18 @@ bbox : boundingbox of points to be removed
             ret =  Spec(self.x, np.divide(self.y,other.y), '%s/%s'%(self.name,other.name))
         return ret
 
+    def __rtruediv__(self, other):
+        if not isinstance(other, Spec):
+            return Spec(self.x, other/self.y, '%s/%s'%(other,self.name))
+        if not np.alltrue(self.x == other.x):
+            a, b = overlap(self.x, other.x)
+            interpolate = interp1d(other.x,other.y)
+            interp = interpolate(self.x[a:b])
+            ret = Spec(self.x[a:b], np.divide(interp,self.y[a:b]), '%s/%s'%(other.name,self.name))
+        else:
+            ret =  Spec(self.x, np.divide(other.y,self.y), '%s/%s'%(other.name,self.name))
+        return ret
+
     def __mul__(self, other):
         if not isinstance(other, Spec):
             if np.isscalar(other):
@@ -575,6 +587,8 @@ bbox : boundingbox of points to be removed
         else:
             ret =  Spec(self.x, np.multiply(self.y,other.y), '%s*%s'%(self.name,other.name))
         return ret
+
+    __rmul__ = __mul__
 
     def __add__(self, other):
         if not isinstance(other, Spec):
