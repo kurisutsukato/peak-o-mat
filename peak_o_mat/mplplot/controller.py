@@ -348,6 +348,9 @@ def set_plot_attributes(ax, pm):
     else:
         ax.legend_ = None
 
+    if pm.label_title != '':
+        ax.set_title(pm.label_title)
+
     for item in ([ax.title, ax.xaxis.label, ax.yaxis.label]+ ax.get_xticklabels() + ax.get_yticklabels()):
         item.set_fontsize(pm.fontsize)
 

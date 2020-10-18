@@ -742,6 +742,8 @@ class ControlFrame(WithMessage,wx.Frame):
             self.spn_fontsize.Value = mpmodel.selected.fontsize
             self.chk_legend_frameon.Value = mpmodel.selected.legend_frameon
 
+            self.txt_title.Value = mpmodel.selected.label_title
+
     def resize_canvas(self, w, h, dpi):
         self.figure.set_size_inches(w,h,True)
         self.plot_view.canvas.SetMinSize((dpi*w,dpi*h))

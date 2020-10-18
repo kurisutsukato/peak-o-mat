@@ -257,6 +257,7 @@ class PlotData(object):
         self.legend_fontsize = int(view.spn_legend_fontsize.Value)
         self.legend_position = int(view.spn_legend_position.Value)
         self.legend_frameon = bool(view.chk_legend_frameon.Value)
+        self.label_title = str(view.txt_title.Value)
 
         self.fontsize = int(view.spn_fontsize.Value)
 
@@ -476,7 +477,12 @@ class MultiPlotModel(dict):
     def remove(self, pos):
         item = self[pos]
         self[pos] = None
-        item.release()
+        try:
+            item.release()
+        except AttributeError:
+            # happens if item is empty (= None)
+            pass
+
 
     def select(self, pos):
         if pos in self:

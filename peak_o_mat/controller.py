@@ -290,7 +290,7 @@ class Controller(object):
                     plotname = None
                     order = 'xyyy'
                 if not plot_created or one_plot_each:
-                    if (not one_plot_each and len(path) > 1):
+                    if not one_plot_each and len(path) > 1:
                         plotname = split(os.path.dirname(p))[-1]
                     plot = self.project.append_plot(name=plotname)
                     plot_created = True

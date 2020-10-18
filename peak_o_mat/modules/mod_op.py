@@ -21,7 +21,6 @@ etc.
 
 import wx
 from pubsub import pub
-import wx.dataview as dv
 
 import re
 import sys
