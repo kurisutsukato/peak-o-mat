@@ -97,7 +97,7 @@ class FitBatchPanel(wx.Panel):
         self.ch_parameter = wx.Choice(self.sbox2)
         self.txt_xexpr = wx.TextCtrl(self.sbox1)
         self.txt_xpreview = wx.TextCtrl(self.sbox1, style=wx.TE_READONLY)
-        self.cb_errors = wx.CheckBox(self.pan_export, label='include errors')
+        self.cb_errors = wx.CheckBox(self.pan_export, label='Include errors')
         self.btn_export = wx.Button(self.pan_export, label='Export')
         self.btn_export.Disable()
         self.btn_generate = wx.Button(self.pan_export, label='Create')
