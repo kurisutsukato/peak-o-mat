@@ -410,8 +410,8 @@ class Project(LData):
         for p in self:
             for s in p:
                 if s.uuid == uuid:
-                    return s
-        return None
+                    return p,s
+        raise KeyError('{} not found'.format(uuid))
 
     def append_plot(self, name=None):
         return self.add(Plot(name=name))
