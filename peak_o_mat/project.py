@@ -42,6 +42,9 @@ from .weights import Weights,WeightsRegion
 
 from .mplplot.model import MultiPlotModel, PlotData
 
+import wx.dataview as dv
+
+
 special_numbers=dict([('-1.#INF',-inf),('1.#INF',inf),
                       ('-1.#IND',nan),('-1.#IND00',nan),
                       ('1.#QNAN',-nan),('1.#QNAN0',-nan)])
@@ -114,9 +117,93 @@ def dict2xmlelements(data):
             xml.append('<{0}>{1}</{0}>'.format(k,v))
     return '\n'.join(xml)
 
-class LData(list):
+class ExtraBase(list):
     def __init__(self, *args):
-        list.__init__(self, *args)
+        super(ExtraBase, self).__init__(*args)
+
+    def attach_dvmodel(self, model):
+        self.m = model
+        for k in self:
+            k.m = model
+
+    @property
+    def __cb(self):
+        ret = hasattr(self, 'm')
+        return ret
+
+    def append(self, obj):
+        if isinstance(obj, Spec):
+            obj.__class__ = PlotItem
+            Dataset.__init__(obj)
+        list.append(self, obj)
+        if self.__cb:
+            dvi = self.m.ObjectToItem(obj)
+            self.m.ItemAdded(self.m.GetParent(dvi), dvi)
+
+    def insert(self, n, obj):
+        if isinstance(obj, Spec):
+            obj.__class__ = PlotItem
+            Dataset.__init__(obj)
+        list.insert(self, n, obj)
+        if self.__cb:
+            dvi = self.m.ObjectToItem(obj)
+            self.m.ItemAdded(self.m.GetParent(dvi), dvi)
+
+    def pop(self, n):
+        if self.__cb:
+            dvi = self.m.ObjectToItem(self[n])
+            dvipa = self.m.GetParent(dvi)
+        ret = list.pop(self, n)
+        if self.__cb:
+            self.m.ItemDeleted(dvipa, dvi)
+        return ret
+
+    def remove(self, obj):
+        if self.__cb:
+            dvi = self.m.ObjectToItem(obj)
+            dvipa = self.m.GetParent(dvi)
+        ret = list.remove(self, obj)
+        if self.__cb:
+            self.m.ItemDeleted(dvipa, dvi)
+        return ret
+
+    def __setitem__(self, item, obj):
+        if self.__cb:
+            dviarr = dv.DataViewItemArray()
+            if type(item) == slice:
+                for k in self[item]:
+                    dvi = self.m.ObjectToItem(k)
+                    dviarr.append(dvi)
+            else:
+                dvi = self.m.ObjectToItem(self[item])
+                dviarr.append(dvi)
+            dvipa = self.m.GetParent(dvi)
+            self.m.ItemsDeleted(dvipa, dviarr)
+        if type(item) == slice:
+            for o in obj:
+                if isinstance(o, Spec):
+                    o.__class__ = PlotItem
+                    Dataset.__init__(o)
+        else:
+            if isinstance(obj, Spec):
+                obj.__class__ = PlotItem
+                Dataset.__init__(obj)
+        list.__setitem__(self, item, obj)
+        if self.__cb:
+            dviarr = dv.DataViewItemArray()
+            if type(item) == slice:
+                for k in self[item]:
+                    dvi = self.m.ObjectToItem(k)
+                    dviarr.append(dvi)
+            else:
+                dvi = self.m.ObjectToItem(self[item])
+                dviarr.append(dvi)
+            dvipa = self.m.GetParent(dvi)
+            self.m.ItemsAdded(dvipa, dviarr)
+
+class LData(ExtraBase):
+    def __init__(self, *args):
+        ExtraBase.__init__(self, *args)
         self.name = ''
 
     def add(self, item):
@@ -175,7 +262,7 @@ class LData(list):
         elif to < frm:
             self[:] = ptake(self,list(range(to))+[frm]+list(range(to,frm))+list(range(frm+1,len(self))))
 
-    def insert(self, pos, item):
+    def _insert(self, pos, item):
         if type(item) == list:
             if pos == len(self):
                 self.extend(item)
@@ -192,6 +279,13 @@ class LData(list):
                 else:
                     raise
 
+    def position(self, item):
+        #like index() but checks if objects are identicals
+        for n,i in enumerate(self):
+            if id(item) == id(i):
+                return n
+        raise IndexError(item)
+
 class Dataset(object):
     type = 'dataset'
     def __init__(self):
@@ -202,11 +296,12 @@ class PlotItem(Spec, Dataset):
         Dataset.__init__(self)
         Spec.__init__(self, *args)
 
+
 class Plot(LData):
     type = 'plot'
     def __init__(self, uuid=None, name=None):
         LData.__init__(self)
-        self.xrng,self.yrng = None,None
+        self.xrng, self.yrng = None,None
         self._references = []
         self.uuid = uuid or UUID.uuid4().hex
         if name is not None:
@@ -219,8 +314,15 @@ class Plot(LData):
         self.limits = None
         self.model = None
 
-    def __repr__(self):
-        return 'plot \'{}\' with {} set(s)'.format(self.name,len(self))
+    def add(self, item):
+        list.append(self, item)
+        return len(self)-1
+
+    def index_by_uuid(self, item):
+        for n,q in enumerate(self):
+            if q.uuid == item.uuid:
+                return n
+        raise IndexError(item)
 
     def __getstate__(self):
         dict = self.__dict__.copy()
@@ -408,6 +510,8 @@ class Project(LData):
 
     def find_by_uuid(self, uuid):
         for p in self:
+            if p.uuid == uuid:
+                return None,p
             for s in p:
                 if s.uuid == uuid:
                     return p,s
@@ -425,6 +529,14 @@ class Project(LData):
     def __getitem__(self, item):
         if type(item) in [int,slice]:
             return super(Project, self).__getitem__(item)
+        else:
+            for p in self:
+                if p.uuid == item:
+                    return p
+            raise KeyError('no plot with uuid "{}"'.format(item))
+            #return self.find_by_uuid(item)[1]
+
+        #TODO: hat bisher nur nach plots gesucht, nicht nach datasets
         _tmp = []
         for p in self:
             _tmp.append(p.uuid)
@@ -804,60 +916,97 @@ class Project(LData):
         return None
     Write = save
 
+
+import unittest
+from operator import add
+
+#unittest.main()
+
+class tests(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        unittest.TestCase.__init__(self, *args, **kwargs)
+        self.a = LData()
+        for i in range(5):
+            self.a.add(str(i))
+
+    def test1(self):
+        self.a.move(1, 3)
+        order = reduce(add, [str(x) for x in self.a])
+        self.assertTrue(order == '02134')
+
+    def test2(self):
+        self.a.move(3, 1)
+        order = reduce(add, [str(x) for x in self.a])
+        self.assertTrue(order == '03124')
+
+    def test3(self):
+        self.a.move(3, 3)
+        order = reduce(add, [str(x) for x in self.a])
+        self.assertTrue(order == '01234')
+
+    def test4(self):
+        self.a.move([0, 2, 4], 2)
+        order = reduce(add, [str(x) for x in self.a])
+        self.assertTrue(order == '10243')
+
+    def test5(self):
+        print('tedst5')
+        print(self.a)
+        self.a.move([0, 1, 2, 3, 4], 2)
+        print(self.a)
+        order = reduce(add, [str(x) for x in self.a])
+        self.assertTrue(order == '01234')
+
+    def test6(self):
+        self.a.delete([1, 4])
+        order = reduce(add, [str(x) for x in self.a])
+        self.assertTrue(order == '023')
+
+    def test7(self):
+        out = self.a.delete([1, 4])
+        self.a.insert(-1, out)
+        order = reduce(add, [str(x) for x in self.a])
+        self.assertTrue(order == '02143')
+
+    def test8(self):
+        self.a.insert(2, ['8', '9'])
+        order = reduce(add, [str(x) for x in self.a])
+        self.assertTrue(order == '0189234')
+
 if __name__ == '__main__':
-    import unittest
-    from operator import add
-    
-    class tests(unittest.TestCase):
-        def __init__(self, *args, **kwargs):
-            unittest.TestCase.__init__(self, *args, **kwargs)
-            self.a = LData()
-            for i in range(5):
-                self.a.add(str(i))
+    p = Project()
+    p.load('example.lpj')
 
-        def test1(self):
-            self.a.move(1,3)
-            order = reduce(add, [str(x) for x in self.a])
-            self.assertTrue(order == '02134')
-            
-        def test2(self):
-            self.a.move(3,1)
-            order = reduce(add, [str(x) for x in self.a])
-            self.assertTrue(order == '03124')
-            
-        def test3(self):
-            self.a.move(3,3)
-            order = reduce(add, [str(x) for x in self.a])
-            self.assertTrue(order == '01234')
-            
-        def test4(self):
-            self.a.move([0,2,4],2)
-            order = reduce(add, [str(x) for x in self.a])
-            self.assertTrue(order == '10243')
 
-        def test5(self):
-            print('tedst5')
-            print(self.a)
-            self.a.move([0,1,2,3,4],2)
-            print(self.a)
-            order = reduce(add, [str(x) for x in self.a])
-            self.assertTrue(order == '01234')
+    p2 = p[2]
 
-        def test6(self):
-            self.a.delete([1,4])
-            order = reduce(add, [str(x) for x in self.a])
-            self.assertTrue(order == '023')
-            
-        def test7(self):
-            out = self.a.delete([1,4])
-            self.a.insert(-1, out)
-            order = reduce(add, [str(x) for x in self.a])
-            self.assertTrue(order == '02143')
 
-        def test8(self):
-            self.a.insert(2, ['8','9'])
-            order = reduce(add, [str(x) for x in self.a])
-            self.assertTrue(order == '0189234')
-            
-    unittest.main()
+    class Base1(object):
+        def __init__(self):
+            self.uuid = UUID.uuid4().hex
+
+    class Base2(object):
+        def __init__(self, name):
+            self.name = name
+
+        def __eq__(selfself, other):
+            if self.name == other:
+                return True
+            else:
+                return False
+
+    class Custom(Spec, Base1):
+        def __init__(self, *args):
+            Base1.__init__(self)
+            Spec.__init__(self, *args)
+
+    a = Custom([1,2,3],[1,2,3],'test')
+    print(id(a))
+    p2.append(a)
+    print('where is a',p2.position(a))
+
+    b = Custom([1,2,3],[1,2,3],'test3')#
+    print(id(b))
+    p2.append(b)
+    print('where is b',p2.position(b))
 

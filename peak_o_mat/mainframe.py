@@ -9,6 +9,7 @@ import sys
 from . import misc
 from . import plotcanvas
 from . import controls
+from . import dvctree
 from . import tree
 from . import menu
 from . import images
@@ -55,7 +56,6 @@ class App(wx.App):
 
 class MainFrame(wx.Frame):
     _import_filetype = 0
-
 
     def __init__(self, silent=False):
         super(MainFrame, self).__init__(None)
@@ -144,10 +144,8 @@ class MainFrame(wx.Frame):
         box.Add(self.tb_canvas, 0, wx.EXPAND)
         self.panplot.SetSizer(box)
 
-        #self.nb_modules = wx.Notebook(self)
-
-        self.tree = tree.TreeCtrl(self)
-
+        self.tree = dvctree.TreeCtrl(self)
+        #self.tree = tree.TreeCtrl(self)
         #self.splitwin.SetMinimumPaneSize(20)
         #self.splitwin.SplitVertically(self.pan_plot, self.pan_tree, -100)
 

@@ -52,6 +52,7 @@ from . import codeeditor
 from .mplplot import controller as mplcontroller
 from .mplplot import model as mplmodel
 from .controls import FigureListController
+from .dvctree import TreeListModel
 
 from .main import new_controller
 
@@ -205,7 +206,8 @@ class Controller(object):
 
             self.codeeditor.data = self.project.code
 
-            self.view.tree.build(self.project)
+            self.view.tree.AssociateModel(TreeListModel(self.project))
+            #self.view.tree.build(self.project)
             if self.project.path is not None:
                 self.view.filehistory.AddFileToHistory(os.path.abspath(path))
                 self.save_filehistory()
@@ -568,6 +570,10 @@ class Controller(object):
         Synchronize the tree with the project data. If 'plot' is not None, update only
         the nodes contained in 'plot'.
         """
+        #TODO: should not be necesary anymore
+        return
+
+
         if plot is None:
             self.view.tree.update_node(-1, [x.name for x in self.project])
             for n in range(len(self.project)):
