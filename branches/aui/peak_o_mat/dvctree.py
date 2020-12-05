@@ -2,32 +2,50 @@ import wx
 import wx.dataview as dv
 from uuid import uuid4
 import sys
+from pubsub import pub
+from json import dumps, loads
 
 from . project import Project, Plot, PlotData
+from .misc_ui import WithMessage
 
 class TreeListModel(dv.PyDataViewModel):
     def __init__(self, data):
         dv.PyDataViewModel.__init__(self)
-        self.data = data
         self._selection = []
+        self.data = data
+        self.data.attach_dvmodel(self)
 
     @property
     def selection(self):
         try:
-            item = self.ObjectToItem(self._selection[0])
+            parent = self.GetParent(self._selection[0])
         except IndexError:
             print('index error')
             return None, []
         else:
-            parent = self.GetParent(item)
             if parent == dv.NullDataViewItem:
-                return None, self._selection
+                return None, [self.ItemToObject(q) for q in self._selection]
             else:
-                return self.ItemToObject(parent), self._selection
+                return self.ItemToObject(parent), [self.ItemToObject(q) for q in self._selection]
 
     @selection.setter
     def selection(self, newsel):
         self._selection = newsel
+
+    @property
+    def selection_indices(self):
+        parent, childs = self.selection
+
+        if parent is None:
+            try:
+                plotnum = self.data.index(childs[0])
+            except IndexError:
+                plotnum = None
+            setnum = []
+        else:
+            plotnum = self.data.index(parent)
+            setnum = [self.data[plotnum].index(q) for q in childs]
+        return plotnum, setnum
 
     def GetColumnCount(self):
         return 2
@@ -98,16 +116,17 @@ class TreeListModel(dv.PyDataViewModel):
         node = self.ItemToObject(item)
 
         if isinstance(node, Plot):
-            num = self.data.index(node)
+            num = self.data.position(node)
             mapper = { 0 : 'p{} {}'.format(num, node.name),
-                       1 : 'test',
+                       1 : '',
                        }
             return mapper[col]
         else:
             cont, elem = self.data.find_by_uuid(node.uuid)
-            num = cont.index(elem)
+            num = cont.position(elem)
+            #print(cont[num], id(cont[num]), elem, id(elem))
             mapper = { 0 : 's{} {}'.format(num, node.name),
-                       1 : 'test'
+                       1 : ''
                        }
             return mapper[col]
 
@@ -131,91 +150,153 @@ class TreeListModel(dv.PyDataViewModel):
             else:
                 dvctrl.Collapse(self.ObjectToItem(self.data[k]))
 
-class MyFrame(wx.Frame):
-    def __init__(self, parent, prj):
-        wx.Frame.__init__(self, parent, -1, "Table", size=(-1,400))
-        self.selection = [None, []]
+class TreeCtrl(dv.DataViewCtrl, WithMessage):
+    def __init__(self, parent, standalone=False):
+        dv.DataViewCtrl.__init__(self, parent, style=wx.BORDER_THEME|dv.DV_MULTIPLE|dv.DV_NO_HEADER)
+        if standalone:
+            self.instid = 'ID'+str(id(self)) # needed for the message system
+        else:
+            WithMessage.__init__(self)
+
         self._dragging = False
         self._draglevel = 0
         self._items_dragged = []
         self._timer = wx.Timer(self)
         self._scrolllines = 0
 
-        panel = wx.Panel(self)
-        dvcTree = dv.DataViewCtrl(panel,style=wx.BORDER_THEME|dv.DV_MULTIPLE|dv.DV_NO_HEADER)
-        self.model = TreeListModel(prj)
-        dvcTree.AssociateModel(self.model)
+        self.AppendTextColumn("Container",   0, width=400)
+        self.AppendTextColumn("Element",   1, width=0)
 
-        dvcTree.AppendTextColumn("Container",   0, width=400)
-        dvcTree.AppendTextColumn("Element",   1, width=0, mode=dv.DATAVIEW_CELL_EDITABLE)
-
-        dvcTree.Bind(wx.EVT_KILL_FOCUS, self.on_focuskill)
-
-        dvcTree.Bind(dv.EVT_DATAVIEW_ITEM_BEGIN_DRAG, self.on_drag)
+        self.Bind(dv.EVT_DATAVIEW_ITEM_BEGIN_DRAG, self.on_drag)
         if sys.platform == 'darwin':
-            dvcTree.Bind(dv.EVT_DATAVIEW_ITEM_DROP, self.on_enddragosx)
+            self.Bind(dv.EVT_DATAVIEW_ITEM_DROP, self.on_enddragosx)
         elif sys.platform == 'linux':
-            dvcTree.Bind(dv.EVT_DATAVIEW_ITEM_DROP, self.on_enddraglinux)
+            self.Bind(dv.EVT_DATAVIEW_ITEM_DROP, self.on_enddraglinux)
         else:
-            dvcTree.Bind(dv.EVT_DATAVIEW_ITEM_DROP, self.on_enddrag)
-        dvcTree.Bind(dv.EVT_DATAVIEW_ITEM_DROP_POSSIBLE, self.on_droppossible)
-        dvcTree.Bind(dv.EVT_DATAVIEW_SELECTION_CHANGED, self.on_select)
+            self.Bind(dv.EVT_DATAVIEW_ITEM_DROP, self.on_enddrag)
+        self.Bind(dv.EVT_DATAVIEW_ITEM_DROP_POSSIBLE, self.on_droppossible)
+        self.Bind(dv.EVT_DATAVIEW_SELECTION_CHANGED, self.on_select)
         if sys.platform != 'linux':
-            dvcTree.Bind(dv.EVT_DATAVIEW_ITEM_EXPANDED, self.on_expand)
-        panel.Bind(dv.EVT_DATAVIEW_ITEM_CONTEXT_MENU, self.on_menu, dvcTree)
+            self.Bind(dv.EVT_DATAVIEW_ITEM_EXPANDED, self.on_expand)
+        self.Bind(dv.EVT_DATAVIEW_ITEM_CONTEXT_MENU, self.on_menu)
 
-        dvcTree.Bind(dv.EVT_DATAVIEW_ITEM_ACTIVATED, self.on_activated)
+        self.Bind(dv.EVT_DATAVIEW_ITEM_ACTIVATED, self.on_activated)
 
         self.Bind(wx.EVT_TIMER, self.on_timer)
 
-        dvcTree.EnableDragSource(wx.DataFormat(wx.DF_UNICODETEXT))
-        dvcTree.EnableDropTarget(wx.DataFormat(wx.DF_UNICODETEXT))
+        if sys.platform != 'darwin':
+            self.EnableDragSource(wx.DataFormat(wx.DF_UNICODETEXT))
+            self.EnableDropTarget(wx.DataFormat(wx.DF_UNICODETEXT))
 
-        self.dvcTree = dvcTree
-        self.btn_clear = wx.Button(panel, label='Clear')
-        box = wx.BoxSizer(wx.HORIZONTAL)
-        box.Add(dvcTree, 1, wx.ALL|wx.EXPAND,10)
-        box.Add(self.btn_clear, 0, wx.EXPAND)
-        panel.SetSizer(box)
-        self.Layout()
+        self.init_menus()
 
-        self.btn_clear.Bind(wx.EVT_BUTTON, self.on_clear)
-        self.panel = panel
+    def AssociateModel(self, model):
+        self.dataviewmodel = model
+        dv.DataViewCtrl.AssociateModel(self, model)
+
+    def init_menus(self):
+        self.menumap = [#(-1, 'Rename', self.on_),
+                        (-1, 'Delete', self.on_delete),
+                        #(-1, 'Duplicate', self.OnDuplicate),
+                        #(-1, 'New sets from visible area', self.OnNewSetsFromVisArea),
+                        #(-1, 'Copy to data grid', self.OnSpreadsheet),
+                        #(wx.ID_SEPARATOR, '', None),
+                        #(-1, 'Toggle visibility', self.OnHide),
+                        #(wx.ID_SEPARATOR, '', None),
+                        #(-1, 'Remove mask', self.OnUnmask),
+                        #(-1, 'Remove trafos', self.OnRemTrafo),
+                        #(-1, 'Remove model', self.OnRemFit),
+                        #(-1, 'Remove weights', self.OnRemError),
+                        #(wx.ID_SEPARATOR, '', None),
+                        #(-1, 'Insert plot', self.OnInsertPlot),
+                        #(-1, 'Copy', self.OnCopy),
+                        #(-1, 'Paste', self.OnPaste)
+                        ]
+
+        self.menu = wx.Menu()
+        #self.minimal_menu = wx.Menu()
+
+        for id, text, act in self.menumap:
+            item = wx.MenuItem(self.menu, id=id, text=text)
+            item = self.menu.Append(item)
+            if act is not None:
+                self.Bind(wx.EVT_MENU, act, item)
+                if text.find('Plot') != -1:
+                    self.Bind(wx.EVT_UPDATE_UI, self.on_uimenu, item)
+
+        #item = wx.MenuItem(self.minimal_menu, id=-1, text='paste')
+        #item = self.minimal_menu.Append(item)
+        #self.Bind(wx.EVT_MENU, self.OnPaste, item)
+        #item = wx.MenuItem(self.minimal_menu, id=-1, text='add_plot')
+        #item = self.minimal_menu.Append(item)
+        #self.Bind(wx.EVT_MENU, self.OnAddPlot, item)
+
+    def on_uimenu(self, evt):
+        evt.Enable(self.dataviewmodel.selection[0] is None)
+
+    def on_delete(self, evt):
+        self.SetEvtHandlerEnabled(False)
+
+        parent, childs = self.dataviewmodel.selection
+        dvia = dv.DataViewItemArray()
+        if parent is None:
+            for pl in childs:
+                index = self.dataviewmodel.data.index(pl)
+                self.dataviewmodel.data.remove(pl)
+                #self.dataviewmodel.ItemDeleted(dv.NullDataViewItem, self.dataviewmodel.ObjectToItem(pl))
+            if len(self.dataviewmodel.data) > 0:
+                item = self.dataviewmodel.ObjectToItem(self.dataviewmodel.data[max(0,index-1)])
+                dvia.append(item)
+            self._select(dvia)
+        else:
+            index = 100000
+            pa = self.dataviewmodel.ObjectToItem(parent)
+            for ds in childs:
+                index = min(parent.index(ds),index)
+                #dvia.append(self.dataviewmodel.ObjectToItem(ds))
+                parent.remove(ds)
+            #self.dataviewmodel.ItemsDeleted(pa,dvia)
+            dvia = dv.DataViewItemArray()
+            if len(self.dataviewmodel.data) > 0:
+                item = self.dataviewmodel.ObjectToItem(parent[max(0,index-1)])
+                dvia.append(item)
+            else:
+                item = self.dataviewmodel.ObjectToItem(parent)
+                dvia.append(item)
+            self.dataviewmodel.selection = item
+        self.SetEvtHandlerEnabled(True)
+
+        self._select(dvia)
 
     def on_menu(self, evt):
-        print(evt.GetEventObject(),evt.GetModel())
-        print('menu')
-        menu = wx.Menu()
-        # Show how to put an icon in the menu
-        menu.Append(-1, 'Remove trafo')
-        menu.Append(-1, 'Remove model')
-        self.PopupMenu(menu)
-        menu.Destroy()
+        self.PopupMenu(self.menu)
+        #menu.Destroy()
 
     def on_endedit(self, evt):
         obj = evt.GetEventObject()
         obj.Unbind(wx.EVT_TEXT_ENTER)
         obj.Unbind(wx.EVT_KILL_FOCUS)
-        node = self.model.data[self._obj_edited]
+        data = self.GetModel().data
+        par, node = data.find_by_uuid(self._obj_edited)
         node.name = obj.GetValue()
-        self.dvcTree.SetFocus()
+        self.SetFocus()
         wx.CallAfter(obj.Destroy)
 
     def on_activated(self, evt):
-        rect = self.dvcTree.GetItemRect(evt.GetItem(), self.dvcTree.GetColumn(0))
+        rect = self.GetItemRect(evt.GetItem(), self.GetColumn(0))
         x, y, w, h = rect
-        parent = self.dvcTree
-        W, H = self.dvcTree.GetVirtualSize()
+        parent = self
+        W, H = self.GetVirtualSize()
         w = W - x-2
         if sys.platform == 'darwin':
             y -= 0
             h += 4
         elif sys.platform == 'linux':
-            X,Y = self.dvcTree.GetPosition()
+            X,Y = self.GetPosition()
             h += 2
             x += X
             y += Y
-            parent = self.panel
+            parent = self.GetParent()
         txt = wx.TextCtrl(parent, pos=(x,y), size=(w,h), style=wx.TE_PROCESS_ENTER)
         obj = evt.GetModel().ItemToObject(evt.GetItem())
         lab = obj.name
@@ -227,37 +308,36 @@ class MyFrame(wx.Frame):
         txt.Bind(wx.EVT_KILL_FOCUS, self.on_endedit)
         self._obj_edited = obj.uuid
 
-    def on_clear(self, evt):
-        mod = self.dvcTree.GetModel()
-        mod.Cleared()
+    def _set_selection(self, sel):
+        print(sel)
+        if type(sel) == tuple:
+            p, s = sel
+        else:
+            p, s = sel, []
+    #selection = property(fset=_set_selection)
 
     def _select(self, dvia, silent=False):
         if silent:
-            self.dvcTree.SetEvtHandlerEnabled(False)
-            self.dvcTree.SetSelections(dvia)
-            self.dvcTree.SetEvtHandlerEnabled(True)
+            self.SetEvtHandlerEnabled(False)
+            self.SetSelections(dvia)
+            self.SetEvtHandlerEnabled(True)
         else:
-            self.dvcTree.SetSelections(dvia)
-
-    def on_focuskill(self, evt):
-        print('focus lost')
-        evt.Skip()
-        self._dragging = 0
-
+            self.SetSelections(dvia)
 
     def on_expand(self, evt):
         mod = evt.GetModel()
         par = mod.ItemToObject(evt.GetItem())
         selpar, childs = mod.selection
+
         if par != selpar:
             return
-        print('on expand selection',par,mod.selection)
+        #print('on expand selection',par,mod.selection)
         try:
             if par is not None and len(childs) > 0 and mod.ItemToObject(mod.GetParent(mod.ObjectToItem(childs[0]))) == par:
                 dvia = dv.DataViewItemArray()
-                if [mod.ItemToObject(q) for q in self.dvcTree.GetSelections()] != mod.selection[1]:
-                    for o in mod.selection[1]:
-                        dvia.append(evt.GetModel().ObjectToItem(o))
+                if self.GetSelections() != mod._selection:
+                    for i in mod._selection:
+                        dvia.append(i)
                     self._select(dvia, True)
         except:
             raise
@@ -265,23 +345,31 @@ class MyFrame(wx.Frame):
     def on_select(self, evt):
         #print('select',len(self.dvcTree.GetSelections()))
         mod = evt.GetModel()
-        selection = [mod.ItemToObject(q) for q in self.dvcTree.GetSelections()]
-        parents = [mod.ItemToObject(mod.GetParent(q)).uuid if mod.GetParent(q) != dv.NullDataViewItem else 0 for q in self.dvcTree.GetSelections()]
+        selection = self.GetSelections()
+        parents = [mod.GetParent(q) if mod.GetParent(q) != dv.NullDataViewItem else 0 for q in selection]
         if len(set(parents)) > 1 or (len(selection) > 1 and 0 in parents):
             darr = dv.DataViewItemArray()
-            for i in [mod.ObjectToItem(q) for q in mod.selection[1]]:
+            for i in mod._selection:
                 darr.append(i)
             self._select(darr, False)
         else:
             if len(selection) > 0:
                 mod.selection = selection
+                pub.sendMessage((self.instid, 'tree', 'select'), selection=mod.selection_indices)
 
     def on_timer(self, evt):
-        self.dvcTree.ScrollLines(self._scrolllines)
+        self.ScrollLines(self._scrolllines)
 
     def on_droppossible(self, evt):
         mod = evt.GetModel()
         targetitem = evt.GetItem()
+
+        obj = wx.TextDataObject()
+        obj.SetData(wx.DataFormat(wx.DF_UNICODETEXT), evt.GetDataBuffer())
+
+        instid,itemid = loads(obj.GetText())
+        if instid != self.instid:
+            evt.Veto()
 
         if not self._dragging or self._draglevel == 0 and mod.GetParent(targetitem) != dv.NullDataViewItem:
             # does not have consequences on linux
@@ -289,17 +377,17 @@ class MyFrame(wx.Frame):
 
         if sys.platform not in ['darwin','linux']:
             mposx, mposy = wx.GetMousePosition()
-            cposx, cposy = self.dvcTree.ScreenToClient((mposx, mposy))
+            cposx, cposy = self.ScreenToClient((mposx, mposy))
 
-            item, col = self.dvcTree.HitTest((cposx,cposy))
-            if item == self.dvcTree.GetTopItem() and \
-                    self.dvcTree.GetScrollPos(wx.VERTICAL) != 0:
+            item, col = self.HitTest((cposx,cposy))
+            if item == self.GetTopItem() and \
+                    self.GetScrollPos(wx.VERTICAL) != 0:
                 self._scrolllines = -1
-                self._timer.Start(30, wx.TIMERon_e_shot)
-            elif self.dvcTree.GetScrollPos(wx.VERTICAL) + self.dvcTree.GetScrollThumb(wx.VERTICAL) != self.dvcTree.GetScrollRange(wx.VERTICAL) \
-                    and self.dvcTree.ClientSize[1] - cposy < 10:
+                self._timer.Start(30, wx.TIMER_ONE_SHOT)
+            elif self.GetScrollPos(wx.VERTICAL) + self.GetScrollThumb(wx.VERTICAL) != self.GetScrollRange(wx.VERTICAL) \
+                    and self.ClientSize[1] - cposy < 10:
                 self._scrolllines = +1
-                self._timer.Start(30, wx.TIMERon_e_shot)
+                self._timer.Start(30, wx.TIMER_ONE_SHOT)
 
     def on_enddrag(self, evt):
         print('end drag')
@@ -328,13 +416,13 @@ class MyFrame(wx.Frame):
             print('container on root {}->{}'.format(sourceobjects,targetobj))
             dvia = dv.DataViewItemArray()
             for c in sourceobjects:
-                data.remove(c)
-                data.append(c)
+                mod.data.remove(c)
+                mod.data.append(c)
                 dvia.append(mod.ObjectToItem(c))
             parent = mod.GetParent(mod.ObjectToItem(c))
             mod.ItemsDeleted(parent, dvia)
             mod.ItemsAdded(parent, dvia)
-            mod.Cleared(self.dvcTree)
+            mod.Cleared(self)
         elif targetobj is None:
             print('child on root {}->{}'.format(sourceobjects,targetobj))
             # drop child on root --> add to last container
@@ -343,7 +431,7 @@ class MyFrame(wx.Frame):
                 sourceparent.remove(c)
                 data[-1].append(c)
                 dvia.append(mod.ObjectToItem(c))
-            self.dvcTree.Expand(mod.ObjectToItem(data[-1]))
+            self.Expand(mod.ObjectToItem(data[-1]))
             mod.ItemsDeleted(mod.ObjectToItem(sourceparent), dvia)
             mod.ItemsAdded(mod.ObjectToItem(data[-1]), dvia)
         elif not isinstance(targetobj, Plot):
@@ -379,9 +467,9 @@ class MyFrame(wx.Frame):
                 for c in sourceobjects:
                     if c == targetobj:
                         continue
-                    data.remove(c)
-                    n = data.index(targetobj)
-                    data.insert(n, c)
+                    mod.data.remove(c)
+                    n = mod.data.index(targetobj)
+                    mod.data.insert(n, c)
                     item = mod.ObjectToItem(c)
                     dvia.append(item)
                 mod.ItemsDeleted(dv.NullDataViewItem, dvia)
@@ -419,7 +507,7 @@ class MyFrame(wx.Frame):
             #dropped container on child --> forbidden
             return
 
-        mod.save_state(self.dvcTree)
+        mod.save_state(self)
 
         if not evt.GetItem().IsOk():
             # happens when dropping on root
@@ -442,13 +530,13 @@ class MyFrame(wx.Frame):
             print('container on root {}->{}'.format(sourceobjects,targetobj))
             dvia = dv.DataViewItemArray()
             for c in sourceobjects:
-                data.remove(c)
-                data.append(c)
+                mod.data.remove(c)
+                mod.data.append(c)
                 dvia.append(mod.ObjectToItem(c))
             parent = mod.GetParent(mod.ObjectToItem(c))
             mod.ItemsDeleted(parent, dvia)
             mod.ItemsAdded(parent, dvia)
-            mod.Cleared(self.dvcTree)
+            mod.Cleared(self)
         elif targetobj is None:
             print('child on root {}->{}'.format(sourceobjects,targetobj))
             # drop child on root --> add to last container
@@ -457,7 +545,7 @@ class MyFrame(wx.Frame):
                 sourceparent.remove(c)
                 data[-1].append(c)
                 dvia.append(mod.ObjectToItem(c))
-            self.dvcTree.Expand(mod.ObjectToItem(data[-1]))
+            self.Expand(mod.ObjectToItem(data[-1]))
             mod.ItemsDeleted(mod.ObjectToItem(sourceparent), dvia)
             mod.ItemsAdded(mod.ObjectToItem(data[-1]), dvia)
         elif not isinstance(targetobj, Plot):
@@ -494,14 +582,14 @@ class MyFrame(wx.Frame):
                 for c in sourceobjects:
                     if c == targetobj:
                         continue
-                    data.remove(c)
-                    n = data.index(targetobj)
-                    data.insert(n, c)
+                    mod.data.remove(c)
+                    n = mod.data.index(targetobj)
+                    mod.data.insert(n, c)
                     dvia.append(mod.ObjectToItem(c))
                 parent = mod.GetParent(mod.ObjectToItem(c))
                 mod.ItemsDeleted(parent, dvia)
                 mod.ItemsAdded(parent, dvia)
-                mod.Cleared(self.dvcTree)
+                mod.Cleared(self)
             else:
                 # dropping childs on containers
                 print('child on container {}->{}'.format(sourceobjects,targetobj))
@@ -520,15 +608,23 @@ class MyFrame(wx.Frame):
 
     def on_enddragosx(self, evt):
         self._dragging = False
+        self.SetEvtHandlerEnabled(False)
+
         obj = wx.TextDataObject()
         obj.SetData(wx.DataFormat(wx.DF_UNICODETEXT), evt.GetDataBuffer())
         #obj = DataObject()
         #print(evt.GetDataBuffer())
         #obj.SetData(evt.GetDataBuffer())
 
-        id = obj.GetText()
-
         mod = evt.GetModel()
+
+        instid,itemid = loads(obj.GetText())
+        if instid != self.instid:
+            print('veto')
+            return
+        sourceitem = dv.DataViewItem(int(itemid))
+        id = mod.ItemToObject(sourceitem).uuid
+
         if not evt.GetItem().IsOk():
             # happens when dropping on root
             targetobj = None
@@ -545,15 +641,15 @@ class MyFrame(wx.Frame):
             # container dropped outside
             mod.data.remove(sourceobj)
             mod.data.append(sourceobj)
-            mod.ItemDeleted(dv.NullDataViewItem, mod.ObjectToItem(sourceobj))
-            mod.ItemAdded(dv.NullDataViewItem, mod.ObjectToItem(sourceobj))
+            #mod.ItemDeleted(dv.NullDataViewItem, mod.ObjectToItem(sourceobj))
+            #mod.ItemAdded(dv.NullDataViewItem, mod.ObjectToItem(sourceobj))
         elif targetobj is None:
             # drop child on root --> add to last container
             sourceparent.remove(sourceobj)
             mod.data[-1].append(sourceobj)
-            mod.ItemDeleted(mod.ObjectToItem(sourceparent), mod.ObjectToItem(sourceobj))
-            mod.ItemAdded(mod.ObjectToItem(mod.data[-1]), mod.ObjectToItem(sourceobj))
-            #self.dvcTree.Expand(mod.ObjectToItem(mod.data[-1]))
+            #mod.ItemDeleted(mod.ObjectToItem(sourceparent), mod.ObjectToItem(sourceobj))
+            #mod.ItemAdded(mod.ObjectToItem(mod.data[-1]), mod.ObjectToItem(sourceobj))
+            #self.Expand(mod.ObjectToItem(mod.data[-1]))
         elif not isinstance(targetobj, Plot):
             # dropped on child
             if targetparent != sourceparent:
@@ -561,15 +657,15 @@ class MyFrame(wx.Frame):
                 sourceparent.remove(sourceobj)
                 n = targetparent.index(targetobj)
                 targetparent.insert(n, sourceobj)
-                mod.ItemDeleted(mod.ObjectToItem(sourceparent), mod.ObjectToItem(sourceobj))
-                mod.ItemAdded(mod.ObjectToItem(targetparent), mod.ObjectToItem(sourceobj))
+                #mod.ItemDeleted(mod.ObjectToItem(sourceparent), mod.ObjectToItem(sourceobj))
+                #mod.ItemAdded(mod.ObjectToItem(targetparent), mod.ObjectToItem(sourceobj))
             else:
                 print('element moved within same container')
                 sourceparent.remove(sourceobj)
                 n = targetparent.index(targetobj)
                 targetparent.insert(n, sourceobj)
-                mod.ItemDeleted(mod.ObjectToItem(sourceparent), mod.ObjectToItem(sourceobj))
-                mod.ItemAdded(mod.ObjectToItem(targetparent), mod.ObjectToItem(sourceobj))
+                #mod.ItemDeleted(mod.ObjectToItem(sourceparent), mod.ObjectToItem(sourceobj))
+                #mod.ItemAdded(mod.ObjectToItem(targetparent), mod.ObjectToItem(sourceobj))
         else:
             # dropped on parent node
             if sourceparent is None:
@@ -578,31 +674,29 @@ class MyFrame(wx.Frame):
                 mod.data.remove(sourceobj)
                 n = mod.data.index(targetobj)
                 mod.data.insert(n, sourceobj)
-                mod.ItemDeleted(dv.NullDataViewItem, mod.ObjectToItem(sourceobj))
-                mod.ItemAdded(dv.NullDataViewItem, mod.ObjectToItem(sourceobj))
+                #mod.ItemDeleted(dv.NullDataViewItem, mod.ObjectToItem(sourceobj))
+                #mod.ItemAdded(dv.NullDataViewItem, mod.ObjectToItem(sourceobj))
                 #mod.ItemChanged(mod.ObjectToItem(sourceobj))
             else:
                 print('element on container')
                 # element dropped on container
                 sourceparent.remove(sourceobj)
                 targetobj.append(sourceobj)
-                mod.ItemDeleted(mod.ObjectToItem(sourceparent), mod.ObjectToItem(sourceobj))
-                mod.ItemAdded(mod.ObjectToItem(targetobj), mod.ObjectToItem(sourceobj))
-
-        def delayed():
-            #wx.CallAfter(mod.Cleared) # craches if called directly from event handler
-            wx.CallAfter(self._select, darr, True)
+                #mod.ItemDeleted(mod.ObjectToItem(sourceparent), mod.ObjectToItem(sourceobj))
+                #mod.ItemAdded(mod.ObjectToItem(targetobj), mod.ObjectToItem(sourceobj))
 
         darr = dv.DataViewItemArray()
-        for i in [mod.ObjectToItem(q) for q in mod.selection[1]]:
-            darr.append(i)
+        self.SetEvtHandlerEnabled(True)
 
-        delayed()
+        for i in mod._selection:
+            darr.append(i)
+        self._select(darr)
 
     def on_drag(self, evt):
         #print('begin drag')
         obj = evt.GetModel().ItemToObject(evt.GetItem())
-        evt.SetDataObject(wx.TextDataObject(obj.uuid))
+        msg = dumps((self.instid,str(int(evt.GetItem().GetID()))))
+        evt.SetDataObject(wx.TextDataObject(msg))
 
         mod = evt.GetModel()
         self._draglevel = int(mod.GetParent(evt.GetItem()) != dv.NullDataViewItem)
@@ -613,10 +707,8 @@ class MyFrame(wx.Frame):
         parent, childs = mod.selection
         if len(childs) == 0: # happens if on linux there is no selection prior to dragging
             childs = [obj]
-        print('ondrag selection',self.selection)
-        if len(childs) == 0:
-            self._items_dragged = parent, mod.ItemToObject(evt.GetItem())
-        elif mod.ItemToObject(evt.GetItem()) not in childs:
+        print('ondrag selection',mod.selection)
+        if mod.ItemToObject(evt.GetItem()) not in childs:
             par = mod.GetParent(evt.GetItem())
             if par == dv.NullDataViewItem:
                 parent = None
@@ -628,7 +720,27 @@ class MyFrame(wx.Frame):
         print('items dragged', self._items_dragged)
 
 
-if __name__ == "__main__":
+class MyFrame(wx.Frame):
+    def __init__(self, parent, prj, standalone=False):
+        wx.Frame.__init__(self, parent, -1, "Table", size=(-1,400))
+
+
+        panel = wx.Panel(self)
+        self.dataviewmodel = TreeListModel(prj)
+        self.dvcTree = TreeCtrl(panel, standalone)
+        self.dvcTree.AssociateModel(self.dataviewmodel)
+
+        self.btn_clear = wx.Button(panel, label='Clear')
+        box = wx.BoxSizer(wx.HORIZONTAL)
+        box.Add(self.dvcTree, 1, wx.ALL|wx.EXPAND,10)
+        box.Add(self.btn_clear, 0, wx.EXPAND)
+        panel.SetSizer(box)
+        self.Layout()
+
+        #self.btn_clear.Bind(wx.EVT_BUTTON, self.on_clear)
+
+
+def demo():
     prj = Project()
     import os
     print(os.path.abspath(os.curdir))
@@ -638,6 +750,67 @@ if __name__ == "__main__":
         for s in p:
             print(s)
     app = wx.App()
-    f = MyFrame(None, prj)
+    f = MyFrame(None, prj, True)
     f.Show()
     app.MainLoop()
+
+def cbm():
+
+    import sys, types
+
+    def callback_method(func, inst, manager):
+        def notify(self, *args, **kwargs):
+            for _, callback in manager._callbacks:
+                callback()
+            return func(inst, *args, **kwargs)
+        return types.MethodType(notify, inst)
+
+    class CallbackManager:
+        def __init__(self, data):
+            self._callbacks = []
+            self._callback_cntr = 0
+            self.attach(data)
+
+        def attach(self, data):
+            data.append = callback_method(list.append, data, self)
+            # the same for all the other methods as in OP
+
+        def register_callback(self, cb):
+            self._callbacks.append((self._callback_cntr, cb))
+            self._callback_cntr += 1
+            return self._callback_cntr - 1
+
+        def unregister_callback(self, cbid):
+            for idx, (i, cb) in enumerate(self._callbacks):
+                if i == cbid:
+                    self._callbacks.pop(idx)
+                    return cb
+            else:
+                return None
+
+    class CustomList(list):
+        pass
+
+    class ExtraBase(list):
+        def __getitem__(self, item):
+            print('got ya', self.test)
+            return list.__getitem__(self, item)
+        def pop(self, n):
+            print('pop',n)
+            return list.pop(self, n)
+
+
+    def enhance(obj):
+        class Patched(obj.__class__, ExtraBase):
+            pass
+        obj.__class__ = Patched
+        obj.test = False
+
+    A = CustomList([1,2,3])
+    enhance(A)
+
+    A[0]
+    print(A.pop(0))
+
+if __name__ == "__main__":
+    demo()
