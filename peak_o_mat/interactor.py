@@ -121,7 +121,7 @@ class Interactor(object):
         self.controller.new_datagrid(data, name=name)
 
     def pubOnGenerateDataset(self, spec, target):
-        print('interactor: gen dataset',spec,target)
+        #print('interactor: gen dataset',spec,target)
         if target == 0:
             target = self.controller.add_plot()
         else:

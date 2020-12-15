@@ -64,7 +64,8 @@ class Interactor:
         self.controller.process(name)
 
     def selection_changed(self, plot, dataset):
-        print('modop selection changed, visible: {}'.format(self.controller.visible))
+        #print('modop selection changed, visible: {}'.format(self.controller.visible))
+        pass
 
 class Module(module.BaseModule):
     title = 'Toolbox'

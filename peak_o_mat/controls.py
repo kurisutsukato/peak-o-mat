@@ -671,7 +671,7 @@ class FigureListCtrl(misc_ui.WithMessage, wx.Panel):
 
         self.controller = controller
 
-        self.lst = dv.DataViewCtrl(self,style=dv.DV_NO_HEADER|dv.DV_ROW_LINES)
+        self.lst = dv.DataViewCtrl(self,style=dv.DV_NO_HEADER)
 
         self.lst.AssociateModel(self.model)
 

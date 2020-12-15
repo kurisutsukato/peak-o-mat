@@ -67,7 +67,7 @@ class TrafoListCtrl(wx.ListCtrl,
             self.SetItem(index, col, data[col])
         self.SetItemData(index, index)
         if not data[3]:
-            self.CheckItem(index)
+            self.CheckItem(index, True)
 
 class XRCModule(module.XRCModule):
     title = 'Set info'

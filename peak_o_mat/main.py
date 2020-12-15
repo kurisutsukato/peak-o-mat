@@ -46,10 +46,20 @@ def run():
 
     new_controller(lpj_path, silent, startapp=True)
 
+
+import wx.lib.mixins.inspection as wit
+
+class MyApp(wx.App, wit.InspectionMixin):
+    def OnInit(self):
+        self.Init()  # initialize the inspection tool
+        return True
+
 def new_controller(path=None, silent=True, startapp=False):
-    #print('new controller')
+    print('new controller', path, silent, startapp)
     if startapp:
-        app = wx.App()
+
+        app = MyApp()
+        #app = wx.App()
         app.locale = wx.Locale(wx.LANGUAGE_ENGLISH)
     from .controller import Controller
     from .interactor import Interactor

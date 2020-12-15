@@ -58,6 +58,7 @@ class Interpreter(code.InteractiveInterpreter):
         locs.add('add_plot', self.controller.add_plot)
         locs.add('add_set', self.controller.add_set)
         locs.add('project', self.controller.project)
+        locs.add('controller', self.controller)
 
         def _get_model():
             return self.controller.fit_controller.model
