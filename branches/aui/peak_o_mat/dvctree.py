@@ -349,6 +349,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
     selection = property(fset=_set_selection)
 
     def _select(self, dvia, silent=False):
+        print('dvctree _select',dvia,silent)
         self.SetEvtHandlerEnabled(False)
         self.SetSelections(dv.DataViewItemArray())
         self.SetEvtHandlerEnabled(True)
@@ -359,6 +360,8 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
             self.SetEvtHandlerEnabled(True)
         else:
             self.SetSelections(dvia)
+            if sys.platform == 'win32':
+                self.on_select(None)
 
     def on_expand(self, evt):
         mod = evt.GetModel()
@@ -379,7 +382,9 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
             raise
 
     def on_select(self, evt):
-        mod = evt.GetModel()
+        print('dvctree onselect')
+        #mod = evt.GetModel()
+        mod = self.dataviewmodel
         selection = self.GetSelections()
         parents = [mod.GetParent(q) if mod.GetParent(q) != dv.NullDataViewItem else 0 for q in selection]
 
@@ -400,18 +405,28 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         mod = evt.GetModel()
         targetitem = evt.GetItem()
 
-        obj = wx.TextDataObject()
-        obj.SetData(wx.DataFormat(wx.DF_UNICODETEXT), evt.GetDataBuffer())
+        if evt.GetDataFormat() != wx.DF_UNICODETEXT:
+            print('invalid data format')
+        else:
+            pass
+            #evt.SetDropEffect(wx.DragMove)
 
-        instid,itemid = loads(obj.GetText())
-        if instid != self.instid:
-            evt.Veto()
+        obj = wx.TextDataObject()
+        buf = evt.GetDataBuffer()
+
+        if buf is not None: # always true on windows
+            obj.SetData(wx.DF_UNICODETEXT, evt.GetDataBuffer())
+
+            instid,itemid = loads(obj.GetText())
+            print(instid, itemid)
+            if instid != self.instid:
+                evt.Veto()
 
         if not self._dragging or self._draglevel == 0 and mod.GetParent(targetitem) != dv.NullDataViewItem:
             # does not have consequences on linux
             evt.Veto()
 
-        if sys.platform not in ['darwin','linux']:
+        if False and sys.platform not in ['darwin','linux']:
             mposx, mposy = wx.GetMousePosition()
             cposx, cposy = self.ScreenToClient((mposx, mposy))
 
@@ -426,10 +441,10 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
                 self._timer.Start(30, wx.TIMER_ONE_SHOT)
 
     def on_enddrag(self, evt):
-        print('end drag')
         self._dragging -= 1
         obj = wx.TextDataObject()
         obj.SetData(wx.DataFormat(wx.DF_UNICODETEXT), evt.GetDataBuffer())
+        instid, itemid = loads(obj.GetText())
 
         mod = evt.GetModel()
         if not evt.GetItem().IsOk():
@@ -450,77 +465,77 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         if targetobj is None and sourceparent is None:
             # container dropped on root --> move to last position
             print('container on root {}->{}'.format(sourceobjects,targetobj))
-            dvia = dv.DataViewItemArray()
+           # dvia = dv.DataViewItemArray()
             for c in sourceobjects:
                 mod.data.remove(c)
                 mod.data.append(c)
-                dvia.append(mod.ObjectToItem(c))
+                #dvia.append(mod.ObjectToItem(c))
             parent = mod.GetParent(mod.ObjectToItem(c))
-            mod.ItemsDeleted(parent, dvia)
-            mod.ItemsAdded(parent, dvia)
-            mod.Cleared(self)
+            #mod.ItemsDeleted(parent, dvia)
+            #mod.ItemsAdded(parent, dvia)
+            #mod.Cleared(self)
         elif targetobj is None:
             print('child on root {}->{}'.format(sourceobjects,targetobj))
             # drop child on root --> add to last container
-            dvia = dv.DataViewItemArray()
+            #dvia = dv.DataViewItemArray()
             for c in sourceobjects:
                 sourceparent.remove(c)
-                data[-1].append(c)
-                dvia.append(mod.ObjectToItem(c))
-            self.Expand(mod.ObjectToItem(data[-1]))
-            mod.ItemsDeleted(mod.ObjectToItem(sourceparent), dvia)
-            mod.ItemsAdded(mod.ObjectToItem(data[-1]), dvia)
+                mod.data[-1].append(c)
+                #dvia.append(mod.ObjectToItem(c))
+            #self.Expand(mod.ObjectToItem(data[-1]))
+            #mod.ItemsDeleted(mod.ObjectToItem(sourceparent), dvia)
+            #mod.ItemsAdded(mod.ObjectToItem(data[-1]), dvia)
         elif not isinstance(targetobj, Plot):
             # dropped on child
             if targetparent != sourceparent:
                 print('drop child on child {}->{}'.format(sourceobjects,targetobj))
-                dvia = dv.DataViewItemArray()
+                #dvia = dv.DataViewItemArray()
                 for c in sourceobjects:
                     sourceparent.remove(c)
                     n = targetparent.index(targetobj)
                     targetparent.insert(n, c)
-                    dvia.append(mod.ObjectToItem(c))
-                mod.ItemsDeleted(mod.ObjectToItem(sourceparent), dvia)
-                mod.ItemsAdded(mod.ObjectToItem(targetparent), dvia)
+                    #dvia.append(mod.ObjectToItem(c))
+                #mod.ItemsDeleted(mod.ObjectToItem(sourceparent), dvia)
+                #mod.ItemsAdded(mod.ObjectToItem(targetparent), dvia)
             else:
                 print('drop child on child {}->{}'.format(sourceobjects,targetobj))
-                dvia = dv.DataViewItemArray()
+                #dvia = dv.DataViewItemArray()
                 for c in sourceobjects:
                     if c == targetobj:
                         continue
                     sourceparent.remove(c)
                     n = targetparent.index(targetobj)
                     targetparent.insert(n, c)
-                    dvia.append(mod.ObjectToItem(c))
-                mod.ItemsDeleted(mod.ObjectToItem(sourceparent), dvia)
-                mod.ItemsAdded(mod.ObjectToItem(targetparent), dvia)
+                    #dvia.append(mod.ObjectToItem(c))
+                #mod.ItemsDeleted(mod.ObjectToItem(sourceparent), dvia)
+                #mod.ItemsAdded(mod.ObjectToItem(targetparent), dvia)
         else:
             # dropping containers on containers
             # sourceobjects should be a list with a single item, but, well...
             if sourceparent is None:
                 print('container on container {}->{}'.format(sourceobjects,targetobj))
-                dvia = dv.DataViewItemArray()
+                #dvia = dv.DataViewItemArray()
                 for c in sourceobjects:
                     if c == targetobj:
                         continue
                     mod.data.remove(c)
                     n = mod.data.index(targetobj)
                     mod.data.insert(n, c)
-                    item = mod.ObjectToItem(c)
-                    dvia.append(item)
-                mod.ItemsDeleted(dv.NullDataViewItem, dvia)
-                mod.ItemsAdded(dv.NullDataViewItem, dvia)
+                    #item = mod.ObjectToItem(c)
+                    #dvia.append(item)
+                #mod.ItemsDeleted(dv.NullDataViewItem, dvia)
+                #mod.ItemsAdded(dv.NullDataViewItem, dvia)
             else:
                 # dropping childs on containers
-                dvia = dv.DataViewItemArray()
+                #dvia = dv.DataViewItemArray()
                 print('child on container {}->{}'.format(sourceobjects,targetobj))
                 for c in sourceobjects:
                     sourceparent.remove(c)
                     targetobj.append(c)
-                    item = mod.ObjectToItem(c)
-                    dvia.append(item)
-                mod.ItemsDeleted(mod.ObjectToItem(sourceparent), dvia)
-                mod.ItemsAdded(mod.ObjectToItem(targetobj), dvia)
+                    #item = mod.ObjectToItem(c)
+                    #dvia.append(item)
+                #mod.ItemsDeleted(mod.ObjectToItem(sourceparent), dvia)
+                #mod.ItemsAdded(mod.ObjectToItem(targetobj), dvia)
 
         darr = dv.DataViewItemArray()
         for i in [mod.ObjectToItem(q) for q in mod.selection[1]]:
@@ -732,7 +747,10 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         #print('begin drag')
         obj = evt.GetModel().ItemToObject(evt.GetItem())
         msg = dumps((self.instid,str(int(evt.GetItem().GetID()))))
-        evt.SetDataObject(wx.TextDataObject(msg))
+        do = wx.TextDataObject()
+        do.SetText(msg)
+        evt.SetDataObject(do)
+        evt.SetDragFlags(wx.Drag_AllowMove)
 
         mod = evt.GetModel()
         self._draglevel = int(mod.GetParent(evt.GetItem()) != dv.NullDataViewItem)
@@ -743,7 +761,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         parent, childs = mod.selection
         if len(childs) == 0: # happens if on linux there is no selection prior to dragging
             childs = [obj]
-        print('ondrag selection',mod.selection)
+        #print('ondrag selection',mod.selection)
         if mod.ItemToObject(evt.GetItem()) not in childs:
             par = mod.GetParent(evt.GetItem())
             if par == dv.NullDataViewItem:
@@ -753,7 +771,6 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
             self._items_dragged = parent, [mod.ItemToObject(evt.GetItem())]
         else:
             self._items_dragged = parent, childs
-        print('items dragged', self._items_dragged)
 
 
 class MyFrame(wx.Frame):
