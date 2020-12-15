@@ -132,9 +132,13 @@ class ExtraBase(list):
         return ret
 
     def append(self, obj):
+        #print(self, 'appending', obj)
         if isinstance(obj, Spec):
             obj.__class__ = PlotItem
-            Dataset.__init__(obj)
+            obj.uuid = UUID.uuid4().hex
+        elif isinstance(obj, Plot):
+            if not obj.__cb and self.__cb:
+                obj.attach_dvmodel(self.m)
         list.append(self, obj)
         if self.__cb:
             dvi = self.m.ObjectToItem(obj)
@@ -143,7 +147,7 @@ class ExtraBase(list):
     def insert(self, n, obj):
         if isinstance(obj, Spec):
             obj.__class__ = PlotItem
-            Dataset.__init__(obj)
+            obj.uuid = UUID.uuid4().hex
         list.insert(self, n, obj)
         if self.__cb:
             dvi = self.m.ObjectToItem(obj)
@@ -183,11 +187,13 @@ class ExtraBase(list):
             for o in obj:
                 if isinstance(o, Spec):
                     o.__class__ = PlotItem
-                    Dataset.__init__(o)
+                    obj.uuid = UUID.uuid4().hex
+                    obj.m = self.m
         else:
             if isinstance(obj, Spec):
                 obj.__class__ = PlotItem
-                Dataset.__init__(obj)
+                obj.uuid = UUID.uuid4().hex
+                obj.m = self.m
         list.__setitem__(self, item, obj)
         if self.__cb:
             dviarr = dv.DataViewItemArray()
@@ -286,16 +292,18 @@ class LData(ExtraBase):
                 return n
         raise IndexError(item)
 
-class Dataset(object):
-    type = 'dataset'
-    def __init__(self):
-        self.uuid = UUID.uuid4().hex
-
-class PlotItem(Spec, Dataset):
+class PlotItem(Spec):
     def __init__(self, *args):
-        Dataset.__init__(self)
+        self.uuid = UUID.uuid4().hex
         Spec.__init__(self, *args)
 
+    def __eq__(self, other):
+        if type(other) == type(self):
+            return self.uuid == other.uuid
+        return False
+
+    def __repr__(self):
+        return '<plotitem {}>'.format(self.name)
 
 class Plot(LData):
     type = 'plot'
@@ -314,8 +322,11 @@ class Plot(LData):
         self.limits = None
         self.model = None
 
+    def __repr__(self):
+        return '<plot {}>'.format(self.name)
+
     def add(self, item):
-        list.append(self, item)
+        self.append(item)
         return len(self)-1
 
     def index_by_uuid(self, item):
@@ -325,7 +336,11 @@ class Plot(LData):
         raise IndexError(item)
 
     def __getstate__(self):
-        dict = self.__dict__.copy()
+        #remove treedatamodel
+        m = self.m
+        del self.__dict__['m']
+        dict = copy.deepcopy(self.__dict__)
+        self.__dict__['m'] = m
         dict['uuid'] = UUID.uuid4().hex
         dict['_references'] = []
         return dict
@@ -508,6 +523,9 @@ class Project(LData):
         self._figure_settings = None
         self._settings_element = None
 
+    def __repr__(self):
+        return 'project {}'.format(id(self))
+
     def find_by_uuid(self, uuid):
         for p in self:
             if p.uuid == uuid:
@@ -522,8 +540,12 @@ class Project(LData):
 
     def index(self, value):
         for n,p in enumerate(self):
-            if p.uuid == value:
-                return n
+            if type(value) == str: # when referenced from mplplot
+                if p.uuid == value:
+                    return n
+            else:
+                if p.uuid == value.uuid:
+                    return n
         return super(Project, self).index(value)
 
     def __getitem__(self, item):
@@ -537,13 +559,13 @@ class Project(LData):
             #return self.find_by_uuid(item)[1]
 
         #TODO: hat bisher nur nach plots gesucht, nicht nach datasets
-        _tmp = []
-        for p in self:
-            _tmp.append(p.uuid)
-            if p.uuid == item:
-                return p
-        print(_tmp)
-        raise KeyError('no plot with uuid "{}"'.format(item))
+        #_tmp = []
+        #for p in self:
+        #    _tmp.append(p.uuid)
+        #    if p.uuid == item:
+        #        return p
+        #print(_tmp)
+        #raise KeyError('no plot with uuid "{}"'.format(item))
 
     def __contains__(self, item):
         for p in self:
@@ -978,35 +1000,7 @@ if __name__ == '__main__':
     p.load('example.lpj')
 
 
-    p2 = p[2]
-
-
-    class Base1(object):
-        def __init__(self):
-            self.uuid = UUID.uuid4().hex
-
-    class Base2(object):
-        def __init__(self, name):
-            self.name = name
-
-        def __eq__(selfself, other):
-            if self.name == other:
-                return True
-            else:
-                return False
-
-    class Custom(Spec, Base1):
-        def __init__(self, *args):
-            Base1.__init__(self)
-            Spec.__init__(self, *args)
-
-    a = Custom([1,2,3],[1,2,3],'test')
-    print(id(a))
-    p2.append(a)
-    print('where is a',p2.position(a))
-
-    b = Custom([1,2,3],[1,2,3],'test3')#
-    print(id(b))
-    p2.append(b)
-    print('where is b',p2.position(b))
-
+    k = Plot()
+    k.m = 'test'
+    a = copy.deepcopy(k)
+    print(a.__dict__)

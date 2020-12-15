@@ -191,9 +191,7 @@ class Controller(object):
         new_controller(path)
 
     def open_project(self, path):
-        #if self.project_modified:
-        #    if not self.view.confirm_open_project_dialog():
-        #        return
+        self.view.tree.AssociateModel(TreeListModel(self.project))
 
         if path is not None:
             msg = self.project.load(path, datastore=self.datagrid)
@@ -206,14 +204,14 @@ class Controller(object):
 
             self.codeeditor.data = self.project.code
 
-            self.view.tree.AssociateModel(TreeListModel(self.project))
-            #self.view.tree.build(self.project)
             if self.project.path is not None:
                 self.view.filehistory.AddFileToHistory(os.path.abspath(path))
                 self.save_filehistory()
             self.project_modified = False
             misc.set_cwd(path)
-            self.selection = (0,None) # needed because is loading a project on th ecommand line, nothing will be selected
+            #self.selection = (0,None) # needed because if loading a project on the ecommand line, nothing will be selected
+            self.view.tree.selection = 0,0
+
             pub.sendMessage((self.view.instid, 'figurelist','needsupdate'))
 
     def open_recent(self, num):
@@ -305,7 +303,7 @@ class Controller(object):
         misc.set_cwd(p)
 
         if added_plot:
-            self.update_tree()
+            #self.update_tree()
             self.view.tree.selection = (plot,0)
 
     def show_export_dialog(self):
@@ -505,7 +503,7 @@ class Controller(object):
         Add an empty plot.
         """
         added = self.project.add(project.Plot(name=name))
-        self.update_tree()
+        #self.update_tree()
         self.view.tree.selection = added
         self.project_modified = True
         pub.sendMessage((self.view.instid, 'plot_added'), plotlist=['p{}'.format(n) for n in range(len(self.project))])
@@ -524,10 +522,12 @@ class Controller(object):
                 plot = self.project.index(self.active_plot)
         else:
             added = self.project[plot].add(data)
-        self.update_tree()
+        #self.update_tree()
         self.view.tree.selection = plot,added
         self.project_modified = True
-        pub.sendMessage((self.view.instid, 'dataset_added'), datasetlist=[q.name for q in self.project[plot]])
+        #TODO: no receivers
+        #pub.sendMessage((self.view.instid, 'dataset_added'), datasetlist=[q.name for q in self.project[plot]])
+        #self.update_plot()
         return added
 
     def rem_attr(self, attr, only_sel=False):

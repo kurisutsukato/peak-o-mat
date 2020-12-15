@@ -522,6 +522,7 @@ bbox : boundingbox of points to be removed
     xy_limited = property(_get_xy_limited, doc='returns masked x-y-data within limits, shape(2,x)')
 
     def __eq__(self, other):
+        print('calling Spec.__eq__')
         if not isinstance(other, Spec):
             return False
 

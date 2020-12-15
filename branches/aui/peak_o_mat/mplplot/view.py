@@ -148,8 +148,8 @@ class AxesControlPanel(WithMessage, wx.Panel):
 
         self.spn_left = wx.SpinCtrl(self.pan_box, value='', min=0, max=100, size=(50,-1), name='left')
         self.spn_bottom = wx.SpinCtrl(self.pan_box, value='', min=0, max=100, size=(50,-1), name='bottom')
-        self.spn_width = wx.SpinCtrl(self.pan_box, value='', min=10, max=100, size=(50,-1), name='width')
-        self.spn_height = wx.SpinCtrl(self.pan_box, value='', min=10, max=100, size=(50,-1), name='height')
+        self.spn_width = wx.SpinCtrl(self.pan_box, value='', min=0, max=100, size=(50,-1), name='width')
+        self.spn_height = wx.SpinCtrl(self.pan_box, value='', min=0, max=100, size=(50,-1), name='height')
 
     def layout(self):
         outer = wx.BoxSizer(wx.HORIZONTAL)
@@ -800,10 +800,10 @@ class ControlFrame(WithMessage,wx.Frame):
 
         self.spn_fontsize = wx.SpinCtrl(self.panel_basic, size=(80,-1), min=0, max=20, initial=10, value='10', style=wx.TE_PROCESS_ENTER)
 
-        self.spn_bottom = wx.SpinCtrlDouble(self.panel, size=(80,-1), min=0, max=0.4, inc=0.05, value='0.1', style=wx.TE_PROCESS_ENTER, name='bottom')
-        self.spn_top = wx.SpinCtrlDouble(self.panel, size=(80,-1),min=0.6, max=1.0, inc=0.05, value='0.9', style=wx.TE_PROCESS_ENTER, name='top')
-        self.spn_left = wx.SpinCtrlDouble(self.panel, size=(80,-1),min=0, max=0.4, inc=0.05, value='0.1', style=wx.TE_PROCESS_ENTER, name='left')
-        self.spn_right = wx.SpinCtrlDouble(self.panel, size=(80,-1),min=0.6, max=1.0, inc=0.05, value='0.9', style=wx.TE_PROCESS_ENTER, name='right')
+        self.spn_bottom = wx.SpinCtrlDouble(self.panel, size=(80,-1), min=0, max=1, inc=0.05, value='0.1', style=wx.TE_PROCESS_ENTER, name='bottom')
+        self.spn_top = wx.SpinCtrlDouble(self.panel, size=(80,-1),min=0.0, max=1.0, inc=0.05, value='0.9', style=wx.TE_PROCESS_ENTER, name='top')
+        self.spn_left = wx.SpinCtrlDouble(self.panel, size=(80,-1),min=0, max=1, inc=0.05, value='0.1', style=wx.TE_PROCESS_ENTER, name='left')
+        self.spn_right = wx.SpinCtrlDouble(self.panel, size=(80,-1),min=0.0, max=1.0, inc=0.05, value='0.9', style=wx.TE_PROCESS_ENTER, name='right')
         self.spn_hspace = wx.SpinCtrlDouble(self.panel, size=(80,-1),min=0.0, max=1.0, inc=0.05, value='0.1', style=wx.TE_PROCESS_ENTER, name='hspace')
         self.spn_wspace = wx.SpinCtrlDouble(self.panel, size=(80,-1),min=0.0, max=1.0, inc=0.05, value='0.1', style=wx.TE_PROCESS_ENTER, name='wspace')
 

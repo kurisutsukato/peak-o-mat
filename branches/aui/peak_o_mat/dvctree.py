@@ -14,13 +14,13 @@ class TreeListModel(dv.PyDataViewModel):
         self._selection = []
         self.data = data
         self.data.attach_dvmodel(self)
-
     @property
     def selection(self):
+        #print('dvmodel selection property')
         try:
             parent = self.GetParent(self._selection[0])
         except IndexError:
-            print('index error')
+            print('dvmodel no selection')
             return None, []
         else:
             if parent == dv.NullDataViewItem:
@@ -30,7 +30,10 @@ class TreeListModel(dv.PyDataViewModel):
 
     @selection.setter
     def selection(self, newsel):
-        self._selection = newsel
+        if type(newsel) not in [tuple, list, dv.DataViewItemArray]:
+            self._selection = [newsel]
+        else:
+            self._selection = newsel
 
     @property
     def selection_indices(self):
@@ -41,7 +44,7 @@ class TreeListModel(dv.PyDataViewModel):
                 plotnum = self.data.index(childs[0])
             except IndexError:
                 plotnum = None
-            setnum = []
+            setnum = None
         else:
             plotnum = self.data.index(parent)
             setnum = [self.data[plotnum].index(q) for q in childs]
@@ -190,6 +193,15 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
 
         self.init_menus()
 
+        parent.Bind(wx.EVT_ENTER_WINDOW, self.on_mouseenter)
+
+        wx.CallAfter(self.GetColumn(0).SetWidth, 300)
+        # for some reason somtimes the column width is very small otherwise
+
+    def on_mouseenter(self, evt):
+        if wx.GetTopLevelParent(self).IsActive():
+            self.SetFocus()
+
     def AssociateModel(self, model):
         self.dataviewmodel = model
         dv.DataViewCtrl.AssociateModel(self, model)
@@ -257,13 +269,13 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
                 parent.remove(ds)
             #self.dataviewmodel.ItemsDeleted(pa,dvia)
             dvia = dv.DataViewItemArray()
-            if len(self.dataviewmodel.data) > 0:
+            if len(parent) > 0:
                 item = self.dataviewmodel.ObjectToItem(parent[max(0,index-1)])
                 dvia.append(item)
             else:
                 item = self.dataviewmodel.ObjectToItem(parent)
                 dvia.append(item)
-            self.dataviewmodel.selection = item
+            self.dataviewmodel.selection = [item]
         self.SetEvtHandlerEnabled(True)
 
         self._select(dvia)
@@ -280,9 +292,13 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         par, node = data.find_by_uuid(self._obj_edited)
         node.name = obj.GetValue()
         self.SetFocus()
+        self.GetParent().Bind(wx.EVT_ENTER_WINDOW, self.on_mouseenter)
+
         wx.CallAfter(obj.Destroy)
 
     def on_activated(self, evt):
+        self.GetParent().Unbind(wx.EVT_ENTER_WINDOW)
+
         rect = self.GetItemRect(evt.GetItem(), self.GetColumn(0))
         x, y, w, h = rect
         parent = self
@@ -290,7 +306,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         w = W - x-2
         if sys.platform == 'darwin':
             y -= 0
-            h += 4
+            h += 3
         elif sys.platform == 'linux':
             X,Y = self.GetPosition()
             h += 2
@@ -309,14 +325,34 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         self._obj_edited = obj.uuid
 
     def _set_selection(self, sel):
-        print(sel)
+        mod = self.dataviewmodel
+        item = None
         if type(sel) == tuple:
             p, s = sel
+            try:
+                item = mod.ObjectToItem(mod.data[p][s])
+            except IndexError:
+                mod.selection = []
+            else:
+                mod.selection = [item]
         else:
-            p, s = sel, []
-    #selection = property(fset=_set_selection)
+            try:
+                item = mod.ObjectToItem(mod.data[sel])
+            except IndexError:
+                mod.selection = []
+            else:
+                mod.selection = [item]
+        dvia = dv.DataViewItemArray()
+        if item is not None:
+            dvia.append(item)
+        self._select(dvia, False)
+    selection = property(fset=_set_selection)
 
     def _select(self, dvia, silent=False):
+        self.SetEvtHandlerEnabled(False)
+        self.SetSelections(dv.DataViewItemArray())
+        self.SetEvtHandlerEnabled(True)
+
         if silent:
             self.SetEvtHandlerEnabled(False)
             self.SetSelections(dvia)
@@ -331,27 +367,27 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
 
         if par != selpar:
             return
-        #print('on expand selection',par,mod.selection)
+
         try:
             if par is not None and len(childs) > 0 and mod.ItemToObject(mod.GetParent(mod.ObjectToItem(childs[0]))) == par:
                 dvia = dv.DataViewItemArray()
                 if self.GetSelections() != mod._selection:
                     for i in mod._selection:
                         dvia.append(i)
-                    self._select(dvia, True)
+                    self._select(dvia, False)
         except:
             raise
 
     def on_select(self, evt):
-        #print('select',len(self.dvcTree.GetSelections()))
         mod = evt.GetModel()
         selection = self.GetSelections()
         parents = [mod.GetParent(q) if mod.GetParent(q) != dv.NullDataViewItem else 0 for q in selection]
-        if len(set(parents)) > 1 or (len(selection) > 1 and 0 in parents):
+
+        if len(set(parents)) > 1 or (len(selection) > 1 and 0 in parents) or len(selection) == 0:
             darr = dv.DataViewItemArray()
             for i in mod._selection:
                 darr.append(i)
-            self._select(darr, False)
+            self._select(darr, True)
         else:
             if len(selection) > 0:
                 mod.selection = selection
@@ -604,7 +640,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         darr = dv.DataViewItemArray()
         for i in [mod.ObjectToItem(q) for q in selection]:
             darr.append(i)
-        self._select(darr)
+        wx.CallAfter(self._select, darr) #important to avoid recursion error when dropping multiple items
 
     def on_enddragosx(self, evt):
         self._dragging = False
@@ -636,7 +672,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         except:
             targetparent = None
 
-        print('targetobj is',targetobj.__class__)
+        #print('targetobj is',targetobj.__class__)
         if targetobj is None and sourceparent is None:
             # container dropped outside
             mod.data.remove(sourceobj)
@@ -653,14 +689,14 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         elif not isinstance(targetobj, Plot):
             # dropped on child
             if targetparent != sourceparent:
-                print('element moved to other container')
+                #print('element moved to other container')
                 sourceparent.remove(sourceobj)
                 n = targetparent.index(targetobj)
                 targetparent.insert(n, sourceobj)
                 #mod.ItemDeleted(mod.ObjectToItem(sourceparent), mod.ObjectToItem(sourceobj))
                 #mod.ItemAdded(mod.ObjectToItem(targetparent), mod.ObjectToItem(sourceobj))
             else:
-                print('element moved within same container')
+                #print('element moved within same container')
                 sourceparent.remove(sourceobj)
                 n = targetparent.index(targetobj)
                 targetparent.insert(n, sourceobj)
@@ -669,7 +705,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         else:
             # dropped on parent node
             if sourceparent is None:
-                print('container on container')
+                #print('container on container')
                 # container dropped on container
                 mod.data.remove(sourceobj)
                 n = mod.data.index(targetobj)
@@ -678,7 +714,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
                 #mod.ItemAdded(dv.NullDataViewItem, mod.ObjectToItem(sourceobj))
                 #mod.ItemChanged(mod.ObjectToItem(sourceobj))
             else:
-                print('element on container')
+                #print('element on container')
                 # element dropped on container
                 sourceparent.remove(sourceobj)
                 targetobj.append(sourceobj)
