@@ -133,7 +133,6 @@ class ExtraBase(list):
         return ret
 
     def append(self, obj):
-        #print(self, 'appending', obj)
         if isinstance(obj, Spec):
             obj.__class__ = PlotItem
             obj.uuid = UUID.uuid4().hex
@@ -304,12 +303,17 @@ class PlotItem(Spec):
     def __repr__(self):
         return '<plotitem {}>'.format(self.name)
 
+    def __getstate__(self):
+        dict = copy.deepcopy(self.__dict__)
+        dict['uuid'] = UUID.uuid4().hex
+        return dict
+
 class Plot(LData):
     type = 'plot'
     def __init__(self, uuid=None, name=None):
         LData.__init__(self)
         self.xrng, self.yrng = None,None
-        self._references = []
+        self._references = [] # mplplotitems
         self.uuid = uuid or UUID.uuid4().hex
         if name is not None:
             self.name = name
@@ -323,16 +327,6 @@ class Plot(LData):
 
     def __repr__(self):
         return '<plot {}>'.format(self.name)
-
-    def add(self, item):
-        self.append(item)
-        return len(self)-1
-
-    def index_by_uuid(self, item):
-        for n,q in enumerate(self):
-            if q.uuid == item.uuid:
-                return n
-        raise IndexError(item)
 
     def __getstate__(self):
         #remove treedatamodel
@@ -354,6 +348,12 @@ class Plot(LData):
             if p.uuid == item:
                 return p
         raise KeyError('no dataset with uuid "{}"'.format(item))
+
+    def index_by_uuid(self, item):
+        for n,q in enumerate(self):
+            if q.uuid == item.uuid:
+                return n
+        raise IndexError(item)
 
     def _get_range(self):
         if type(self.xrng) == ndarray:
@@ -1001,8 +1001,14 @@ if __name__ == '__main__':
     p = Project()
     p.load('example.lpj')
 
-
     k = Plot()
     k.dvmodel = 'test'
     a = copy.deepcopy(k)
     print(a.__dict__)
+
+    q = p[0][0]
+    import pickle, json
+    bla = pickle.dumps(q)
+
+    pi = pickle.loads(bla)
+    print(pi.__dict__)

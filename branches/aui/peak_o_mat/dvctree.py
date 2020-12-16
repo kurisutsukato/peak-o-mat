@@ -381,6 +381,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
             raise
 
     def on_select(self, evt):
+        print('dvctree onselect')
         #mod = evt.GetModel()
         mod = self.dataviewmodel
         selection = self.GetSelections()
@@ -403,25 +404,26 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         mod = evt.GetModel()
         targetitem = evt.GetItem()
 
+        mod = evt.GetModel()
         if evt.GetDataFormat() != wx.DF_UNICODETEXT:
             print('invalid data format')
         else:
-            evt.SetDropEffect(wx.DragMove)
+            pass
+            #evt.SetDropEffect(wx.DragMove)
 
-        obj = wx.TextDataObject()
-        buf = evt.GetDataBuffer()
+        if sys.platform != 'win32':
+            do = wx.TextDataObject()
+            do.SetData(wx.DataFormat(wx.DF_UNICODETEXT), evt.GetDataBuffer())
 
-        if buf is not None: # always true on windows
-            obj.SetData(wx.DF_UNICODETEXT, evt.GetDataBuffer())
+            instid, itemid, isplot, obj = loads(bytearray.fromhex(do.GetText()))
 
-            instid,itemid = loads(obj.GetText())
-            print(instid, itemid)
             if instid != self.instid:
-                print('drop from other instance')
-
-        if not self._dragging or self._draglevel == 0 and mod.GetParent(targetitem) != dv.NullDataViewItem:
-            # does not have consequences on linux
-            evt.Veto()
+                pass
+                #print('drop from other instance')
+            else:
+                if not self._dragging or self._draglevel == 0 and mod.GetParent(targetitem) != dv.NullDataViewItem:
+                    # does not have consequences on linux
+                    evt.Veto()
 
         if sys.platform not in ['darwin','linux']:
             mposx, mposy = wx.GetMousePosition()
@@ -441,7 +443,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         self._dragging -= 1
         do = wx.TextDataObject()
         do.SetData(wx.DataFormat(wx.DF_UNICODETEXT), evt.GetDataBuffer())
-        instid, isplot, obj = loads(bytearray.fromhex(do.GetText()))
+        instid, itemid, isplot, obj = loads(bytearray.fromhex(do.GetText()))
 
         mod = evt.GetModel()
         if instid != self.instid:
@@ -673,20 +675,30 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
 
     def on_enddragosx(self, evt):
         self._dragging = False
-        self.SetEvtHandlerEnabled(False)
 
-        obj = wx.TextDataObject()
-        obj.SetData(wx.DataFormat(wx.DF_UNICODETEXT), evt.GetDataBuffer())
-        #obj = DataObject()
-        #print(evt.GetDataBuffer())
-        #obj.SetData(evt.GetDataBuffer())
+        do = wx.TextDataObject()
+        do.SetData(wx.DataFormat(wx.DF_UNICODETEXT), evt.GetDataBuffer())
 
         mod = evt.GetModel()
 
-        instid,itemid = loads(obj.GetText())
+        instid, itemid, isplot, obj = loads(bytearray.fromhex(do.GetText()))
         if instid != self.instid:
-            print('veto')
+            paritem = mod.GetParent(evt.GetItem())
+            if  paritem == dv.NullDataViewItem and isplot:
+                if evt.GetItem().IsOk():
+                    target = mod.ItemToObject(evt.GetItem())
+                    n = mod.data.index(target)
+                    mod.data.insert(n, obj)
+                else:
+                    mod.data.append(obj)
+            elif not (paritem == dv.NullDataViewItem or isplot):
+                if evt.GetItem().IsOk():
+                    target = mod.ItemToObject(evt.GetItem())
+                    targetpar = mod.ItemToObject(mod.GetParent(evt.GetItem()))
+                    n = targetpar.index(target)
+                    targetpar.insert(n, obj)
             return
+
         sourceitem = dv.DataViewItem(int(itemid))
         id = mod.ItemToObject(sourceitem).uuid
 
@@ -751,7 +763,6 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
                 #mod.ItemAdded(mod.ObjectToItem(targetobj), mod.ObjectToItem(sourceobj))
 
         darr = dv.DataViewItemArray()
-        self.SetEvtHandlerEnabled(True)
 
         for i in mod._selection:
             darr.append(i)
@@ -760,20 +771,16 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
     def on_drag(self, evt):
         #print('begin drag')
         obj = evt.GetModel().ItemToObject(evt.GetItem())
+        mod = evt.GetModel()
 
-        isplot = evt.GetModel().GetParent(evt.GetItem()) == dv.NullDataViewItem
-        try:
-            msg = dumps((self.instid,isplot,obj)).hex()
-        except TypeError:
-            print('pickle failed for',obj,type(obj),obj.__dict__.keys())
-            msg = dumps((self.instid,str(int(evt.GetItem().GetID())),None)).hex()
+        isplot = mod.GetParent(evt.GetItem()) == dv.NullDataViewItem
+        msg = dumps((self.instid,str(int(evt.GetItem().GetID())),isplot,obj)).hex()
 
         do = wx.TextDataObject()
         do.SetText(msg)
         evt.SetDataObject(do)
         evt.SetDragFlags(wx.Drag_AllowMove)
 
-        mod = evt.GetModel()
         self._draglevel = int(mod.GetParent(evt.GetItem()) != dv.NullDataViewItem)
         self._dragging = True
         if sys.platform == 'darwin':
@@ -799,7 +806,6 @@ class MyFrame(wx.Frame):
     def __init__(self, parent, prj, standalone=False):
         wx.Frame.__init__(self, parent, -1, "Table", size=(-1,400))
 
-
         panel = wx.Panel(self)
         self.dataviewmodel = TreeListModel(prj)
         self.dvcTree = TreeCtrl(panel, standalone)
@@ -813,7 +819,6 @@ class MyFrame(wx.Frame):
         self.Layout()
 
         #self.btn_clear.Bind(wx.EVT_BUTTON, self.on_clear)
-
 
 def demo():
     prj = Project()
