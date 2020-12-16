@@ -3,7 +3,7 @@ import wx.dataview as dv
 from uuid import uuid4
 import sys
 from pubsub import pub
-from json import dumps, loads
+from pickle import dumps, loads
 
 from . project import Project, Plot, PlotData
 from .misc_ui import WithMessage
@@ -349,7 +349,6 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
     selection = property(fset=_set_selection)
 
     def _select(self, dvia, silent=False):
-        print('dvctree _select',dvia,silent)
         self.SetEvtHandlerEnabled(False)
         self.SetSelections(dv.DataViewItemArray())
         self.SetEvtHandlerEnabled(True)
@@ -382,7 +381,6 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
             raise
 
     def on_select(self, evt):
-        print('dvctree onselect')
         #mod = evt.GetModel()
         mod = self.dataviewmodel
         selection = self.GetSelections()
@@ -408,8 +406,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         if evt.GetDataFormat() != wx.DF_UNICODETEXT:
             print('invalid data format')
         else:
-            pass
-            #evt.SetDropEffect(wx.DragMove)
+            evt.SetDropEffect(wx.DragMove)
 
         obj = wx.TextDataObject()
         buf = evt.GetDataBuffer()
@@ -420,13 +417,13 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
             instid,itemid = loads(obj.GetText())
             print(instid, itemid)
             if instid != self.instid:
-                evt.Veto()
+                print('drop from other instance')
 
         if not self._dragging or self._draglevel == 0 and mod.GetParent(targetitem) != dv.NullDataViewItem:
             # does not have consequences on linux
             evt.Veto()
 
-        if False and sys.platform not in ['darwin','linux']:
+        if sys.platform not in ['darwin','linux']:
             mposx, mposy = wx.GetMousePosition()
             cposx, cposy = self.ScreenToClient((mposx, mposy))
 
@@ -442,11 +439,28 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
 
     def on_enddrag(self, evt):
         self._dragging -= 1
-        obj = wx.TextDataObject()
-        obj.SetData(wx.DataFormat(wx.DF_UNICODETEXT), evt.GetDataBuffer())
-        instid, itemid = loads(obj.GetText())
+        do = wx.TextDataObject()
+        do.SetData(wx.DataFormat(wx.DF_UNICODETEXT), evt.GetDataBuffer())
+        instid, isplot, obj = loads(bytearray.fromhex(do.GetText()))
 
         mod = evt.GetModel()
+        if instid != self.instid:
+            paritem = mod.GetParent(evt.GetItem())
+            if  paritem == dv.NullDataViewItem and isplot:
+                if evt.GetItem().IsOk():
+                    target = mod.ItemToObject(evt.GetItem())
+                    n = mod.data.index(target)
+                    mod.data.insert(n, obj)
+                else:
+                    mod.data.append(obj)
+            elif not (paritem == dv.NullDataViewItem or isplot):
+                if evt.GetItem().IsOk():
+                    target = mod.ItemToObject(evt.GetItem())
+                    targetpar = mod.ItemToObject(mod.GetParent(evt.GetItem()))
+                    n = targetpar.index(target)
+                    targetpar.insert(n, obj)
+            return
+
         if not evt.GetItem().IsOk():
             # happens when dropping on root
             targetobj = None
@@ -746,7 +760,14 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
     def on_drag(self, evt):
         #print('begin drag')
         obj = evt.GetModel().ItemToObject(evt.GetItem())
-        msg = dumps((self.instid,str(int(evt.GetItem().GetID()))))
+
+        isplot = evt.GetModel().GetParent(evt.GetItem()) == dv.NullDataViewItem
+        try:
+            msg = dumps((self.instid,isplot,obj)).hex()
+        except TypeError:
+            print('pickle failed for',obj,type(obj),obj.__dict__.keys())
+            msg = dumps((self.instid,str(int(evt.GetItem().GetID())),None)).hex()
+
         do = wx.TextDataObject()
         do.SetText(msg)
         evt.SetDataObject(do)
@@ -771,6 +792,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
             self._items_dragged = parent, [mod.ItemToObject(evt.GetItem())]
         else:
             self._items_dragged = parent, childs
+        print('items dragged',self._items_dragged)
 
 
 class MyFrame(wx.Frame):

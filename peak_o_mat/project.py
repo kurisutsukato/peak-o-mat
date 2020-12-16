@@ -122,13 +122,14 @@ class ExtraBase(list):
         super(ExtraBase, self).__init__(*args)
 
     def attach_dvmodel(self, model):
-        self.m = model
-        for k in self:
-            k.m = model
+        self.dvmodel = model
+        if isinstance(self, Project):
+            for k in self:
+                k.dvmodel = model
 
     @property
-    def __cb(self):
-        ret = hasattr(self, 'm')
+    def has_notifier(self):
+        ret = hasattr(self, 'dvmodel')
         return ret
 
     def append(self, obj):
@@ -137,75 +138,73 @@ class ExtraBase(list):
             obj.__class__ = PlotItem
             obj.uuid = UUID.uuid4().hex
         elif isinstance(obj, Plot):
-            if not obj.__cb and self.__cb:
-                obj.attach_dvmodel(self.m)
+            if self.has_notifier:
+                obj.attach_dvmodel(self.dvmodel)
         list.append(self, obj)
-        if self.__cb:
-            dvi = self.m.ObjectToItem(obj)
-            self.m.ItemAdded(self.m.GetParent(dvi), dvi)
+        if self.has_notifier:
+            dvi = self.dvmodel.ObjectToItem(obj)
+            self.dvmodel.ItemAdded(self.dvmodel.GetParent(dvi), dvi)
 
     def insert(self, n, obj):
         if isinstance(obj, Spec):
             obj.__class__ = PlotItem
             obj.uuid = UUID.uuid4().hex
         list.insert(self, n, obj)
-        if self.__cb:
-            dvi = self.m.ObjectToItem(obj)
-            self.m.ItemAdded(self.m.GetParent(dvi), dvi)
+        if self.has_notifier:
+            dvi = self.dvmodel.ObjectToItem(obj)
+            self.dvmodel.ItemAdded(self.dvmodel.GetParent(dvi), dvi)
 
     def pop(self, n):
-        if self.__cb:
-            dvi = self.m.ObjectToItem(self[n])
-            dvipa = self.m.GetParent(dvi)
+        if self.has_notifier:
+            dvi = self.dvmodel.ObjectToItem(self[n])
+            dvipa = self.dvmodel.GetParent(dvi)
         ret = list.pop(self, n)
-        if self.__cb:
-            self.m.ItemDeleted(dvipa, dvi)
+        if self.has_notifier:
+            self.dvmodel.ItemDeleted(dvipa, dvi)
         return ret
 
     def remove(self, obj):
-        if self.__cb:
-            dvi = self.m.ObjectToItem(obj)
-            dvipa = self.m.GetParent(dvi)
+        if self.has_notifier:
+            dvi = self.dvmodel.ObjectToItem(obj)
+            dvipa = self.dvmodel.GetParent(dvi)
         ret = list.remove(self, obj)
-        if self.__cb:
-            self.m.ItemDeleted(dvipa, dvi)
+        if self.has_notifier:
+            self.dvmodel.ItemDeleted(dvipa, dvi)
         return ret
 
     def __setitem__(self, item, obj):
-        if self.__cb:
+        if self.has_notifier:
             dviarr = dv.DataViewItemArray()
             if type(item) == slice:
                 for k in self[item]:
-                    dvi = self.m.ObjectToItem(k)
+                    dvi = self.dvmodel.ObjectToItem(k)
                     dviarr.append(dvi)
             else:
-                dvi = self.m.ObjectToItem(self[item])
+                dvi = self.dvmodel.ObjectToItem(self[item])
                 dviarr.append(dvi)
-            dvipa = self.m.GetParent(dvi)
-            self.m.ItemsDeleted(dvipa, dviarr)
+            dvipa = self.dvmodel.GetParent(dvi)
+            self.dvmodel.ItemsDeleted(dvipa, dviarr)
         if type(item) == slice:
             for o in obj:
                 if isinstance(o, Spec):
                     o.__class__ = PlotItem
                     obj.uuid = UUID.uuid4().hex
-                    obj.m = self.m
         else:
             if isinstance(obj, Spec):
                 obj.__class__ = PlotItem
                 obj.uuid = UUID.uuid4().hex
-                obj.m = self.m
         list.__setitem__(self, item, obj)
-        if self.__cb:
+        if self.has_notifier:
             dviarr = dv.DataViewItemArray()
             if type(item) == slice:
                 for k in self[item]:
-                    dvi = self.m.ObjectToItem(k)
+                    dvi = self.dvmodel.ObjectToItem(k)
                     dviarr.append(dvi)
             else:
-                dvi = self.m.ObjectToItem(self[item])
+                dvi = self.dvmodel.ObjectToItem(self[item])
                 dviarr.append(dvi)
-            dvipa = self.m.GetParent(dvi)
-            self.m.ItemsAdded(dvipa, dviarr)
+            dvipa = self.dvmodel.GetParent(dvi)
+            self.dvmodel.ItemsAdded(dvipa, dviarr)
 
 class LData(ExtraBase):
     def __init__(self, *args):
@@ -337,10 +336,13 @@ class Plot(LData):
 
     def __getstate__(self):
         #remove treedatamodel
-        m = self.m
-        del self.__dict__['m']
+        print('getstate')
+        if self.has_notifier:
+            m = self.dvmodel
+            del self.__dict__['dvmodel']
         dict = copy.deepcopy(self.__dict__)
-        self.__dict__['m'] = m
+        if self.has_notifier:
+            self.__dict__['dvmodel'] = m
         dict['uuid'] = UUID.uuid4().hex
         dict['_references'] = []
         return dict
@@ -1001,6 +1003,6 @@ if __name__ == '__main__':
 
 
     k = Plot()
-    k.m = 'test'
+    k.dvmodel = 'test'
     a = copy.deepcopy(k)
     print(a.__dict__)
