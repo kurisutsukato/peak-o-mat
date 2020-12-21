@@ -419,7 +419,7 @@ class Controller(object):
     def set2clipboard(self):
         if wx.TheClipboard.Open():
             do = wx.CustomDataObject('selection')
-            if self.selection.plot:
+            if self.selection.isplot:
                 data = pickle.dumps(self.active_plot,1)
             else:
                 plot, sel = self.selection
@@ -598,22 +598,23 @@ class Controller(object):
         self.update_plot()
         self.project_modified = True
         
-    def delete_selection(self, wholeplot=False):
+    def delete_selection(self): # wholeplot=False)
+        #TODO wholeplot sollte man cniht mehr brauchen.
         """\
-        Delete the current selectionp. If 'wholeplot' is True, delete the whole plot
+        Delete the current selection. If 'wholeplot' is True, delete the whole plot
         including all sets.
         """
         plot, sel = self.selection
-        if wholeplot:
+        if self.selection.isplot:
             if self.project.delete(plot) is None:
                 self.view.msg_dialog('Plot cannot be deleted. It is referenced by a figure object.')
             else:
-                self.update_tree()
+                #self.update_tree()
                 if len(self.project) > 0:
                     self.view.tree.selection = min(len(self.project)-1,plot)
                 else:
                     self._selection = None
-                    self.update_plot()
+                    #self.update_plot()
         else:
             self.project[plot].delete(sel)
             self.update_tree(plot)
@@ -691,12 +692,12 @@ class Controller(object):
         return self._selection
     def _set_selection(self, selection):
         class Selection(tuple):
-            plot = False
+            isplot = False
         plot, ds = selection
         if ds is None:
             ds = list(range(len(self.project[plot])))
             self._selection = Selection((plot, ds))
-            self._selection.plot = True
+            self._selection.isplot = True
         else:
             self._selection = Selection((plot, ds))
         plot_sel = self.project[plot]
@@ -868,6 +869,7 @@ class Controller(object):
             else:
                 self.__mpm_edit_combo = None, mplmodel.MultiPlotModel(self.project)
             #TODO: nicht jedesmal neu erzeugen!
+            print(self.__mpm_edit_combo)
             self.mplplot = mplcontroller.new(self, self.view, self.__mpm_edit_combo[1])
 
             self.mplplot.view.Show(show)

@@ -157,8 +157,11 @@ class ExtraBase(list):
         if self.has_notifier:
             dvi = self.dvmodel.ObjectToItem(self[n])
             dvipa = self.dvmodel.GetParent(dvi)
+            dvichil = dv.DataViewItemArray()
+            self.dvmodel.GetChildren(dvi,dvichil)
         ret = list.pop(self, n)
         if self.has_notifier:
+            self.dvmodel.ItemsDeleted(dvi, dvichil)
             self.dvmodel.ItemDeleted(dvipa, dvi)
         return ret
 
@@ -310,13 +313,12 @@ class PlotItem(Spec):
 
 class Plot(LData):
     type = 'plot'
-    def __init__(self, uuid=None, name=None):
-        LData.__init__(self)
+    def __init__(self, uuid=None, name=''):
         self.xrng, self.yrng = None,None
         self._references = [] # mplplotitems
         self.uuid = uuid or UUID.uuid4().hex
-        if name is not None:
-            self.name = name
+        self.name = name
+        LData.__init__(self)
 
         #TODO ueberdenken, sind alles attribute der datasets
 
@@ -326,7 +328,7 @@ class Plot(LData):
         self.model = None
 
     def __repr__(self):
-        return '<plot {}>'.format(self.name)
+        return '{} name: {}'.format(self.__class__, self.name)
 
     def __getstate__(self):
         #remove treedatamodel
