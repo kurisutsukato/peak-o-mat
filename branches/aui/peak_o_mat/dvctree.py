@@ -247,38 +247,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         evt.Enable(self.dataviewmodel.selection[0] is None)
 
     def on_delete(self, evt):
-        self.SetEvtHandlerEnabled(False)
-
-        parent, childs = self.dataviewmodel.selection
-        dvia = dv.DataViewItemArray()
-        if parent is None:
-            for pl in childs:
-                index = self.dataviewmodel.data.index(pl)
-                self.dataviewmodel.data.remove(pl)
-                #self.dataviewmodel.ItemDeleted(dv.NullDataViewItem, self.dataviewmodel.ObjectToItem(pl))
-            if len(self.dataviewmodel.data) > 0:
-                item = self.dataviewmodel.ObjectToItem(self.dataviewmodel.data[max(0,index-1)])
-                dvia.append(item)
-            self._select(dvia)
-        else:
-            index = 100000
-            pa = self.dataviewmodel.ObjectToItem(parent)
-            for ds in childs:
-                index = min(parent.index(ds),index)
-                #dvia.append(self.dataviewmodel.ObjectToItem(ds))
-                parent.remove(ds)
-            #self.dataviewmodel.ItemsDeleted(pa,dvia)
-            dvia = dv.DataViewItemArray()
-            if len(parent) > 0:
-                item = self.dataviewmodel.ObjectToItem(parent[max(0,index-1)])
-                dvia.append(item)
-            else:
-                item = self.dataviewmodel.ObjectToItem(parent)
-                dvia.append(item)
-            self.dataviewmodel.selection = [item]
-        self.SetEvtHandlerEnabled(True)
-
-        self._select(dvia)
+        pub.sendMessage((self.instid, 'tree', 'delete'))
 
     def on_menu(self, evt):
         self.PopupMenu(self.menu)
@@ -770,8 +739,8 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
 
     def on_drag(self, evt):
         #print('begin drag')
-        obj = evt.GetModel().ItemToObject(evt.GetItem())
         mod = evt.GetModel()
+        obj = mod.ItemToObject(evt.GetItem())
 
         isplot = mod.GetParent(evt.GetItem()) == dv.NullDataViewItem
         msg = dumps((self.instid,str(int(evt.GetItem().GetID())),isplot,obj)).hex()

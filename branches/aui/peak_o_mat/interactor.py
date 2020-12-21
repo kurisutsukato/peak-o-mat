@@ -276,8 +276,8 @@ class Interactor(object):
     def OnTreeSelect(self, selection):
         self.controller.selection = selection
 
-    def pubOnTreeDelete(self, msg):
-        self.controller.delete_selection(msg)
+    def pubOnTreeDelete(self):
+        self.controller.delete_selection()
 
     def OnTreeRename(self, msg):
         #TODO: wird vermutlich nicht mehr benutzt
