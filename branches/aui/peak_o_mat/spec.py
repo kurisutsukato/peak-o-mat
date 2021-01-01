@@ -60,10 +60,10 @@ x : array/list holding the x-values
 y : array/list holding the y-values
 name : short description of the data
 """
-        self.hide = False
+        # TODO: check if ok to delete. moved to PlotItem
+        #self.hide = False
         # TODO:
-        # 1) accept lists as x- and y-input .... war glaube ich ein Irrtum
-        # 2) crop nan values from input
+        # crop nan values from input.... still valid?
         self._inverse = False
         self._unsorted = False
         self._mod = None
@@ -236,26 +236,22 @@ returns boundingBox of the data as
         self.data = data
 
     def derivate(self, cp=False):
-        """\
-calculates the derivative
-"""
-        x = (self.x[1:]+self.x[:-1])/2.0
-        y = (self.y[1:]-self.y[:-1])
+        dy = np.gradient(self.y, self.x)
+
+        #x = (self.x[1:]+self.x[:-1])/2.0
+        #y = (self.y[1:]-self.y[:-1])
     
-        dy = y/(self.x[1:]-self.x[:-1])
+        #dy = y/(self.x[1:]-self.x[:-1])
         if cp:
-            return Spec(x,dy,'d_dx_%s'%self.name)
+            return Spec(self.x,dy,'d_dx_%s'%self.name)
         else:
-            self.data = np.array([x,dy])
+            self.data = np.array([self.x,dy])
             self.mask = None
             self.trafo = None
             return None
         
     def average(self, avg, cp=False):
-        """
-moving average with 'avg' points
-avg : number of points to average
-"""
+
         l = len(self.y)
         newy = np.zeros((0,l-avg))
         newx = []

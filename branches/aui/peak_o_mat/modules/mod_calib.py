@@ -154,7 +154,7 @@ class Module(module.BaseModule):
         self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApply, self.view.btn_storecalibration)
         self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToRestoreSearch, self.view.btn_restoresearch)
         
-        pub.subscribe(self.OnUpdate, (self.instid, 'setattrchanged'))
+        pub.subscribe(self.update, (self.instid, 'setattrchanged'))
 
     def update_from_model(self):
         #it = self.panel.ch_unit.FindString(self.calib.unit)
@@ -212,7 +212,7 @@ class Module(module.BaseModule):
         self.view.txt_offset.Value = str(self.calib.offset)
 
     def selection_changed(self):
-        self.OnUpdate(None)
+        self.update()
         #self.panel.btn_update.Enable(self.parent_controller.active_set is not None)
 
     def focus_changed(self, newfocus=None):
@@ -221,7 +221,7 @@ class Module(module.BaseModule):
             self.view.chk_speclines.Value = False
             pub.sendMessage((self.instid, 'updateplot'))
         else:
-            self.OnUpdate()
+            self.update()
 
     def OnDispersion(self, evt):
         trafo = self.calib.trafo(self.calib.selection, int(self.view.spin_order.Value))
@@ -238,7 +238,7 @@ class Module(module.BaseModule):
 
     def OnUnit(self, evt):
         self.calib.unit = self.view.ch_unit.GetStringSelection()
-        self.OnUpdate(None)
+        self.update()
         self.lastsearch = None
 
         if self.view.chk_speclines.Value:
@@ -281,7 +281,7 @@ class Module(module.BaseModule):
         except:
             return
         else:
-            self.OnUpdate(None)
+            self.update()
 
     def OnOffset(self, evt):
         try:
@@ -289,7 +289,7 @@ class Module(module.BaseModule):
         except:
             return
         else:
-            self.OnUpdate(None)
+            self.update()
 
     def OnDataChanged(self, evt):
         if evt.GetColumn() == 3:
@@ -312,7 +312,7 @@ class Module(module.BaseModule):
             self.view.spin_order.SetValue(coerced)
             self.view.spin_order.SetRange(0,max(0,min(len(self.calib.selection)-1,2)))
 
-    def OnUpdate(self, evt=None):
+    def update(self):
         #if len(self.calib.selection) > 0:
         #    selected = np.take(self.calib.data, self.calib.selection, axis=0)[:,2]
         #else:
@@ -373,12 +373,12 @@ class Module(module.BaseModule):
                 tol = max((measured - lines).std()*6,fwhm.mean()*0.1)
                 self.calib.tol = tol
                 self.calib.offset = off
-                self.OnUpdate(None)
+                self.update()
                 self.calib.selection = lines
                 self.update_from_model()
             else:
                 selection, lines = self.lastsearch
-                self.OnUpdate(None)
+                self.update()
                 self.calib.selection = selection
                 for n,s in enumerate(selection):
                     self.calib.data[s][3] = lines[n]

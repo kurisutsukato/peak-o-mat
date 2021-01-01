@@ -740,6 +740,7 @@ class ControlFrame(WithMessage,wx.Frame):
             self.spn_legend_position.Value = mpmodel.selected.legend_position
 
             self.spn_fontsize.Value = mpmodel.selected.fontsize
+            self.spn_inset_fontsize.Value = mpmodel.selected.inset_fontsize
             self.chk_legend_frameon.Value = mpmodel.selected.legend_frameon
 
             self.txt_title.Value = mpmodel.selected.label_title
@@ -752,15 +753,6 @@ class ControlFrame(WithMessage,wx.Frame):
 
     def init_pop(self, mpmodel):
         self.plot_layout.pop.update_from_model(mpmodel)
-        # try:
-        #     pd = mpmodel[self.plot_layout.selection]
-        # except KeyError:
-        #     sel = (-1, -1)
-        #     self.enable_edit(False)
-        # else:
-        #     sel = (pd.plot_ref, pd.plot_ref_secondary)
-        #     self.enable_edit(True)
-
         names = [p.name if p.name != '' else 'p{}'.format(n) for n,p in enumerate(mpmodel.project)]
         self.plot_layout.set_plot_choices(['<none>']+names,
                                           [-1]+[p.uuid for p in mpmodel.project])
@@ -799,6 +791,7 @@ class ControlFrame(WithMessage,wx.Frame):
         self.chk_legend_frameon.SetValue(True)
 
         self.spn_fontsize = wx.SpinCtrl(self.panel_basic, size=(80,-1), min=0, max=20, initial=10, value='10', style=wx.TE_PROCESS_ENTER)
+        self.spn_inset_fontsize = wx.SpinCtrl(self.panel_basic, size=(80,-1), min=0, max=20, initial=10, value='10', style=wx.TE_PROCESS_ENTER)
 
         self.spn_bottom = wx.SpinCtrlDouble(self.panel, size=(80,-1), min=0, max=1, inc=0.05, value='0.1', style=wx.TE_PROCESS_ENTER, name='bottom')
         self.spn_top = wx.SpinCtrlDouble(self.panel, size=(80,-1),min=0.0, max=1.0, inc=0.05, value='0.9', style=wx.TE_PROCESS_ENTER, name='top')
@@ -857,7 +850,9 @@ class ControlFrame(WithMessage,wx.Frame):
         bx = wx.StaticBox(self.panel_basic, label='Text')
         hbox = wx.StaticBoxSizer(bx, wx.HORIZONTAL)
         hbox.Add(wx.StaticText(self.panel_basic, label='Font size'), 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 10)
-        hbox.Add(self.spn_fontsize, 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 20)
+        hbox.Add(self.spn_fontsize, 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 40)
+        hbox.Add(wx.StaticText(self.panel_basic, label='Inset font size'), 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 10)
+        hbox.Add(self.spn_inset_fontsize, 0, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 20)
         vbox.Add(hbox, 0, wx.EXPAND|wx.ALL, 5)
 
         self.panel_basic.SetSizer(vbox)

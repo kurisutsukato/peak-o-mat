@@ -11,7 +11,6 @@ from scipy.signal import find_peaks
 
 from threading import Thread, Event
 
-
 from . import misc_ui
 from . import model
 from . import lineshapebase as lb
@@ -395,10 +394,9 @@ class FitController(object):
         #                data=data.as_table(), name='{}:{}'.format(data.name, data.par))
         return data
 
-    def start_batchfit(self, baseds_name, initial, order, fitopts):
+    def start_batchfit(self, base, initial, order, fitopts):
         pl,ds = self.selection
 
-        base = int(baseds_name[1:])
         self._batchfit_plot = pl
         self._batchfit_basemodel = copy.deepcopy(pl[base].model)
 
@@ -407,9 +405,9 @@ class FitController(object):
         else:
             rng = list(range(base+1, len(pl)))
 
-        datasets = [copy.deepcopy(pl[q]) for q in rng]
+        datasets = [pl[q].clone() for q in rng]
 
-        job = (datasets, copy.deepcopy(pl[base]), initial, order, fitopts)
+        job = (datasets, pl[base].clone(), initial, order, fitopts)
         #self.view.progress_dialog(len(rng))
         self._worker = BatchWorker(self.view, job)
         self._worker.start()
@@ -422,7 +420,7 @@ class FitController(object):
         ds.model = copy.deepcopy(self._batchfit_basemodel)
         pub.sendMessage((self.view.instid, 'updateview'))
         self.view.pan_batch.txt_log.AppendText(
-            '{}: {}\n'.format(ds.name,result[-1]))
+            '{}: {}\n'.format(ds.name,','.join(result[-1])))
 
     def stop_batch_fit(self):
         if hasattr(self, '_worker'):

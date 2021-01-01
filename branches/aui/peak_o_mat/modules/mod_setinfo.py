@@ -32,42 +32,39 @@ class EditMixin(listmix.TextEditMixin):
         listmix.TextEditMixin.__init__(self, *args, **kwargs)
         self.Unbind(wx.EVT_LEFT_DOWN)
 
-class TrafoListCtrl(wx.ListCtrl,
-                    listmix.ListCtrlAutoWidthMixin,
-                    EditMixin,
-                    listmix.CheckListCtrlMixin):
-
+class TrafoListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, EditMixin):
     def __init__(self, parent, ID, pos=wx.DefaultPosition,
                  size=wx.DefaultSize, style=0):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
-        self.Populate()
+        self.init_ctrl()
         EditMixin.__init__(self)
-        listmix.CheckListCtrlMixin.__init__(self)
         self.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEdit)
-        
-    def OnBeginEdit(self, evt):
-        if evt.GetColumn() == 0:
-            evt.Veto()
-        
-    def Populate(self):
-        self.InsertColumn(0, "axis")
-        self.InsertColumn(1, "trafo")
-        self.InsertColumn(2, "comment")
+        self.EnableCheckBoxes(True)
 
-        self.SetColumnWidth(0, 50)
-        self.SetColumnWidth(1, 300)
-        self.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+    def init_ctrl(self):
+        self.InsertColumn(0, "")
+        self.InsertColumn(1, "Axis")
+        self.InsertColumn(2, "Transformation")
+        self.InsertColumn(3, "Comment")
+
+        self.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.SetColumnWidth(1, 50)
+        self.SetColumnWidth(2, 300)
+        self.SetColumnWidth(3, wx.LIST_AUTOSIZE)
 
     def Insert(self, data):
         #TODO: sys.maxsize is zu gross, daher 20000
 
         index = self.InsertItem(20000, data[0])
         for col in range(3):
-            self.SetItem(index, col, data[col])
+            self.SetItem(index, col+1, data[col])
         self.SetItemData(index, index)
-        if not data[3]:
-            self.CheckItem(index, True)
+        self.CheckItem(index, not data[3])
+
+    def OnBeginEdit(self, evt):
+        if evt.GetColumn() in [0, 1]:
+            evt.Veto()
 
 class XRCModule(module.XRCModule):
     title = 'Set info'
@@ -79,7 +76,6 @@ class XRCModule(module.XRCModule):
     def init(self):
         self._current_selection = 0
         self._updating = False
-        self._selected = False
         self.xmlres.AttachUnknownControl('xrc_lc_trafo', TrafoListCtrl(self.view, -1,
                                                                        style=wx.LC_REPORT))
         self.view.Bind(wx.EVT_BUTTON, self.OnRemoveTrafo, self.xrc_btn_trafo_remove)
@@ -88,27 +84,32 @@ class XRCModule(module.XRCModule):
         self.view.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEndEdit)
         self.view.Bind(wx.EVT_LIST_ITEM_SELECTED, lambda evt: self.OnItemSelected(evt, True))
         self.view.Bind(wx.EVT_LIST_ITEM_DESELECTED, lambda evt: self.OnItemSelected(evt, False))
+        self.view.Bind(wx.EVT_LIST_ITEM_CHECKED, lambda evt: self.OnItemChecked(evt, True))
+        self.view.Bind(wx.EVT_LIST_ITEM_UNCHECKED, lambda evt: self.OnItemChecked(evt, False))
+
         self.view.Bind(wx.EVT_BUTTON, self.OnRemoveMask, self.xrc_btn_mask_remove)
         self.view.Bind(wx.EVT_BUTTON, self.OnMaskMakePermanent, self.xrc_btn_mask_permanent)
         
-        self.xrc_lc_trafo.OnCheckItem = self.OnCheckItem
         self.xrc_btn_trafo_remove.Enable(False)
-        pub.subscribe(self.OnSetinfoUpdate, (self.instid, 'setinfo','update'))
+        pub.subscribe(self.OnSetinfoUpdate, (self.instid, 'setattrchanged'))
+
 
     def OnSetinfoUpdate(self):
-        if self._selected and not self._updating:
+        if not self._updating:
             self.update()
 
-    def OnCheckItem(self, idx, state):
+    def OnItemChecked(self, evt, state):
         if not self._updating:
-            set = self.controller.active_set
-            trafo = list(set.trafo[idx])
+            idx = evt.GetIndex()
+            ds = self.controller.active_set
+            trafo = list(ds.trafo[idx])
             trafo[3] = not state
-            set.trafo[idx] = tuple(trafo)
+            ds.trafo[idx] = tuple(trafo)
+            #TODO: replace by message
             wx.CallAfter(self.controller.plot)
 
     def OnMaskMakePermanent(self, evt):
-        aset = self.controller.active_set.make_mask_permanent()
+        self.controller.active_set.make_mask_permanent()
         self.controller.update_plot()
             
     def OnRemoveMask(self, evt):
@@ -124,10 +125,11 @@ class XRCModule(module.XRCModule):
     def OnEndEdit(self, evt):
         col,idx = evt.GetColumn(),evt.GetIndex()
         label = evt.GetLabel()
-        set = self.controller.active_set
-        trafo = list(set.trafo[idx])
-        trafo[col] = label
-        set.trafo[idx] = tuple(trafo)
+        ds = self.controller.active_set
+        trafo = list(ds.trafo[idx])
+        trafo[col-1] = label
+        ds.trafo[idx] = tuple(trafo)
+        #TODO: replace by msg
         self.controller.update_plot()
 
     def OnTrafosMakePermanent(self, evt):
@@ -135,23 +137,18 @@ class XRCModule(module.XRCModule):
         self.controller.update_plot()
 
     def OnRemoveAllTrafos(self, evt):
-        set = self.controller.active_set
-        if set is not None:
-            set.trafo[:] = []
+        ds = self.controller.active_set
+        if ds is not None:
+            ds.trafo[:] = []
             self.update()
             self.controller.update_plot()
         
     def OnRemoveTrafo(self, evt):
-        set = self.controller.active_set
-        if set is not None:
-            set.trafo.pop(self._current_selection)
+        ds = self.controller.active_set
+        if ds is not None:
+            ds.trafo.pop(self._current_selection)
             self.update()
             self.controller.update_plot()
-
-    def page_changed(self, state):
-        self._selected = state
-        if state:
-            self.update()
 
     def selection_changed(self):
         set = self.controller.active_set
@@ -164,22 +161,22 @@ class XRCModule(module.XRCModule):
 
     def update(self):
         self._updating = True
-        set = self.controller.active_set
-        if set is not None:
+        ds = self.controller.active_set
+        if ds is not None:
             self._current_selection = 0
             self.xrc_lc_trafo.DeleteAllItems()
 
             self.xrc_btn_trafo_remove.Enable(False)
 
-            self.xrc_btn_trafo_remove_all.Enable(len(set.trafo) > 0)
-            self.xrc_btn_trafo_permanent.Enable(len(set.trafo) > 0)
+            self.xrc_btn_trafo_remove_all.Enable(len(ds.trafo) > 0)
+            self.xrc_btn_trafo_permanent.Enable(len(ds.trafo) > 0)
             
-            self.xrc_btn_mask_remove.Enable(np.sometrue(set.mask))
-            self.xrc_btn_mask_permanent.Enable(np.sometrue(set.mask))
+            self.xrc_btn_mask_remove.Enable(np.sometrue(ds.mask))
+            self.xrc_btn_mask_permanent.Enable(np.sometrue(ds.mask))
             
-            for data in set.trafo:
+            for data in ds.trafo:
                 self.xrc_lc_trafo.Insert(data)
-            self.xrc_lab_points.SetLabel('%d points, %d masked'%(len(set.data[0]), len(np.compress(set.mask == 1, set.mask))))
+            self.xrc_lab_points.SetLabel('%d points, %d masked'%(len(ds.data[0]), len(np.compress(ds.mask == 1, ds.mask))))
         else:
             self.xrc_lc_trafo.DeleteAllItems()
 

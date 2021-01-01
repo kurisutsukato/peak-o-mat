@@ -185,10 +185,10 @@ class Interactor(object):
     def OnFigureShow(self, msg):
         self.controller.create_or_show_figure(True, model=msg)
 
-    def OnTreeCopy(self, msg):
+    def OnTreeCopy(self):
         self.controller.set2clipboard()
 
-    def OnTreePaste(self, msg):
+    def OnTreePaste(self):
         self.controller.clipboard2set()
 
     def OnProjectModified(self):
@@ -233,17 +233,17 @@ class Interactor(object):
     def pubOnAddPlot(self, msg):
         self.controller.add_plot()
         
-    def OnTreeUnmask(self, msg):
+    def OnTreeUnmask(self):
         self.controller.rem_attr('mask', only_sel=True)
 
-    def OnTreeRemWeights(self, msg):
+    def OnTreeRemWeights(self):
         self.controller.rem_attr('weights', only_sel=True)
 
-    def OnTreeRemFit(self, msg):
+    def OnTreeRemFit(self):
         self.controller.rem_attr('mod', only_sel=True)
         pub.sendMessage((self.view.instid, 'delmod'))
 
-    def OnTreeRemTrafo(self, msg):
+    def OnTreeRemTrafo(self):
         self.controller.rem_attr('trafo', only_sel=True)
 
     def OnFitPars2DataGrid(self, msg):
@@ -288,11 +288,11 @@ class Interactor(object):
     def OnTreeMove(self, msg):
         self.controller.move_set(*msg)
 
-    def OnTreeHide(self, msg):
+    def OnTreeHide(self):
         self.controller.hide_selection()
 
-    def OnTreeDuplicate(self, msg):
-        self.controller.duplicate_selection(msg)
+    def OnTreeDuplicate(self):
+        self.controller.duplicate_selection()
 
     def OnTreeNewFromVisArea(self, msg):
         self.controller.crop_selection(msg)

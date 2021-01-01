@@ -240,35 +240,35 @@
                       <object class="wxGridSizer">
                         <object class="sizeritem">
                           <object class="wxButton" name="xrc_btn_A2eV">
-                            <label>Ang &lt;-&gt; eV</label>
+                            <label>&#x212B; &#x2194; eV</label>
                           </object>
                           <flag>wxALL|wxEXPAND</flag>
                           <border>2</border>
                         </object>
                         <object class="sizeritem">
                           <object class="wxButton" name="xrc_btn_A2cm">
-                            <label>Ang &lt;-&gt; cm</label>
+                            <label>&#x212B; &#x2194; cm&#x207b;&#xb9;</label>
                           </object>
                           <flag>wxALL|wxEXPAND</flag>
                           <border>2</border>
                         </object>
                         <object class="sizeritem">
                           <object class="wxButton" name="xrc_btn_eV2cm">
-                            <label>eV -&gt; cm-1</label>
+                            <label>eV &#x2192; cm&#x207b;&#xb9;</label>
                           </object>
                           <flag>wxALL|wxEXPAND</flag>
                           <border>2</border>
                         </object>
                         <object class="sizeritem">
                           <object class="wxButton" name="xrc_btn_cm2eV">
-                            <label>cm-1 -&gt; eV</label>
+                            <label>cm&#x207b;&#xb9; &#x2192; eV</label>
                           </object>
                           <flag>wxALL|wxEXPAND</flag>
                           <border>2</border>
                         </object>
                         <object class="sizeritem">
                           <object class="wxButton" name="xrc_btn_nm2cm">
-                            <label>nm -&gt; rel cm-1</label>
+                            <label>nm &#x2192; rel cm&#x207b;&#xb9;</label>
                           </object>
                           <flag>wxALL|wxEXPAND</flag>
                           <border>2</border>
@@ -282,7 +282,7 @@
                         </object>
                         <object class="sizeritem">
                           <object class="wxButton" name="xrc_btn_cm2nm">
-                            <label>rel cm-1 -&gt; nm</label>
+                            <label>rel cm&#x207b;&#xb9; &#x2192; nm</label>
                           </object>
                           <flag>wxALL|wxEXPAND</flag>
                           <border>2</border>
