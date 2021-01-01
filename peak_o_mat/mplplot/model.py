@@ -82,48 +82,24 @@ class Box:
         return [self.left/100, self.bottom/100, self.width/100, self.height/100]
 
 class PlotData(object):
-    _attrs = ['legend_show', 'legend_fontsize', 'legend_position', 'fontsize', 'label_title', 'legend_frameon', 'box']
+    _attrs = ['legend_show', 'legend_fontsize', 'legend_position', 'fontsize', 'inset_fontsize', 'label_title', 'legend_frameon', 'box']
 
-    _types = [textbool, int, int, int, string, textbool, Box.from_xml]
+    _types = [textbool, int, int, int, int, string, textbool, Box.from_xml]
 
-    _defaults = [False, 12, 0, 10, '', True, None]
-
-    def release(self):
-        self.project[self.plot_ref].del_ref(self.uuid)
-        if self.plot_ref_secondary is not None:
-            self.project[self.plot_ref_secondary].del_ref(self.uuid)
-
-    def __deepcopy__(self, memo):
-        #print('deepcopy', self.project, self.plot_ref, self.plot_ref_secondary, self.plot_hash)
-        obj = PlotData(self.project, self.plot_ref, self.plot_ref_secondary, plot_hash=self.plot_hash,
-                       linedata=deepcopy(self.line_data, memo),
-                       axesdata=deepcopy(self.axes_data, memo))
-        for attr in self._attrs:
-            setattr(obj, attr, getattr(self, attr))
-        return obj
-
-    def equals(self, other):
-        #TODO: scheint nicht gebraucht zu werden
-        '''
-        not used
-        '''
-        if other is None:
-            return False
-        for attr in self._attrs:
-            if getattr(self, attr) != getattr(other, attr):
-                return False
-        return True
+    _defaults = [False, 12, 0, 10, 10, '', True, None]
 
     def __init__(self, project, plot, plot_secondary=None, linedata=None, axesdata=None, plot_hash=None, plot_hash_secondary=None):
         self.plot_hash = project[plot].hash if plot_hash is None else plot_hash
         self.plot_hash_secondary = project[plot_secondary].hash if plot_secondary is not None and plot_hash_secondary is None else plot_hash_secondary
-        print('pd init hahes:',self.plot_hash, self.plot_hash_secondary)
+        #print('pd init hahes:',self.plot_hash, self.plot_hash_secondary)
         self.uuid = uuid.uuid4().hex
         self.project = project
 
+        #TODO: 'plot' is the uuid already, I Think
         self.plot_ref = project[plot].uuid
         self.plot_ref_secondary = plot_secondary
 
+        print('add ref',self.plot_ref,self.uuid)
         self.project[self.plot_ref].add_ref(self.uuid)
         if self.plot_ref_secondary is not None:
             self.project[self.plot_ref_secondary].add_ref(self.uuid)
@@ -144,6 +120,29 @@ class PlotData(object):
         for attr, default in zip(self._attrs, self._defaults):
             setattr(self, attr, default)
         self.box = Box()
+
+    def release(self):
+        print('del ref', self.plot_ref, self.uuid)
+        self.project[self.plot_ref].del_ref(self.uuid)
+        if self.plot_ref_secondary is not None:
+            self.project[self.plot_ref_secondary].del_ref(self.uuid)
+
+    def __deepcopy__(self, memodict={}):
+        pd = PlotData.__new__(PlotData)
+        pd.__dict__ = {attr: deepcopy(self.__dict__[attr]) if attr != 'project' else self.__dict__[attr] for attr in self.__dict__}
+        return pd
+
+    def equals(self, other):
+        #TODO: scheint nicht gebraucht zu werden
+        '''
+        not used
+        '''
+        if other is None:
+            return False
+        for attr in self._attrs:
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+        return True
 
     def add_secondary(self, plot):
         self.project[plot].add_ref(self.uuid)
@@ -260,6 +259,7 @@ class PlotData(object):
         self.label_title = str(view.txt_title.Value)
 
         self.fontsize = int(view.spn_fontsize.Value)
+        self.inset_fontsize = int(view.spn_inset_fontsize.Value)
 
         self.figsize = view.plot_view.canvas.GetSize()
         return hash != self.hash()
@@ -428,24 +428,18 @@ class MultiPlotModel(dict):
                     return self.pop(pos)
         return d
 
-    def __del__(self):
+    def a__del__(self):
+        #TODO: remove
+        print('calling __del__', self.values())
         vals = self.values()
         for v in vals:
             v.release()
 
-    def __deepcopy__(self, memo):
-        mpm = copy(self)
-        mpm.selected = None
-
-        pd = {}
-        for k,v in self.items():
-            pd[k] = deepcopy(v, memo)
-        mpm = MultiPlotModel(self.project, pd)
-        for attr in self.attrs:
-            setattr(mpm, attr, getattr(self, attr))
-        mpm.__order = dict(self.__order)
-        mpm.__shape = self.shape
-        return mpm
+    def __deepcopy__(self, memodict={}):
+        pd = copy(self)
+        pd.__dict__ = {attr: deepcopy(self.__dict__[attr]) if attr != 'project' else self.__dict__[attr] for attr in self.__dict__}
+        pd.selected = None
+        return pd
 
     def __getitem__(self, item):
         if type(item) == bytes:
@@ -475,14 +469,12 @@ class MultiPlotModel(dict):
         self.select(pos)
 
     def remove(self, pos):
-        item = self[pos]
-        self[pos] = None
+        item = self.pop(pos)
         try:
             item.release()
         except AttributeError:
             # happens if item is empty (= None)
             pass
-
 
     def select(self, pos):
         if pos in self:
@@ -545,7 +537,7 @@ class MultiPlotModel(dict):
             if k[0] >= shape[0] or k[1] >= shape[1]:
                 self.remove(k)
         self.__shape = shape
-        print('newshape',shape,self.keys())
+        #print('newshape',shape,self.keys())
 
     @property
     def modified(self):

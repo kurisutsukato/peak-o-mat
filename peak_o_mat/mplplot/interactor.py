@@ -31,7 +31,7 @@ class Interactor:
         self.view.Bind(wx.EVT_TIMER, self.OnTimer)
 
         txtinput = ['txt_title','spn_legend_fontsize','spn_legend_position',
-                    'spn_fontsize',
+                    'spn_fontsize', 'spn_inset_fontsize',
                     ]
         spins = ['spn_bottom','spn_top','spn_left','spn_right',
                  'spn_hspace','spn_wspace',

@@ -162,6 +162,7 @@ class PlotController(object):
         self.redraw(force=True)
 
     def select_plot(self, plot, pos):
+        print('mplplot controller {} {}'.format(plot, pos))
         if plot == -1:
             self.model.remove(pos)
             #TODO: deselect secondary plot
@@ -169,10 +170,12 @@ class PlotController(object):
             self.view.update_from_model(self.model)
             self.view.enable_edit(False)
         else:
-            if self.model[pos] is not None and self.model[pos].plot_ref == plot:#
+            if self.model[pos] is not None and self.model[pos].plot_ref == plot:
+                # selection did not change
                 return
+            self.model.remove(pos)
             pd = PlotData(self.model.project,plot)
-            print('new pd:', plot, pd.plot_ref_secondary)
+            #print('new pd:', plot, pd.plot_ref_secondary)
             self.model.add(pd, pos)
             self.view.update_from_model(self.model)
             self.view.enable_edit(True)
@@ -250,7 +253,6 @@ class PlotController(object):
                         for line,(s,style) in zip(ax.lines,pm.primary()):
                             for attr,value in style.kwargs().items():
                                 getattr(line, 'set_{}'.format(attr))(value)
-                    set_plot_attributes(ax, pm)
                     set_axis_attributes(ax, 'x', pm.axes_data['x'])
                     set_axis_attributes(ax, 'y', pm.axes_data['y'])
                     if 'twinx' in pm.axes_data:
@@ -330,6 +332,7 @@ class PlotController(object):
                             continue
                         set_axis_attributes(inset, 'x', pm.axes_data['insetx'])
                         set_axis_attributes(inset, 'y', pm.axes_data['insety'])
+                    set_plot_attributes(ax, pm)
 
         self.__needs_update = False
 
@@ -353,6 +356,15 @@ def set_plot_attributes(ax, pm):
 
     for item in ([ax.title, ax.xaxis.label, ax.yaxis.label]+ ax.get_xticklabels() + ax.get_yticklabels()):
         item.set_fontsize(pm.fontsize)
+
+    try:
+        ax = ax.myinset
+    except AttributeError:
+        pass
+    else:
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label]+ ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(pm.inset_fontsize)
+
 
 def set_axis_attributes(ax, axis, ad):
     getattr(ax, 'set_{}label'.format(axis))(ad.label)
@@ -382,7 +394,8 @@ def set_axis_attributes(ax, axis, ad):
         if getattr(ax, '{}axis_inverted'.format(axis))():
             getattr(ax, 'invert_{}axis'.format(axis))()
     if ad.min != ad.max:
-        print('set axis limits', getattr(ax, 'set_{}lim'.format(axis))(floatOrNone(ad.min), floatOrNone(ad.max)))
+        #print('set axis limits', getattr(ax, 'set_{}lim'.format(axis))(floatOrNone(ad.min), floatOrNone(ad.max)))
+        getattr(ax, 'set_{}lim'.format(axis))(floatOrNone(ad.min), floatOrNone(ad.max))
 
 def new(controller, parent, plotmodel):
     return PlotController(controller, ControlFrame(parent), plotmodel)

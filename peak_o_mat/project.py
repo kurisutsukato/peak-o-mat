@@ -132,10 +132,24 @@ class ExtraBase(list):
         ret = hasattr(self, 'dvmodel')
         return ret
 
+    def extend(self, objlist):
+        dvia = dv.DataViewItemArray()
+        for obj in objlist:
+            if isinstance(obj, Spec):
+                obj = PlotItem.from_spec(obj)
+            elif isinstance(obj, Plot):
+                if self.has_notifier:
+                    obj.attach_dvmodel(self.dvmodel)
+            list.append(self, obj)
+            if self.has_notifier:
+                dvi = self.dvmodel.ObjectToItem(obj)
+                dvia.append(dvi)
+        if self.has_notifier:
+            self.dvmodel.ItemsAdded(self.dvmodel.GetParent(dvi), dvia)
+
     def append(self, obj):
         if isinstance(obj, Spec):
-            obj.__class__ = PlotItem
-            obj.uuid = UUID.uuid4().hex
+            obj = PlotItem.from_spec(obj)
         elif isinstance(obj, Plot):
             if self.has_notifier:
                 obj.attach_dvmodel(self.dvmodel)
@@ -146,8 +160,7 @@ class ExtraBase(list):
 
     def insert(self, n, obj):
         if isinstance(obj, Spec):
-            obj.__class__ = PlotItem
-            obj.uuid = UUID.uuid4().hex
+            obj = PlotItem.from_spec(obj)
         list.insert(self, n, obj)
         if self.has_notifier:
             dvi = self.dvmodel.ObjectToItem(obj)
@@ -189,12 +202,10 @@ class ExtraBase(list):
         if type(item) == slice:
             for o in obj:
                 if isinstance(o, Spec):
-                    o.__class__ = PlotItem
-                    obj.uuid = UUID.uuid4().hex
+                    obj = PlotItem.from_spec(obj)
         else:
             if isinstance(obj, Spec):
-                obj.__class__ = PlotItem
-                obj.uuid = UUID.uuid4().hex
+                obj = PlotItem.from_spec(obj)
         list.__setitem__(self, item, obj)
         if self.has_notifier:
             dviarr = dv.DataViewItemArray()
@@ -225,12 +236,10 @@ class LData(ExtraBase):
             out = []
             for i in item:
                 out.append(copy.deepcopy(self[i]))
-                if type(out[-1]) == PlotItem:
-                    out[-1].uuid = UUID.uuid4().hex
+                out[-1].uuid = UUID.uuid4().hex
         else:
             out = copy.deepcopy(self[item])
-            if type(out) == PlotItem:
-                out.uuid = UUID.uuid4().hex
+            out.uuid = UUID.uuid4().hex
         return out
 
     def delete(self, item):
@@ -297,6 +306,7 @@ class PlotItem(Spec):
     def __init__(self, *args):
         self.uuid = UUID.uuid4().hex
         Spec.__init__(self, *args)
+        self.hide = False
 
     def __eq__(self, other):
         if type(other) == type(self):
@@ -310,6 +320,18 @@ class PlotItem(Spec):
         dict = copy.deepcopy(self.__dict__)
         dict['uuid'] = UUID.uuid4().hex
         return dict
+
+    def clone(self):
+        clone = copy.deepcopy(self)
+        clone.uuid = self.uuid
+        return clone
+
+    @classmethod
+    def from_spec(cls, s):
+        s.uuid = UUID.uuid4().hex
+        s.hide = False
+        s.__class__ = PlotItem
+        return s
 
 class Plot(LData):
     type = 'plot'
@@ -332,7 +354,6 @@ class Plot(LData):
 
     def __getstate__(self):
         #remove treedatamodel
-        print('getstate')
         if self.has_notifier:
             m = self.dvmodel
             del self.__dict__['dvmodel']
@@ -371,6 +392,7 @@ class Plot(LData):
 
     def add_ref(self, ref):
         self._references.append(ref)
+
     def del_ref(self, ref):
         try:
             self._references.remove(ref)

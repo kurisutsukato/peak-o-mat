@@ -22,6 +22,7 @@ import scipy.odr.odrpack as O
     
 from .model import QuickEvaluate
 from .spec import Spec
+from .project import PlotItem
 from . import misc_ui
 import wx
 import time
@@ -69,7 +70,7 @@ class BatchParameters(dict):
         xvalues = list(range(len(self[item].values)))
         for n,idx in enumerate(self[item].index):
             xvalues[n] = self.x[idx]
-        return Spec(xvalues, [q.value for q in self[item].values], '{}:{}:{}'.format(self.name,item,self.par))
+        return PlotItem(xvalues, [q.value for q in self[item].values], '{}:{}:{}'.format(self.name,item,self.par))
 
     def __str__(self):
         return '\n'.join([str(q) for q in self.items()])

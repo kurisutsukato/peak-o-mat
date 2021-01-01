@@ -74,8 +74,8 @@ class TreeListModel(dv.PyDataViewModel):
             for ds in node:
                 children.append(self.ObjectToItem(ds))
             return len(children)
-        raise Exception('should not happen')
-        return 0
+        else:
+            return 0
 
     def IsContainer(self, item):
         try:
@@ -107,13 +107,23 @@ class TreeListModel(dv.PyDataViewModel):
         return True
 
     def GetAttr(self, item, col, attr):
-        return False
-
-        if self.ItemToObject(item).modified:
-            attr.SetColour(wx.RED)
+        obj = self.ItemToObject(item)
+        if isinstance(obj, Plot):
+            if obj.model is not None:
+                attr.SetColour(wx.GREEN)
+                return True
+            else:
+                return False
+        elif obj.hide:
+            attr.SetStrikethrough(True)
+            if obj.model is not None:
+                attr.SetColour(wx.Colour(0,120,0))
             return True
         else:
-            return False
+            if obj.model is not None:
+                attr.SetColour(wx.Colour(0,120,0))
+                return True
+        return False
 
     def GetValue(self, item, col):
         node = self.ItemToObject(item)
@@ -208,21 +218,21 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
 
     def init_menus(self):
         self.menumap = [#(-1, 'Rename', self.on_),
-                        (-1, 'Delete', self.on_delete),
-                        #(-1, 'Duplicate', self.OnDuplicate),
+                        (-1, 'Delete', self.on_menudelete),
+                        (-1, 'Duplicate', self.on_menuduplicate),
                         #(-1, 'New sets from visible area', self.OnNewSetsFromVisArea),
                         #(-1, 'Copy to data grid', self.OnSpreadsheet),
-                        #(wx.ID_SEPARATOR, '', None),
-                        #(-1, 'Toggle visibility', self.OnHide),
-                        #(wx.ID_SEPARATOR, '', None),
-                        #(-1, 'Remove mask', self.OnUnmask),
-                        #(-1, 'Remove trafos', self.OnRemTrafo),
-                        #(-1, 'Remove model', self.OnRemFit),
-                        #(-1, 'Remove weights', self.OnRemError),
+                        (wx.ID_SEPARATOR, '', None),
+                        (-1, 'Toggle visibility', self.on_menuhide),
+                        (wx.ID_SEPARATOR, '', None),
+                        (-1, 'Remove mask', self.on_menuremmask),
+                        (-1, 'Remove trafos', self.on_menuremtrafo),
+                        (-1, 'Remove model', self.on_menuremfit),
+                        (-1, 'Remove weights', self.on_menuremweights),
                         #(wx.ID_SEPARATOR, '', None),
                         #(-1, 'Insert plot', self.OnInsertPlot),
-                        #(-1, 'Copy', self.OnCopy),
-                        #(-1, 'Paste', self.OnPaste)
+                        (-1, 'Copy', self.on_menucopy),
+                        (-1, 'Paste', self.on_menupaste)
                         ]
 
         self.menu = wx.Menu()
@@ -246,8 +256,39 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
     def on_uimenu(self, evt):
         evt.Enable(self.dataviewmodel.selection[0] is None)
 
-    def on_delete(self, evt):
+    def on_menuhide(self, evt):
+        pub.sendMessage((self.instid, 'tree', 'hide'))
+        sel = self.dataviewmodel._selection
+        if len(sel) == 1:
+            if self.dataviewmodel.IsContainer(sel[0]):
+                childs = dv.DataViewItemArray()
+                self.dataviewmodel.GetChildren(sel[0], childs)
+                sel = childs
+        self.dataviewmodel.ItemsChanged(sel)
+
+    def on_menuremmask(self, evt=None):
+        pub.sendMessage((self.instid, 'tree', 'unmask'))
+
+    def on_menuremfit(self, evt=None):
+        pub.sendMessage((self.instid, 'tree', 'remfit'))
+
+    def on_menuremweights(self, evt=None):
+        pub.sendMessage((self.instid, 'tree', 'remerror'))
+
+    def on_menuremtrafo(self, evt=None):
+        pub.sendMessage((self.instid, 'tree', 'remtrafo'))
+
+    def on_menucopy(self, evt):
+        pub.sendMessage((self.instid, 'tree', 'copy'))
+
+    def on_menupaste(self, evt):
+        pub.sendMessage((self.instid, 'tree', 'paste'))
+
+    def on_menudelete(self, evt):
         pub.sendMessage((self.instid, 'tree', 'delete'))
+
+    def on_menuduplicate(self, evt):
+        pub.sendMessage((self.instid, 'tree', 'duplicate'))
 
     def on_menu(self, evt):
         self.PopupMenu(self.menu)
@@ -350,7 +391,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
             raise
 
     def on_select(self, evt):
-        print('dvctree onselect')
+        #print('dvctree onselect')
         #mod = evt.GetModel()
         mod = self.dataviewmodel
         selection = self.GetSelections()

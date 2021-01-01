@@ -437,7 +437,7 @@ class Controller(object):
             if success:
                 data = do.GetData()
                 data = pickle.loads(data)
-                if type(data) == spec.Spec:
+                if type(data) in [project.PlotItem, spec.Spec]:
                     self.add_set(data)
                 elif type(data) == project.Plot:
                     self.project.add(data)
@@ -483,11 +483,11 @@ class Controller(object):
         plot,set = item
         if set is not None:
             self.project[plot][set].name = name
-            self.update_tree(plot)
+            #self.update_tree(plot)
         else:
             self.project[plot].name = name
-            self.update_tree()
-        self.update_setinfo()
+            #self.update_tree()
+        pub.sendMessage((self.view.instid, 'setattrchanged'))
         self.project_modified = True
         
     def insert_plot(self, ind):
@@ -525,6 +525,7 @@ class Controller(object):
         #self.update_tree()
         self.view.tree.selection = plot,added
         self.project_modified = True
+
         #TODO: no receivers
         #pub.sendMessage((self.view.instid, 'dataset_added'), datasetlist=[q.name for q in self.project[plot]])
         #self.update_plot()
@@ -537,8 +538,8 @@ class Controller(object):
             p,sel = self.selection
             for s in sel:
                 setattr(self.project[p][s], attr, None)
-            if attr == 'mod':
-                self.update_tree(p)
+            #if attr == 'mod':
+            #    self.update_tree(p)
         else:
             for p in self.project:
                 for s in p:
@@ -625,21 +626,17 @@ class Controller(object):
                 self.view.tree.selection = plot
         self.project_modified = True
 
-    def duplicate_selection(self, wholeplot=False):
-        """\
-        Duplicate the current selectionp. If 'wholeplot' is True, duplicate and append the
-        whole plot rather than duplicating only the sets of a plot.
-        """
+    def duplicate_selection(self):
         plot, sel = self.selection
-        if wholeplot:
+        if self.selection.isplot:
             dupl = self.project.copy(plot)
             plot = self.project.add(dupl)
-            self.update_tree()
+            #self.update_tree()
             self.view.tree.selection = plot
         else:
             dupl = self.project[plot].copy(sel)
             set = self.project[plot].add(dupl)
-            self.update_tree(plot)
+            #self.update_tree(plot)
             self.view.tree.selection = (plot, set)
         self.project_modified = True
 
@@ -720,9 +717,11 @@ class Controller(object):
         self._updating = False
         self.view.Unbind(wx.EVT_IDLE)
         self.plot(*args, **kwargs)
-        wx.CallAfter(self.update_setinfo)
+        pub.sendMessage((self.view.instid, 'setattrchanged'))
 
-    def update_setinfo(self):
+        #wx.CallAfter(self.update_setinfo)
+
+    def a_update_setinfo(self):
         pub.sendMessage((self.view.instid, 'setinfo', 'update'))
 
     def _get_active_set(self):
@@ -854,7 +853,8 @@ class Controller(object):
 
     def delete_figure(self, fig):
         item = self.project.figure_list.pop(self.project.figure_list.index(fig))
-        del item
+        for pd in item.values():
+            pd.release()
         pub.sendMessage((self.view.instid, 'figurelist', 'needsupdate'))
 
     def clone_figure(self, fig):
@@ -863,13 +863,13 @@ class Controller(object):
         pub.sendMessage((self.view.instid, 'figurelist', 'needsupdate'))
 
     def create_or_show_figure(self, show=False, model=None, discard=False):
+        print('create or show', show, model, discard)
         if show:
             if model is not None:
                 self.__mpm_edit_combo = model, deepcopy(model)
             else:
                 self.__mpm_edit_combo = None, mplmodel.MultiPlotModel(self.project)
             #TODO: nicht jedesmal neu erzeugen!
-            print(self.__mpm_edit_combo)
             self.mplplot = mplcontroller.new(self, self.view, self.__mpm_edit_combo[1])
 
             self.mplplot.view.Show(show)

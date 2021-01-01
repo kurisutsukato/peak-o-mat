@@ -152,7 +152,7 @@ class PlotOrderPanel(wx.Panel):
     def update_from_model(self, mpmodel):
         self.shape = mpmodel.shape
         for k,v in mpmodel.items():
-            print(k,v.name)
+            #print(k,v.name)
             self.__rects[k].Name = v.name
 
         self.redraw_rects()
