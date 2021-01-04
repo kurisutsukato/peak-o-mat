@@ -62,6 +62,8 @@ class Map(wx.Window):
         if hasattr(self, '_buffer') and self._buffer is not None:
             dc = wx.BufferedPaintDC(self, self._buffer)
 
+        wx.CallAfter(m._draw_crosshair)
+
     def OnSize(self, evt):
         print('size evt')
         w, h = self.GetClientSize()
@@ -99,7 +101,6 @@ class Map(wx.Window):
                 dc.Clear()
                 dc.DrawBitmap(wx.Bitmap(self._image), 0, 0)
 
-                wx.CallAfter(m._draw_crosshair)
 
 
 if __name__ == '__main__':
