@@ -1,7 +1,9 @@
 import wx
+import wx.aui as aui
 import numpy as np
 from scipy import ndimage, misc
 from pubsub import pub
+from PIL import Image
 
 from .. import module
 from .. import plotcanvas
@@ -40,7 +42,7 @@ class Map(wx.Window):
 
         self.axes = [[0,1],[0,1]]
 
-        self._cross = None
+        self._cross = [0,0]
 
         self.SetMinSize((140,50))
 
@@ -53,9 +55,9 @@ class Map(wx.Window):
         return self._imdata
     @imdata.setter
     def imdata(self, imdata):
-        self._imdata = np.array([imdata]*3)
-        #self._imdata = np.log10(self._imdata)
-        self._imdata = 255*self._imdata/(max(1,self._imdata.max().astype('uint8')))
+        self._imdata = imdata #(np.ones(3)[:,None,None]*imdata)
+        self._imdata = np.log10(self._imdata)
+        self._imdata = (255*self._imdata/(max(1,self._imdata.max()))).astype('uint8')
 
     @property
     def axes(self):
@@ -65,13 +67,14 @@ class Map(wx.Window):
         self._axes = [np.array(q) for q in ax]
 
     def _move_crosshair(self, x=0, y=0):
-        d,rows,cols = self._imdata.shape
+        rows,cols = self._imdata.shape
         self._cross[0] += x
         self._cross[0] %= cols
         self._cross[1] += y
         self._cross[1] %= rows
 
     def _draw_crosshair(self, pt=None):
+        print('draw crosshair',pt,self._cross)
         if pt is not None:
             x, y = pt
             self._cross = pt
@@ -84,10 +87,12 @@ class Map(wx.Window):
         dx = np.diff(self.x_scaled)[x]
         dy = np.diff(self.y_scaled)[y]
 
-        dc = wx.BufferedDC(wx.ClientDC(self), self._buffer)
+        #dc = wx.BufferedDC(wx.ClientDC(self), self._buffer)
+        dc = wx.ClientDC(self)
         odc = wx.DCOverlay(self.overlay, dc)
         odc.Clear()
-        dc = wx.GCDC(dc)
+        if 'wxMac' not in wx.PlatformInfo:
+            dc = wx.GCDC(dc)
 
         dc.SetBrush(wx.Brush(wx.Colour(255,255,0,120)))
         dc.SetPen(wx.Pen(wx.Colour(255,255,0,120), 1))
@@ -115,17 +120,25 @@ class Map(wx.Window):
         dc.DrawText(label,tx,ty)
 
         del odc
+        #del dc
 
     def OnPaint(self, event):
+        print('on paint')
         if hasattr(self, '_buffer') and self._buffer is not None:
             dc = wx.BufferedPaintDC(self, self._buffer)
 
     def OnSize(self, evt):
-        self._buffer = wx.EmptyBitmap(*self.GetClientSize())
+        print('on size')
+        w,h = self.GetClientSize()
+        w = max(1,w)
+        h = max(1,h)
+        self._buffer = wx.Bitmap(w,h)
         self.Draw()
-        self._draw_crosshair()
+        self.Refresh()
+        wx.CallAfter(self._draw_crosshair)
 
     def Draw(self):
+        print('draw')
         w, h = self.GetClientSize()
         if w < 1 and h < 1:
             return
@@ -135,10 +148,11 @@ class Map(wx.Window):
                 self._imdata = np.ones((3,1,1),'uint8')*255
 
             dc = wx.BufferedDC(wx.ClientDC(self), self._buffer)
+            #dc = wx.ClientDC(self)
             if 'wxMac' not in wx.PlatformInfo:
                 dc = wx.GCDC(dc)
 
-            d,y,x = self._imdata.shape
+            y,x = self._imdata.shape
 
             tw, th = dc.GetTextExtent('888')
 
@@ -149,25 +163,28 @@ class Map(wx.Window):
             #self.x_scaled = (np.arange(x+1)*cw/(x)).astype('int')
             #self.y_scaled = (np.arange(y+1)*ch/(y)).astype('int')
 
-            dummy = np.zeros((y*x))
+            dummy = np.zeros((y*x), dtype='uint8')
             dummy[::2] = 1
             dummy.shape = (y,x)
-            dummy = np.array((dummy,dummy,dummy))
+            #dummy = np.array((dummy,dummy,dummy)).astype('uint8')
 
             if ch > 0 and cw > 0:
-                resized = misc.imresize(self._imdata, (ch, cw), 'nearest')
+                img = Image.fromarray(self._imdata, mode='L').resize((cw, ch), Image.NEAREST)
+                resized = np.array(img.convert('RGB'))
+
                 self._image = wx.ImageFromBuffer(cw, ch, resized)
 
-                dummy = misc.imresize(dummy, (ch, cw), 'nearest')
-                self.x_scaled = np.hstack(([0],np.where(dummy[0,:-1,0] != dummy[0,1:,0])[0]+1,[cw]))
-                self.y_scaled = np.hstack(([0],np.where(dummy[:-1,0,0] != dummy[1:,0,0])[0]+1,[ch]))
+                dummy = np.array(Image.fromarray(dummy, mode='L').resize((cw, ch), Image.NEAREST))
+
+                self.x_scaled = np.hstack(([0],np.where(dummy[0,:-1] != dummy[0,1:])[0]+1,[cw]))
+                self.y_scaled = np.hstack(([0],np.where(dummy[:-1,0] != dummy[1:,0])[0]+1,[ch]))
 
                 br = wx.Brush(wx.Colour(200,200,200), wx.SOLID)
                 dc.SetBackground(br)
                 dc.SetBackgroundMode(wx.TRANSPARENT)
                 dc.SetTextForeground((200,0,0,200))
                 dc.Clear()
-                dc.DrawBitmap(wx.BitmapFromImage(self._image), 0, 0)
+                dc.DrawBitmap(wx.Bitmap(self._image), 0, 0)
                 w,h = self.canvas_size
                 lab = '{:.0f}'.format(self.axes[1][0])
                 dc.DrawText(lab,1,h)
@@ -177,6 +194,9 @@ class Map(wx.Window):
                 dc.DrawText(lab,w,0)
                 lab = '{:.0f}'.format(self.axes[0][-1])
                 dc.DrawText(lab,w,h-dc.GetTextExtent(lab)[1])
+                #self.Refresh()
+                #self.Update()
+                del dc
 
 class Interactor:
     def Install(self, controller, view):
@@ -244,7 +264,7 @@ class Controller:
         self.view.map.axes = self.axes
         self.view.map.imdata = self.data.sum(axis=0)
 
-        self.view.map.Draw()
+        self.view.map.OnSize(None)
 
     def update_map(self, wlrange):
         d,y,x = self.data.shape
@@ -259,7 +279,6 @@ class Controller:
             self.view.map.imdata = self.data[slice(*idx)].sum(axis=0)
 
         self.view.map.Draw()
-        self.view.map._draw_crosshair()
 
     def update_plot(self, x, y):
         self.view.map.idx_x = x
@@ -279,7 +298,12 @@ class Module(module.BaseModule):
     def __init__(self, *args):
         super(Module, self).__init__(*args)
         assert self.parent_view is not None
-        Controller(ControlPanel(self.parent_view),Interactor())
+        self.view = Controller(ControlPanel(self.parent_view),Interactor()).view
+        self.parent_view._mgr.AddPane(self.view, aui.AuiPaneInfo().
+                                      Float().Dockable(True).Hide().
+                                      Caption(self.title).Name(self.title))
+        self.parent_view._mgr.Update()
+        self.parent_controller.view.menu_factory.add_module(self.parent_controller.view.menubar, self.title)
 
 class ControlPanel(wx.Panel):
     def __init__(self, parent):
@@ -288,7 +312,7 @@ class ControlPanel(wx.Panel):
         self.setup_controls()
         self.layout()
 
-        parent.AddPage(self, 'Map scan browser', select=False)
+        #parent.AddPage(self, 'Map scan browser', select=False)
 
     def setup_controls(self):
         self.map = Map(self)
