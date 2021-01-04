@@ -100,7 +100,7 @@ class Map(wx.Window):
 
                 dc.Clear()
                 dc.DrawBitmap(wx.Bitmap(self._image), 0, 0)
-
+                self.Refresh()
 
 
 if __name__ == '__main__':
@@ -108,10 +108,9 @@ if __name__ == '__main__':
     f = wx.Frame(None)
     m = Map(f)
     b = wx.BoxSizer(wx.HORIZONTAL)
-    b.Add(m,0,wx.EXPAND)
+    b.Add(m,1,wx.EXPAND)
     f.SetSizer(b)
     m.Draw()
-
     f.Show()
     a.MainLoop()
 
