@@ -20,12 +20,13 @@ class Map(wx.Window):
         self.SetMinSize((500,200))
 
     def _draw_crosshair(self, pt=None):
-        print('draw crosshair')
         if pt is not None:
             x, y = pt
             self._cross = pt
         else:
             x, y = self._cross
+
+        print('draw overlay at pos {},{}'.format(x,y))
 
         w, h = self.canvas_size
         dx = np.diff(self.xsteps)[x]
