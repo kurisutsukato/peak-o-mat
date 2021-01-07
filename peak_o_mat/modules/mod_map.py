@@ -66,31 +66,30 @@ class Map(wx.Window):
     def axes(self, ax):
         self._axes = [np.array(q) for q in ax]
 
-    def _move_crosshair(self, x=0, y=0):
+    def _move_crosshair(self, dx, dy):
         rows,cols = self._imdata.shape
+
+        x, y = self._cross
+        x += dx
+        x %= cols
+        y += dy
+        y %= rows
+
+        self._update_crosshair(x, y)
+        return
+
         self._cross[0] += x
         self._cross[0] %= cols
         self._cross[1] += y
         self._cross[1] %= rows
 
-    def _draw_crosshair(self, pt=None):
-        print('draw crosshair',pt,self._cross)
-        if pt is not None:
-            x, y = pt
-            self._cross = pt
-        elif self._cross is not None:
-            x, y = self._cross
-        else:
-            return
+    def _draw_crosshair(self, dc):
+        x, y = self._cross
 
         w, h = self.canvas_size
         dx = np.diff(self.x_scaled)[x]
         dy = np.diff(self.y_scaled)[y]
 
-        #dc = wx.BufferedDC(wx.ClientDC(self), self._buffer)
-        dc = wx.ClientDC(self)
-        odc = wx.DCOverlay(self.overlay, dc)
-        odc.Clear()
         if 'wxMac' not in wx.PlatformInfo:
             dc = wx.GCDC(dc)
 
@@ -119,36 +118,41 @@ class Map(wx.Window):
         dc.SetTextForeground(wx.Colour(255,255,0,255))
         dc.DrawText(label,tx,ty)
 
-        del odc
-        #del dc
+    def _update_crosshair(self, x, y):
+        self._cross = [x, y]
+        self.Refresh()
 
-    def OnPaint(self, event):
-        print('on paint')
+        return
+        w,h = self.canvas_size
+        x, y = evt.GetX(), evt.GetY()
+        if x < w and y < h:
+            idx_x = int(float(x)/w*len(self.axes[1]))
+            idx_y = int(float(y)/h*len(self.axes[0]))
+            self._cross = [idx_x, idx_y]
+            self.Refresh()
+
+    def OnPaint(self, evt):
+        dc = wx.PaintDC(self) if self.IsDoubleBuffered() else wx.BufferedPaintDC(self, self._buffer)
         if hasattr(self, '_buffer') and self._buffer is not None:
-            dc = wx.BufferedPaintDC(self, self._buffer)
+            dc.DrawBitmap(self._buffer, 0, 0)
+            self._draw_crosshair(dc)
 
     def OnSize(self, evt):
-        print('on size')
         w,h = self.GetClientSize()
         w = max(1,w)
         h = max(1,h)
         self._buffer = wx.Bitmap(w,h)
         self.Draw()
-        self.Refresh()
-        wx.CallAfter(self._draw_crosshair)
 
     def Draw(self):
-        print('draw')
         w, h = self.GetClientSize()
         if w < 1 and h < 1:
             return
         if self._buffer is not None:
-            self.overlay.Reset()
             if not hasattr(self, '_imdata'):
                 self._imdata = np.ones((3,1,1),'uint8')*255
 
-            dc = wx.BufferedDC(wx.ClientDC(self), self._buffer)
-            #dc = wx.ClientDC(self)
+            dc = wx.BufferedDC(None, self._buffer)
             if 'wxMac' not in wx.PlatformInfo:
                 dc = wx.GCDC(dc)
 
@@ -156,17 +160,12 @@ class Map(wx.Window):
 
             tw, th = dc.GetTextExtent('888')
 
-            #self.canvas_size = cw, ch  = int(min(w,float(h)*x/y)-tw),int(min(float(w)/x*y,h)-th)
             self.canvas_size = cw, ch = int(float(h)*x/y)-tw,h-th
             self.SetMinSize((h*x/y,h))
-
-            #self.x_scaled = (np.arange(x+1)*cw/(x)).astype('int')
-            #self.y_scaled = (np.arange(y+1)*ch/(y)).astype('int')
 
             dummy = np.zeros((y*x), dtype='uint8')
             dummy[::2] = 1
             dummy.shape = (y,x)
-            #dummy = np.array((dummy,dummy,dummy)).astype('uint8')
 
             if ch > 0 and cw > 0:
                 img = Image.fromarray(self._imdata, mode='L').resize((cw, ch), Image.NEAREST)
@@ -194,9 +193,7 @@ class Map(wx.Window):
                 dc.DrawText(lab,w,0)
                 lab = '{:.0f}'.format(self.axes[0][-1])
                 dc.DrawText(lab,w,h-dc.GetTextExtent(lab)[1])
-                #self.Refresh()
-                #self.Update()
-                del dc
+                self.Refresh()
 
 class Interactor:
     def Install(self, controller, view):
@@ -224,7 +221,6 @@ class Interactor:
             idx = map[keycode]
             self.view.map._move_crosshair(*idx)
             self.controller.update_plot(*self.view.map._cross)
-            self.view.map._draw_crosshair()
         elif keycode == wx.WXK_RETURN:
             self.OnTransfer(None)
 
@@ -242,8 +238,9 @@ class Interactor:
         if evt.LeftIsDown() and x < w and y < h:
             idx_x = int(float(x)/w*len(self.view.map.axes[1]))
             idx_y = int(float(y)/h*len(self.view.map.axes[0]))
+            #self.view.map._cross = [idx_x, idx_y]
             self.controller.update_plot(idx_x, idx_y)
-            self.view.map._draw_crosshair([idx_x, idx_y])
+            self.view.map._update_crosshair(idx_x, idx_y)
 
 class Controller:
     def __init__(self, view, interactor):

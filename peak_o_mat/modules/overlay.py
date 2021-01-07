@@ -1,5 +1,6 @@
 import wx
 import numpy as np
+print(wx.__version__)
 
 from PIL import Image
 
@@ -10,21 +11,15 @@ class Map(wx.Window):
         super(Map, self).__init__(parent, style=wx.WANTS_CHARS)
 
         self._cross = [2, 4]
-        self.overlay = wx.Overlay()
         self._buffer = None
+        self._update_needed = False
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnMapLeftDown)
 
-        self.SetMinSize((500,200))
-
-    def _draw_crosshair(self, pt=None):
-        if pt is not None:
-            x, y = pt
-            self._cross = pt
-        else:
-            x, y = self._cross
+    def _draw_crosshair(self, dc):
+        x, y = self._cross
 
         print('draw overlay at pos {},{}'.format(x,y))
 
@@ -32,37 +27,36 @@ class Map(wx.Window):
         dx = np.diff(self.xsteps)[x]
         dy = np.diff(self.ysteps)[y]
 
-        dc = wx.ClientDC(self)
-        odc = wx.DCOverlay(self.overlay, dc)
-        odc.Clear()
         if 'wxMac' not in wx.PlatformInfo:
             dc = wx.GCDC(dc)
 
         dc.SetBrush(wx.Brush(wx.Colour(255, 255, 0, 120)))
-        dc.SetPen(wx.Pen(wx.Colour(255, 255, 0, 120), 1))
+        dc.SetPen(wx.Pen(wx.Colour(255, 255, 0, 120), 0))
         dc.DrawRectangle(self.xsteps[x], 0, dx, self.ysteps[y])
         dc.DrawRectangle(self.xsteps[x], self.ysteps[y] + dy, dx, h - (self.ysteps[y] + dy))
         dc.DrawRectangle(0, self.ysteps[y], self.xsteps[x], dy)
         dc.DrawRectangle(self.xsteps[x] + dx, self.ysteps[y], w - (self.xsteps[x] + dx), dy)
 
-        del odc
-        # del dc
+    def _update_crosshair(self, evt):
+        w,h = self.canvas_size
+        x, y = evt.GetX(), evt.GetY()
+        if x < w and y < h:
+            idx_x = int(float(x)/w*X)
+            idx_y = int(float(y)/h*Y)
+            self._cross = [idx_x, idx_y]
+            self.Refresh()
 
     def OnMapLeftDown(self, evt):
         self.SetFocus()
-        w,h = self.canvas_size
-        x, y = evt.GetX(), evt.GetY()
-        if evt.LeftIsDown() and x < w and y < h:
-            idx_x = int(float(x)/w*X)
-            idx_y = int(float(y)/h*Y)
-            self._draw_crosshair([idx_x, idx_y])
+        if evt.LeftIsDown():
+            self._update_crosshair(evt)
 
-    def OnPaint(self, event):
-        print('on paint')
+    def OnPaint(self, evt):
+        print('on paint', self.IsDoubleBuffered())
+        dc = wx.PaintDC(self) if self.IsDoubleBuffered() else wx.BufferedPaintDC(self, self._buffer)
         if hasattr(self, '_buffer') and self._buffer is not None:
-            dc = wx.BufferedPaintDC(self, self._buffer)
-
-        wx.CallAfter(m._draw_crosshair)
+            dc.DrawBitmap(self._buffer, 0, 0)
+            self._draw_crosshair(dc)
 
     def OnSize(self, evt):
         print('size evt')
@@ -79,9 +73,9 @@ class Map(wx.Window):
             return
 
         if self._buffer is not None:
-            self.overlay.Reset()
-
-            dc = wx.BufferedDC(wx.ClientDC(self), self._buffer)
+            #dc = wx.BufferedDC(wx.ClientDC(self), self._buffer)
+            dc = wx.BufferedDC(None, self._buffer)
+            #dc = wx.ClientDC(self)
             if 'wxMac' not in wx.PlatformInfo:
                 dc = wx.GCDC(dc)
 
@@ -100,6 +94,7 @@ class Map(wx.Window):
 
                 dc.Clear()
                 dc.DrawBitmap(wx.Bitmap(self._image), 0, 0)
+
                 self.Refresh()
 
 

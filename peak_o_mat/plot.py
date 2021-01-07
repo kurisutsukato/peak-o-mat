@@ -507,7 +507,6 @@ class Interactor:
             self._mousestop = self.view.GetXY(evt)
             self.view._drawXMarker(rng=(self._mousestart[0],self._mousestop[0]))
             pub.sendMessage((self.view.instid, 'plot','xmarker'), wl=(self._mousestart[0],self._mousestop[0]))
-
         elif self.view.state.eq('zoom') and evt.LeftIsDown():
             if self._hasDragged:
                 self.view._drawRubberBand(self._zoomCorner1, self._zoomCorner2) # remove old
@@ -568,6 +567,7 @@ class Interactor:
                 self.handles_changed()
         elif self.view.state.eq('xmarker'):
             pt = self.view.GetXY(evt)
+            self.view._drawXMarker(x=pt[0])
             pub.sendMessage(('plot','xmarker'), wl=[pt[0]])
         elif self.view.state.eq('drag'):
             self.view.SetCursor(self.view.GrabHandCursor)
