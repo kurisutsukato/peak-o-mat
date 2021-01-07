@@ -1027,111 +1027,112 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
         self.wxoverlay.Reset()
 
         # sets new dc and clears it
-        dc = wx.BufferedDC(wx.ClientDC(self.canvas), self._Buffer)
-        if 'wxMac' not in wx.PlatformInfo:
-            dc = wx.GCDC(dc)
+        if self._Buffer is not None:
+            dc = wx.BufferedDC(wx.ClientDC(self.canvas), self._Buffer)
+            if 'wxMac' not in wx.PlatformInfo:
+                dc = wx.GCDC(dc)
 
-        br = wx.Brush(self._canvasBgColour, wx.SOLID)
-        dc.SetBackground(br)
-        dc.SetBackgroundMode(wx.SOLID)
-        dc.Clear()
-        
-        dc.SetBackgroundMode(wx.TRANSPARENT)
+            br = wx.Brush(self._canvasBgColour, wx.SOLID)
+            dc.SetBackground(br)
+            dc.SetBackgroundMode(wx.SOLID)
+            dc.Clear()
 
-        # set font size for every thing but title and legend
-        dc.SetFont(self._getFont(self._fontSizeAxis))
+            dc.SetBackgroundMode(wx.TRANSPARENT)
 
-        # sizes axis to axis type, create lower left and upper right corners of plot
-        if xAxis is None or yAxis is None:
-            # One or both axis not specified in Draw
-            p1, p2 = graphics.boundingBox()     # min, max points of graphics
-            if xAxis == None:
-                xAxis = self._axisInterval(self._xSpec, p1[0], p2[0]) # in user units
-            if yAxis == None:
-                yAxis = self._axisInterval(self._ySpec, p1[1], p2[1])
-            # Adjust bounding box for axis spec
-            p1[0],p1[1] = xAxis[0], yAxis[0]     # lower left corner user scale (xmin,ymin)
-            p2[0],p2[1] = xAxis[1], yAxis[1]     # upper right corner user scale (xmax,ymax)
-        else:
-            # Both axis specified in Draw
-            p1= np.array([xAxis[0], yAxis[0]])    # lower left corner user scale (xmin,ymin)
-            p2= np.array([xAxis[1], yAxis[1]])     # upper right corner user scale (xmax,ymax)
+            # set font size for every thing but title and legend
+            dc.SetFont(self._getFont(self._fontSizeAxis))
 
-        self.last_draw = (graphics, np.array(xAxis), np.array(yAxis))       # saves most recient values
-
-        # Get ticks and textExtents for axis if required
-        if self._xSpec is not 'none':        
-            xticks = self._xticks(xAxis[0], xAxis[1])
-            xTextExtent = dc.GetTextExtent(xticks[-1][1]) # w h of x axis text last number on axis
-        else:
-            xticks = None
-            xTextExtent= (0,0) # No text for ticks
-        if self._ySpec is not 'none':
-            yticks = self._yticks(yAxis[0], yAxis[1])
-            if self.getLogScale()[1]:
-                yTextExtent = dc.GetTextExtent('-2e-2') # largest text extension
+            # sizes axis to axis type, create lower left and upper right corners of plot
+            if xAxis is None or yAxis is None:
+                # One or both axis not specified in Draw
+                p1, p2 = graphics.boundingBox()     # min, max points of graphics
+                if xAxis == None:
+                    xAxis = self._axisInterval(self._xSpec, p1[0], p2[0]) # in user units
+                if yAxis == None:
+                    yAxis = self._axisInterval(self._ySpec, p1[1], p2[1])
+                # Adjust bounding box for axis spec
+                p1[0],p1[1] = xAxis[0], yAxis[0]     # lower left corner user scale (xmin,ymin)
+                p2[0],p2[1] = xAxis[1], yAxis[1]     # upper right corner user scale (xmax,ymax)
             else:
-                # TODO
-                # unter bestimmten Umstaenden funktioneirt die Skala nicht
-                #print yticks
-                yTextExtentBottom = dc.GetTextExtent(yticks[0][1])
-                yTextExtentTop = dc.GetTextExtent(yticks[-1][1])
-                yTextExtent= (max(yTextExtentBottom[0],yTextExtentTop[0]),
-                              max(yTextExtentBottom[1],yTextExtentTop[1]))
-        else:
-            yticks = None
-            yTextExtent= (0,0) # No text for ticks
+                # Both axis specified in Draw
+                p1= np.array([xAxis[0], yAxis[0]])    # lower left corner user scale (xmin,ymin)
+                p2= np.array([xAxis[1], yAxis[1]])     # upper right corner user scale (xmax,ymax)
 
-        # TextExtents for Title and Axis Labels
-        titleWH, xLabelWH, yLabelWH= self._titleLablesWH(dc, graphics)
+            self.last_draw = (graphics, np.array(xAxis), np.array(yAxis))       # saves most recient values
 
-        # room around graph area
-        rhsW= xTextExtent[0]
-        lhsW= yTextExtent[0]+ yLabelWH[1]
-        bottomH= max(xTextExtent[1], yTextExtent[1]/2.)+ xLabelWH[1]
-        topH= yTextExtent[1]/2. + titleWH[1]
-        #textSize_scale= _Numeric.array([rhsW+lhsW,bottomH+topH]) # make plot area smaller by text size
-        #textSize_shift= _Numeric.array([lhsW, bottomH])          # shift plot area by this amount
-        textSize_scale= np.array([0,0]) # make plot area smaller by text size
-        textSize_shift= np.array([0,0])          # shift plot area by this amount
-        
-        # drawing title and labels text
-        dc.SetFont(self._getFont(self._fontSizeTitle))
-        titlePos= (self.plotbox_origin[0]+ lhsW + (self.plotbox_size[0]-lhsW-rhsW)/2.- titleWH[0]/2.,
-                 self.plotbox_origin[1]- self.plotbox_size[1])
-        dc.DrawText(graphics.getTitle(),titlePos[0],titlePos[1])
-        dc.SetFont(self._getFont(self._fontSizeAxis))
-        xLabelPos= (self.plotbox_origin[0]+ lhsW + (self.plotbox_size[0]-lhsW-rhsW)/2.- xLabelWH[0]/2.,
-                 self.plotbox_origin[1]- xLabelWH[1])
-        dc.DrawText(graphics.getXLabel(),xLabelPos[0],xLabelPos[1])
-        yLabelPos= (self.plotbox_origin[0],
-                 self.plotbox_origin[1]- bottomH- (self.plotbox_size[1]-bottomH-topH)/2.+ yLabelWH[0]/2.)
-        if graphics.getYLabel():  # bug fix for Linux
-            dc.DrawRotatedText(graphics.getYLabel(),yLabelPos[0],yLabelPos[1],90)
+            # Get ticks and textExtents for axis if required
+            if self._xSpec is not 'none':
+                xticks = self._xticks(xAxis[0], xAxis[1])
+                xTextExtent = dc.GetTextExtent(xticks[-1][1]) # w h of x axis text last number on axis
+            else:
+                xticks = None
+                xTextExtent= (0,0) # No text for ticks
+            if self._ySpec is not 'none':
+                yticks = self._yticks(yAxis[0], yAxis[1])
+                if self.getLogScale()[1]:
+                    yTextExtent = dc.GetTextExtent('-2e-2') # largest text extension
+                else:
+                    # TODO
+                    # unter bestimmten Umstaenden funktioneirt die Skala nicht
+                    #print yticks
+                    yTextExtentBottom = dc.GetTextExtent(yticks[0][1])
+                    yTextExtentTop = dc.GetTextExtent(yticks[-1][1])
+                    yTextExtent= (max(yTextExtentBottom[0],yTextExtentTop[0]),
+                                  max(yTextExtentBottom[1],yTextExtentTop[1]))
+            else:
+                yticks = None
+                yTextExtent= (0,0) # No text for ticks
 
-        # allow for scaling and shifting plotted points
-        scale = (self.plotbox_size-textSize_scale) / (p2-p1)* np.array((1,-1))
-        shift = -p1*scale + self.plotbox_origin + textSize_shift * np.array((1,-1))
-        self._pointScale= scale  # make available for mouse evts
-        self._pointShift= shift        
-        self._drawAxes(dc, p1, p2, scale, shift, xticks, yticks)
+            # TextExtents for Title and Axis Labels
+            titleWH, xLabelWH, yLabelWH= self._titleLablesWH(dc, graphics)
 
-        xoff, yoff = self.plotbox_origin
-        width, height = self.plotbox_size
-        graphics.scaleAndShift(scale, shift, (p1,p2), [xoff,yoff-bottomH], [width, height-bottomH])
+            # room around graph area
+            rhsW= xTextExtent[0]
+            lhsW= yTextExtent[0]+ yLabelWH[1]
+            bottomH= max(xTextExtent[1], yTextExtent[1]/2.)+ xLabelWH[1]
+            topH= yTextExtent[1]/2. + titleWH[1]
+            #textSize_scale= _Numeric.array([rhsW+lhsW,bottomH+topH]) # make plot area smaller by text size
+            #textSize_shift= _Numeric.array([lhsW, bottomH])          # shift plot area by this amount
+            textSize_scale= np.array([0,0]) # make plot area smaller by text size
+            textSize_shift= np.array([0,0])          # shift plot area by this amount
 
-        # set clipping area so drawing does not occur outside axis box
-        ptx,pty,rectWidth,rectHeight= self._point2ClientCoord(p1, p2)
-        self._clippingRegion = ptx,pty,rectWidth,rectHeight
-        dc.SetClippingRegion(ptx,pty,rectWidth,rectHeight)
-        # Draw the lines and markers
-        #start = _time.clock()
-        graphics.draw(dc)
-        # print "entire graphics drawing took: %f second"%(_time.clock() - start)
-        # remove the clipping region
-        dc.DestroyClippingRegion()
+            # drawing title and labels text
+            dc.SetFont(self._getFont(self._fontSizeTitle))
+            titlePos= (self.plotbox_origin[0]+ lhsW + (self.plotbox_size[0]-lhsW-rhsW)/2.- titleWH[0]/2.,
+                     self.plotbox_origin[1]- self.plotbox_size[1])
+            dc.DrawText(graphics.getTitle(),titlePos[0],titlePos[1])
+            dc.SetFont(self._getFont(self._fontSizeAxis))
+            xLabelPos= (self.plotbox_origin[0]+ lhsW + (self.plotbox_size[0]-lhsW-rhsW)/2.- xLabelWH[0]/2.,
+                     self.plotbox_origin[1]- xLabelWH[1])
+            dc.DrawText(graphics.getXLabel(),xLabelPos[0],xLabelPos[1])
+            yLabelPos= (self.plotbox_origin[0],
+                     self.plotbox_origin[1]- bottomH- (self.plotbox_size[1]-bottomH-topH)/2.+ yLabelWH[0]/2.)
+            if graphics.getYLabel():  # bug fix for Linux
+                dc.DrawRotatedText(graphics.getYLabel(),yLabelPos[0],yLabelPos[1],90)
 
-        self._adjustScrollbars()
+            # allow for scaling and shifting plotted points
+            scale = (self.plotbox_size-textSize_scale) / (p2-p1)* np.array((1,-1))
+            shift = -p1*scale + self.plotbox_origin + textSize_shift * np.array((1,-1))
+            self._pointScale= scale  # make available for mouse evts
+            self._pointShift= shift
+            self._drawAxes(dc, p1, p2, scale, shift, xticks, yticks)
+
+            xoff, yoff = self.plotbox_origin
+            width, height = self.plotbox_size
+            graphics.scaleAndShift(scale, shift, (p1,p2), [xoff,yoff-bottomH], [width, height-bottomH])
+
+            # set clipping area so drawing does not occur outside axis box
+            ptx,pty,rectWidth,rectHeight= self._point2ClientCoord(p1, p2)
+            self._clippingRegion = ptx,pty,rectWidth,rectHeight
+            dc.SetClippingRegion(ptx,pty,rectWidth,rectHeight)
+            # Draw the lines and markers
+            #start = _time.clock()
+            graphics.draw(dc)
+            # print "entire graphics drawing took: %f second"%(_time.clock() - start)
+            # remove the clipping region
+            dc.DestroyClippingRegion()
+
+            self._adjustScrollbars()
 
     def Redraw(self):
         """Redraw the existing plot."""

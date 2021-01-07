@@ -46,8 +46,6 @@ class Map(wx.Window):
 
         self.SetMinSize((140,50))
 
-        self.overlay = wx.Overlay()
-
         self._buffer = None
 
     @property
@@ -65,23 +63,6 @@ class Map(wx.Window):
     @axes.setter
     def axes(self, ax):
         self._axes = [np.array(q) for q in ax]
-
-    def _move_crosshair(self, dx, dy):
-        rows,cols = self._imdata.shape
-
-        x, y = self._cross
-        x += dx
-        x %= cols
-        y += dy
-        y %= rows
-
-        self._update_crosshair(x, y)
-        return
-
-        self._cross[0] += x
-        self._cross[0] %= cols
-        self._cross[1] += y
-        self._cross[1] %= rows
 
     def _draw_crosshair(self, dc):
         x, y = self._cross
@@ -117,6 +98,17 @@ class Map(wx.Window):
 
         dc.SetTextForeground(wx.Colour(255,255,0,255))
         dc.DrawText(label,tx,ty)
+
+    def _move_crosshair(self, dx, dy):
+        rows,cols = self._imdata.shape
+
+        x, y = self._cross
+        x += dx
+        x %= cols
+        y += dy
+        y %= rows
+        self._cross = [x, y]
+        self.Refresh()
 
     def _update_crosshair(self, x, y):
         self._cross = [x, y]
@@ -200,11 +192,9 @@ class Interactor:
         self.controller = controller
         self.view = view
 
-        self.view.map.Bind(wx.EVT_MOTION, self.OnMapLeftDown)
-        self.view.map.Bind(wx.EVT_LEFT_DOWN, self.OnMapLeftDown)
-        self.view.plot.Bind(wx.EVT_LEFT_DOWN, self.OnMapLeftDown)
+        self.view.map.Bind(wx.EVT_MOTION, self.OnMapMouseDownMove)
+        self.view.map.Bind(wx.EVT_LEFT_DOWN, self.OnMapMouseDownMove)
         self.view.map.Bind(wx.EVT_KEY_DOWN, self.OnKey)
-        #self.view.Bind(wx.EVT_KEY_DOWN, self.OnKey)
         self.view.Bind(wx.EVT_BUTTON, self.OnTransfer)
         
         pub.subscribe(self.pubOnWlSelect, ('plot','xmarker'))
@@ -231,14 +221,13 @@ class Interactor:
     def pubOnWlSelect(self, wl):
         self.controller.update_map(wl)
 
-    def OnMapLeftDown(self, evt):
+    def OnMapMouseDownMove(self, evt):
         self.view.map.SetFocus()
         w,h = self.view.map.canvas_size
         x, y = evt.GetX(), evt.GetY()
         if evt.LeftIsDown() and x < w and y < h:
             idx_x = int(float(x)/w*len(self.view.map.axes[1]))
             idx_y = int(float(y)/h*len(self.view.map.axes[0]))
-            #self.view.map._cross = [idx_x, idx_y]
             self.controller.update_plot(idx_x, idx_y)
             self.view.map._update_crosshair(idx_x, idx_y)
 
@@ -249,6 +238,8 @@ class Controller:
 
         self.read_data()
         self.init_map()
+
+        wx.CallAfter(self.update_plot, *self.view.map._cross)
 
     def read_data(self):
 
