@@ -17,6 +17,7 @@ class Map(wx.Window):
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnMapLeftDown)
+        self.Bind(wx.EVT_MOTION, self.OnMapLeftDown)
 
     def _draw_crosshair(self, dc):
         x, y = self._cross
@@ -52,8 +53,7 @@ class Map(wx.Window):
             self._update_crosshair(evt)
 
     def OnPaint(self, evt):
-        print('on paint', self.IsDoubleBuffered())
-        dc = wx.PaintDC(self) if self.IsDoubleBuffered() else wx.BufferedPaintDC(self, self._buffer)
+        dc = wx.PaintDC(self) if self.IsDoubleBuffered() else wx.BufferedPaintDC(self)
         if hasattr(self, '_buffer') and self._buffer is not None:
             dc.DrawBitmap(self._buffer, 0, 0)
             self._draw_crosshair(dc)
@@ -73,9 +73,7 @@ class Map(wx.Window):
             return
 
         if self._buffer is not None:
-            #dc = wx.BufferedDC(wx.ClientDC(self), self._buffer)
             dc = wx.BufferedDC(None, self._buffer)
-            #dc = wx.ClientDC(self)
             if 'wxMac' not in wx.PlatformInfo:
                 dc = wx.GCDC(dc)
 
