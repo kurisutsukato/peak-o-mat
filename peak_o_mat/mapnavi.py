@@ -189,7 +189,7 @@ class Interactor:
                wx.WXK_UP:(0,-1),wx.WXK_DOWN:(0,1)}
         if keycode in [wx.WXK_LEFT, wx.WXK_RIGHT, wx.WXK_UP, wx.WXK_DOWN]:
             idx = map[keycode]
-            self.view.map._move_crosshair(*idx)
+            self.view.map.move_crosshair(*idx)
             self.controller.update_plot(*self.view.map._cross)
             self.view.map._draw_crosshair()
 
