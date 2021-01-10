@@ -136,7 +136,7 @@ class Map(wx.Window):
     def update_line(self, start, end, additive=False):
         line = np.asarray([start, end])
 
-        if not additive:
+        if not additive or self._line_overlay is None:
             img = Image.fromarray(np.zeros(self._imdata.shape, dtype='uint8'), mode='L').convert('RGBA')
             data = np.asarray(img).copy()
             data[:, :, 3] = 0
@@ -226,13 +226,24 @@ class Interactor:
         self.view.map.Bind(wx.EVT_LEFT_UP, self.OnMapLeftUp)
         self.view.map.Bind(wx.EVT_LEFT_DOWN, self.OnMapLeftDown)
         self.view.map.Bind(wx.EVT_KEY_DOWN, self.OnKey)
+        self.view.map.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        self.view.map.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
+
         self.view.Bind(wx.EVT_BUTTON, self.OnTransfer)
+
 
         pub.subscribe(self.pubOnWlSelect, ('plot', 'xmarker'))
         pub.subscribe(self.pubOnPageChanged, ('notebook', 'pagechanged'))
 
     def OnTransfer(self, evt):
         pub.sendMessage('set.add', spec=self.controller._spec)
+
+    def OnEnter(self, evt):
+        self.view.SetFocusIgnoringChildren()
+
+    def OnKeyUp(self, evt):
+        if evt.GetKeyCode() == wx.WXK_SHIFT:
+            self.controller.update_plot(self.view.map.line_coords)
 
     def OnKey(self, evt):
         keycode = evt.GetKeyCode()
@@ -268,9 +279,9 @@ class Interactor:
             return
 
         self.view.map.update_crosshair(ix, iy)
-        wx.GetApp().Yield(onlyIfNeeded=True)
-        if evt.ControlDown():
-            wx.CallAfter(self.controller.update_plot, ix, iy)
+        #wx.GetApp().Yield(onlyIfNeeded=True)
+        if evt.ShiftDown():
+            wx.CallAfter(self.controller.update_plot, np.vstack((self.view.map.line_coords, [ix, iy])), highlight_last=True)
         if evt.Dragging():
             if self.view.map._mode == Mode.LINE:
                 self.view.map.update_line(self._startpos, [ix, iy])
@@ -280,7 +291,6 @@ class Interactor:
             self.controller.update_plot(self.view.map.line_coords)
 
     def OnMapLeftDown(self, evt):
-        self.view.map.SetFocus()
         try:
             ix, iy = self.world2map(evt.Position)
         except ValueError:
@@ -342,8 +352,11 @@ class Controller:
         for n,(y,x) in enumerate(ix):
             #xlab = str(self.view.map._axes[1][x])
             #ylab = str(self.view.map._axes[0][y])
-            c = 'red' if n == len(ix)-1 and highlight_last else 'black'
-            line = plotcanvas.Line(np.transpose([self.wl, self.data[:, y, x]]), colour=c, width=1)
+            c = wx.Colour(160,160,160) if n != len(ix)-1 and highlight_last else 'black'
+            try:
+                line = plotcanvas.Line(np.transpose([self.wl, self.data[:, y, x]]), colour=c, width=1)
+            except IndexError:
+                print(self.data.shape, y, x)
             lines.append(line)
         pg = plotcanvas.Graphics(lines)
         self.view.plot.setLogScale([False,True])
@@ -371,8 +384,6 @@ class ControlPanel(wx.Panel):
 
         self.setup_controls()
         self.layout()
-
-        # parent.AddPage(self, 'Map scan browser', select=False)
 
     def setup_controls(self):
         self.map = Map(self)
