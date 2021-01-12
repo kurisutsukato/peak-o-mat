@@ -42,7 +42,7 @@ class Mode(Enum):
 class Map(wx.Window):
     def __init__(self, parent):
         super(Map, self).__init__(parent, style=wx.WANTS_CHARS)
-
+        self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
 
@@ -79,7 +79,6 @@ class Map(wx.Window):
     def _draw_line(self, dc):
         if self._line_overlay is not None:
             img = self._line_overlay.resize(self.canvas_size, Image.NEAREST)
-            img.save('line.png')
             bmp = wx.Bitmap.FromBufferRGBA(*self.canvas_size, img.tobytes())
             dc.DrawBitmap(bmp, 0, 0)
 
@@ -89,9 +88,6 @@ class Map(wx.Window):
         w, h = self.canvas_size
         dx = np.diff(self.x_scaled)[x]
         dy = np.diff(self.y_scaled)[y]
-
-        if 'wxMac' not in wx.PlatformInfo:
-            dc = wx.GCDC(dc)
 
         dc.SetBrush(wx.Brush(wx.Colour(255, 255, 0, 120)))
         dc.SetPen(wx.Pen(wx.Colour(255, 255, 0, 120), 1))
@@ -127,11 +123,11 @@ class Map(wx.Window):
         y += dy
         y %= rows
         self._cross = [x, y]
-        self.Refresh()
+        self.Redraw()
 
     def update_crosshair(self, x, y):
         self._cross = [x, y]
-        self.Refresh()
+        self.Redraw()
 
     def update_line(self, start, end, additive=False):
         line = np.asarray([start, end])
@@ -149,31 +145,46 @@ class Map(wx.Window):
         self._line_overlay = img
 
         self.line_coords = np.vstack(np.where(np.asarray(img)[:,:,:3].sum(axis=2) > 0)).T
-        self.Refresh()
+        self.Redraw()
 
     def OnPaint(self, evt):
-        dc = wx.PaintDC(self) if self.IsDoubleBuffered() else wx.BufferedPaintDC(self)
-        if hasattr(self, '_buffer') and self._buffer is not None:
-            dc.DrawBitmap(self._buffer, 0, 0)
-            self._draw_crosshair(dc)
-            self._draw_line(dc)
+        print('paint')
+        dc = wx.BufferedPaintDC(self)
+        dc.DrawBitmap(self._buffer, 0, 0)
+        self._draw_crosshair(dc)
+        self._draw_line(dc)
 
     def OnSize(self, evt):
+        print('size')
         w, h = self.GetClientSize()
         w = max(1, w)
         h = max(1, h)
         self._buffer = wx.Bitmap(w, h)
-        self.Draw()
+        self.Redraw(True)
+
+    def Redraw(self, full=False):
+        if full:
+            success = self.Draw()
+            dc = wx.BufferedDC(wx.ClientDC(self))
+        else:
+            dc = wx.BufferedDC(wx.ClientDC(self))
+            dc.DrawBitmap(self._buffer, 0, 0)
+
+        if not full or success:
+            self._draw_crosshair(dc)
+            self._draw_line(dc)
 
     def Draw(self):
+        print('draw')
         w, h = self.GetClientSize()
-        if w < 1 and h < 1:
+        if w < 1 or h < 1:
             return
+
         if self._buffer is not None:
             if not hasattr(self, '_imdata'):
                 self._imdata = np.ones((3, 1, 1), 'uint8') * 255
 
-            dc = wx.BufferedDC(None, self._buffer)
+            dc = wx.BufferedDC(wx.ClientDC(self), self._buffer)
             if 'wxMac' not in wx.PlatformInfo:
                 dc = wx.GCDC(dc)
 
@@ -184,11 +195,11 @@ class Map(wx.Window):
             self.canvas_size = cw, ch = int(float(h) * x / y) - tw, h - th
             self.SetMinSize((h * x / y, h))
 
-            dummy = np.zeros((y * x), dtype='uint8')
-            dummy[::2] = 1
-            dummy.shape = (y, x)
+            if cw > 1 and ch > 1:
+                dummy = np.zeros((y * x), dtype='uint8')
+                dummy[::2] = 1
+                dummy.shape = (y, x)
 
-            if ch > 0 and cw > 0:
                 img = Image.fromarray(self._imdata, mode='L').resize((cw, ch), Image.NEAREST)
                 resized = np.array(img.convert('RGB'))
 
@@ -214,8 +225,8 @@ class Map(wx.Window):
                 dc.DrawText(lab, w, 0)
                 lab = '{:.0f}'.format(self.axes[0][-1])
                 dc.DrawText(lab, w, h - dc.GetTextExtent(lab)[1])
-                self.Refresh()
-
+                return True
+        return False
 
 class Interactor:
     def Install(self, controller, view):
@@ -231,11 +242,11 @@ class Interactor:
 
         self.view.Bind(wx.EVT_BUTTON, self.OnTransfer)
 
-
         pub.subscribe(self.pubOnWlSelect, ('plot', 'xmarker'))
         pub.subscribe(self.pubOnPageChanged, ('notebook', 'pagechanged'))
 
     def OnTransfer(self, evt):
+        (self.instid, 'selection', 'changed')
         pub.sendMessage('set.add', spec=self.controller._spec)
 
     def OnEnter(self, evt):
@@ -279,9 +290,9 @@ class Interactor:
             return
 
         self.view.map.update_crosshair(ix, iy)
-        #wx.GetApp().Yield(onlyIfNeeded=True)
+
         if evt.ShiftDown():
-            wx.CallAfter(self.controller.update_plot, np.vstack((self.view.map.line_coords, [ix, iy])), highlight_last=True)
+            self.controller.update_plot(np.vstack((self.view.map.line_coords, [iy, ix])), highlight_last=True)
         if evt.Dragging():
             if self.view.map._mode == Mode.LINE:
                 self.view.map.update_line(self._startpos, [ix, iy])
@@ -291,17 +302,17 @@ class Interactor:
             self.controller.update_plot(self.view.map.line_coords)
 
     def OnMapLeftDown(self, evt):
+        self.view.map.SetFocus()
         try:
             ix, iy = self.world2map(evt.Position)
         except ValueError:
             return
+        self.view.map.update_crosshair(ix, iy)
         if self.view.map._mode == Mode.CROSS:
             self.controller.update_plot(ix, iy)
-            self.view.map.update_crosshair(ix, iy)
         elif self.view.map._mode == Mode.LINE:
             self.view.map.update_line([ix, iy], [ix, iy], evt.ShiftDown())
             self._startpos = [ix, iy]
-
 
 class Controller:
     def __init__(self, view, interactor):
@@ -338,7 +349,7 @@ class Controller:
             idx = [min(max(q, 0), d - 1) for q in idx]
             self.view.map.imdata = self.data[slice(*idx)].sum(axis=0)
 
-        self.view.map.Draw()
+        self.view.map.Redraw(True)
 
     def update_plot(self, ix, iy=None, highlight_last=False):
         #self.view.map.idx_x = ix
@@ -353,16 +364,19 @@ class Controller:
             #xlab = str(self.view.map._axes[1][x])
             #ylab = str(self.view.map._axes[0][y])
             c = wx.Colour(160,160,160) if n != len(ix)-1 and highlight_last else 'black'
-            try:
-                line = plotcanvas.Line(np.transpose([self.wl, self.data[:, y, x]]), colour=c, width=1)
-            except IndexError:
-                print(self.data.shape, y, x)
+            if highlight_last and n != len(ix)-1:
+                wl = self.wl[::10]
+                data = self.data[::10, y, x]
+            else:
+                wl = self.wl
+                data = self.data[:, y, x]
+            line = plotcanvas.Line(np.transpose([wl, data]), colour=c, width=1)
             lines.append(line)
+
         pg = plotcanvas.Graphics(lines)
-        self.view.plot.setLogScale([False,True])
+        #self.view.plot.setLogScale([False,True])
         #self._spec = Spec(self.wl, self.data[:, y, x], 'X{}/Y{}'.format(xlab, ylab))
         self.view.plot.Draw(pg)
-
 
 class Module(module.BaseModule):
     title = 'Map scan browser'
