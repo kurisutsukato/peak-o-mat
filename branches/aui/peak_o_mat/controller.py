@@ -523,7 +523,7 @@ class Controller(object):
         else:
             added = self.project[plot].add(data)
         #self.update_tree()
-        self.view.tree.selection = plot,added
+        self.view.tree.selection = plot, added
         self.project_modified = True
 
         #TODO: no receivers

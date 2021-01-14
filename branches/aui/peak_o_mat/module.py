@@ -159,7 +159,11 @@ class MyModule(module.Module):
 
     def __getattr__(self, name):
         if name.find('xrc_') == 0:
-            return xrc.XRCCTRL(self.view, name)
+            ctrl = xrc.XRCCTRL(self.view, name)
+            if ctrl is None:
+                raise AttributeError('attribute \'{}\' not found'.format(name))
+            else:
+                return ctrl
         else:
             raise AttributeError(name)
 
