@@ -36,9 +36,9 @@ elif wx.Platform == '__WXMAC__':
              }
 else:
     faces = { 'times': 'Times',
-              'mono' : 'Courier',
-              'helv' : 'Courier',
-              'other': 'Courier',
+              'mono' : 'DejaVuSansMono',
+              'helv' : 'DejaVuSansMono',
+              'other': 'DejaVuSansMono',
               'size' : 11,
               'size2': 10,
              }

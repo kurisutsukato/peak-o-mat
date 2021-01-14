@@ -457,15 +457,15 @@ elif wx.Platform == '__WXMAC__':
               'mono' : 'Monaco',
               'helv' : 'Arial',
               'other': 'Comic Sans MS',
-              'size' : 12,
+              'size' : 11,
               'size2': 10,
              }
 else:
     faces = { 'times': 'Times',
-              'mono' : 'Courier',
+              'mono' : 'DejaVuSansMono',
               'helv' : 'Helvetica',
               'other': 'new century schoolbook',
-              'size' : 12,
+              'size' : 11,
               'size2': 10,
              }
 
