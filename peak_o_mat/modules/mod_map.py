@@ -148,19 +148,20 @@ class Map(wx.Window):
         self.Redraw()
 
     def OnPaint(self, evt):
-        print('paint')
+        #print('paint')
         dc = wx.BufferedPaintDC(self)
         dc.DrawBitmap(self._buffer, 0, 0)
         self._draw_crosshair(dc)
         self._draw_line(dc)
 
     def OnSize(self, evt):
-        print('size')
+        #print('size')
         w, h = self.GetClientSize()
         w = max(1, w)
         h = max(1, h)
         self._buffer = wx.Bitmap(w, h)
         self.Redraw(True)
+        self.Refresh()
 
     def Redraw(self, full=False):
         if full:
@@ -229,7 +230,7 @@ class Map(wx.Window):
         return False
 
 class Interactor:
-    def Install(self, controller, view):
+    def install(self, controller, view):
         self.controller = controller
         self.view = view
 
@@ -246,8 +247,11 @@ class Interactor:
         pub.subscribe(self.pubOnPageChanged, ('notebook', 'pagechanged'))
 
     def OnTransfer(self, evt):
-        (self.instid, 'selection', 'changed')
-        pub.sendMessage('set.add', spec=self.controller._spec)
+        coords = self.view.map.line_coords
+        specs = []
+        for y, x in coords:
+            specs.append(Spec(self.controller.wl, self.controller.data[:, y, x], 'x{}-y{}'.format(x, y)))
+        pub.sendMessage((self.controller.instid, 'set', 'add'), spec=specs)
 
     def OnEnter(self, evt):
         self.view.SetFocusIgnoringChildren()
@@ -314,10 +318,24 @@ class Interactor:
             self.view.map.update_line([ix, iy], [ix, iy], evt.ShiftDown())
             self._startpos = [ix, iy]
 
-class Controller:
-    def __init__(self, view, interactor):
-        self.view = view
-        interactor.Install(self, view)
+class Module(module.BaseModule):
+    title = 'Map scan browser'
+
+    def __init__(self, *args):
+        super(Module, self).__init__(*args)
+        self.init()
+
+        self.parent_view._mgr.AddPane(self.view, aui.AuiPaneInfo().
+                                      Float().Dockable(False).Hide().MinSize(400, 200).
+                                      Caption(self.title).Name(self.title))
+        self.parent_view._mgr.Update()
+        self.parent_controller.view.menu_factory.add_module(self.parent_controller.view.menubar, self.title)
+
+    def init(self):
+        self.view = ControlPanel(self.parent_view)
+        super(Module, self).init()
+
+        Interactor().install(self, self.view)
 
         self.read_data()
         self.init_map()
@@ -325,7 +343,6 @@ class Controller:
         wx.CallAfter(self.update_plot, *self.view.map._cross)
 
     def read_data(self):
-
         self.wl, self.axes, self.data = read()
         sort = np.argsort(self.wl)
         self.wl = self.wl.take(sort)
@@ -352,14 +369,12 @@ class Controller:
         self.view.map.Redraw(True)
 
     def update_plot(self, ix, iy=None, highlight_last=False):
-        #self.view.map.idx_x = ix
-        #self.view.map.idx_y = iy
-
         if iy is not None:
             ix = [(iy,ix)]
 
         self.view.btn_transfer.Enable()
         lines = []
+
         for n,(y,x) in enumerate(ix):
             #xlab = str(self.view.map._axes[1][x])
             #ylab = str(self.view.map._axes[0][y])
@@ -374,23 +389,8 @@ class Controller:
             lines.append(line)
 
         pg = plotcanvas.Graphics(lines)
-        #self.view.plot.setLogScale([False,True])
-        #self._spec = Spec(self.wl, self.data[:, y, x], 'X{}/Y{}'.format(xlab, ylab))
+        self.view.plot.setLogScale([False,True])
         self.view.plot.Draw(pg)
-
-class Module(module.BaseModule):
-    title = 'Map scan browser'
-
-    def __init__(self, *args):
-        super(Module, self).__init__(*args)
-        assert self.parent_view is not None
-        self.view = Controller(ControlPanel(self.parent_view), Interactor()).view
-        self.parent_view._mgr.AddPane(self.view, aui.AuiPaneInfo().
-                                      Float().Dockable(True).Hide().
-                                      Caption(self.title).Name(self.title))
-        self.parent_view._mgr.Update()
-        self.parent_controller.view.menu_factory.add_module(self.parent_controller.view.menubar, self.title)
-
 
 class ControlPanel(wx.Panel):
     def __init__(self, parent):
