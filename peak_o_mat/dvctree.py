@@ -197,10 +197,6 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
 
         self.Bind(wx.EVT_TIMER, self.on_timer)
 
-        if sys.platform != 'darwin':
-            self.EnableDragSource(wx.DataFormat(wx.DF_UNICODETEXT))
-            self.EnableDropTarget(wx.DataFormat(wx.DF_UNICODETEXT))
-
         self.init_menus()
 
         parent.Bind(wx.EVT_ENTER_WINDOW, self.on_mouseenter)
@@ -215,6 +211,9 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
     def AssociateModel(self, model):
         self.dataviewmodel = model
         dv.DataViewCtrl.AssociateModel(self, model)
+        if sys.platform != 'darwin':
+            self.EnableDragSource(wx.DataFormat(wx.DF_UNICODETEXT))
+            self.EnableDropTarget(wx.DataFormat(wx.DF_UNICODETEXT))
 
     def init_menus(self):
         self.menumap = [#(-1, 'Rename', self.on_),
