@@ -17,13 +17,14 @@ import sys
 class FeatureList(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, parent, ID=-1, pos=wx.DefaultPosition,
                  size=wx.DefaultSize, style=0):
-        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+        wx.ListCtrl.__init__(self, parent, ID, pos, size, style|wx.WANTS_CHARS)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
 
         self.InsertColumn(0, "Type")
         self.InsertColumn(1, "Feature")
 
-    def populate(self, items):
+    # TODO: not used
+    def __populate(self, items):
         self.ClearAll()
         for data in items:
             index = self.InsertStringItem(sys.maxsize, data[0])
@@ -219,6 +220,8 @@ class FitModelPanel(wx.Panel):
         row.Add(self.lab_peakinfo, 1, wx.EXPAND)
         outer.Add(row, 1, wx.EXPAND|wx.ALL, 5)
         self.SetSizer(outer)
+
+        self.Fit()
 
 class dlg_set_from_model(wx.Dialog):
     def __init__(self, parent, components, rng):
@@ -447,24 +450,26 @@ class FitOptionsPanel(wx.Panel):
         self.SetSizer(outer)
         self.Fit()
 
-class FitPanel(WithMessage,ScrolledPanel):
+class FitPanel(WithMessage, wx.Panel): #,ScrolledPanel):
     def __init__(self, parent, canvas):
         self.canvas = canvas
         self.parent = parent
-        ScrolledPanel.__init__(self, parent)
-        #self.instid = parent.instid
+        #ScrolledPanel.__init__(self, parent)
+        wx.Panel.__init__(self, parent)
         WithMessage.__init__(self)
 
         self.setup_controls()
         self.layout()
 
-        self.SetupScrolling(scrollToTop=False, scrollIntoView=False)
+        #self.SetupScrolling(scrollToTop=False, scrollIntoView=False)
 
     def layout(self):
         box = wx.BoxSizer(wx.VERTICAL)
         box.Add(self.nb_fit, 1, wx.EXPAND)
         self.SetSizer(box)
         self.Fit()
+        print(self.GetSize())
+        self.SetMinSize(self.GetSize())
 
     def setup_controls(self):
         self.nb_fit = wx.Notebook(self)
@@ -579,6 +584,12 @@ class FitPanel(WithMessage,ScrolledPanel):
                 self.pan_model.lst_features.Append((ptype.lower(),name))
                 #index = self.pan_model.lst_features.AppendItem(n, ptype.lower())
                 #self.pan_model.lst_features.SetStringItem(index, 1, name)
+        self.pan_model.lst_features.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.pan_model.lst_features.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+
+        s = self.pan_model.lst_features.Size
+        self.pan_model.lst_features.SetMinSize((s[0]+20,-1))
+        self.pan_model.Fit()
 
 class dlg_find_peaks(wx.Frame):
     def __init__(self, parent):

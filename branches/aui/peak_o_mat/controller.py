@@ -29,7 +29,7 @@ import logging
 import codecs
 import inspect
 
-import pickle
+import pickle, json
 import sys
 from copy import deepcopy
 
@@ -141,11 +141,23 @@ class Controller(object):
             try:
                 with open(pfile) as f:
                     perspective = f.read()
-            except IOError:
+            except EnvironmentError:
                 print('unable to read perspective')
+            except:
+                pass
             else:
                 wx.CallAfter(self.view._mgr.LoadPerspective, perspective, True)
 
+            sfile = os.path.join(configdir(), 'geom')
+            try:
+                with open(sfile, 'rb') as f:
+                    size = pickle.load(f)
+            except EnvironmentError:
+                print('unable to read geometry')
+            except:
+                pass
+            else:
+                wx.CallAfter(self.view.SetSize, size)
             interactor.Install(self, self.view)
 
     def message(self, msg, blink=False, forever=False):
@@ -153,7 +165,7 @@ class Controller(object):
         wx.PostEvent(self.view, event)
 
     def load_filehistory(self):
-        recent = os.path.join(configdir(),'filehistory')
+        recent = os.path.join(configdir(), 'filehistory')
         if os.path.exists(recent):
             for path in codecs.open(recent, 'r', 'utf-8'):
                 self.view.filehistory.AddFileToHistory(path.strip())
@@ -161,7 +173,7 @@ class Controller(object):
     def save_filehistory(self):
         hist = self.view.get_filehistory()
             
-        recent = os.path.join(configdir(),'filehistory')
+        recent = os.path.join(configdir(), 'filehistory')
         if not os.path.exists(configdir()):
             try:
                 os.mkdir(configdir())
@@ -249,10 +261,18 @@ class Controller(object):
             perspective = self.view._mgr.SavePerspective()
             pfile = os.path.join(configdir(), 'perspective')
             try:
-                with open(pfile,'w') as f:
+                with open(pfile, 'w') as f:
                     f.write(perspective)
             except IOError:
                 print('unable to save perspective')
+
+            try:
+                sfile = os.path.join(configdir(), 'geom')
+                with open(sfile, 'wb') as f:
+                    pickle.dump(self.view.GetSize(), f)
+            except IOError:
+                print('unable to save geometry')
+
             pub.sendMessage((self.view.instid, 'stop_all'))
             return True
         return False
@@ -1013,7 +1033,7 @@ class Controller(object):
                     lines.append(Line(ds.xy[:,::skip], colour='black'))
             xr, yr = self.project[plot].rng
         for ptype, spec in self._modules.get_plot_objects():
-            lines.append(getattr(plotcanvas,ptype)([spec.x,spec.y], colour=wx.Colour(0,0,250,180), width=1))
+            lines.append(getattr(plotcanvas,ptype)([spec.x,spec.y], colour=wx.Colour(0,0,250,180), width=2))
 
         graphics = plotcanvas.Graphics(lines)
 

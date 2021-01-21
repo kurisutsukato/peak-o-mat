@@ -176,7 +176,6 @@ class Map(wx.Window):
             self._draw_line(dc)
 
     def Draw(self):
-        print('draw')
         w, h = self.GetClientSize()
         if w < 1 or h < 1:
             return
