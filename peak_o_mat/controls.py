@@ -267,7 +267,8 @@ class Toolbar(misc_ui.WithMessage, wx.Panel):
             sizer.Add(btn, 0)
 
         self.SetSizer(sizer)
-        self.Layout()
+        self.Fit()
+        self.SetMinSize(self.GetSize())
         #self.SetMinSize((20,-1))
 
         pub.subscribe(self.OnNewMode, (self.instid,'canvas','newmode'))

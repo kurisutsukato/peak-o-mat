@@ -468,7 +468,6 @@ class FitPanel(WithMessage, wx.Panel): #,ScrolledPanel):
         box.Add(self.nb_fit, 1, wx.EXPAND)
         self.SetSizer(box)
         self.Fit()
-        print(self.GetSize())
         self.SetMinSize(self.GetSize())
 
     def setup_controls(self):
