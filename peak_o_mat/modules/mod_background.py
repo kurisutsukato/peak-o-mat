@@ -19,18 +19,12 @@
 import wx
 from pubsub import pub
 
-from peak_o_mat import module, spec, misc
-
-from scipy.sparse.linalg import spsolve
-from scipy import sparse
-
-from scipy.interpolate import splrep, splev
-from scipy.optimize import fmin_cobyla, leastsq, fmin
+from peak_o_mat import module, spec
 
 import numpy as np
 
 from ..spec import Spec
-
+from ..filters import mavg_filter, bg_snip, bg_alq
 
 def roll(a, d):
     if d > 0:
@@ -44,7 +38,6 @@ def onedigit(a):
     val = round(a, digits)
     return '{1:.{0}f}'.format(digits, val)
 
-
 class XRCModule(module.XRCModule):
     title = 'Background'
     need_attention = True
@@ -56,6 +49,8 @@ class XRCModule(module.XRCModule):
         self.page = 0
 
         self.xrc_sl_SNIP_iteration.Bind(wx.EVT_SLIDER, self.OnSliderSNIP)
+        self.xrc_sl_SNIP_mavg.Bind(wx.EVT_SLIDER, self.OnSliderSNIP)
+
         self.xrc_btn_create.Bind(wx.EVT_BUTTON, self.OnBtn)
         self.xrc_btn_substract.Bind(wx.EVT_BUTTON, self.OnBtn)
 
@@ -65,6 +60,8 @@ class XRCModule(module.XRCModule):
 
         self.xrc_notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnNBChanged)
 
+        self.xrc_chk_SNIP_mavg.Bind(wx.EVT_CHECKBOX, self.OnCheckFilterSNIP)
+
         self.update_values()
 
     def calc_background_ALQ(self, ds):
@@ -72,32 +69,18 @@ class XRCModule(module.XRCModule):
         lam = np.power(10.0, self.xrc_sl_ALQ_lam.Value/10.0)
         p = np.power(10.0, self.xrc_sl_ALQ_p.Value/10.0)
 
-        L = len(ds)
-        w = np.ones(L)
-        D = sparse.diags([1, -2, 1], [0, -1, -2], shape=(L, L-2))
-        DTD = D.dot(D.T)
-        W = sparse.spdiags(w, 0, L, L)
+        x, y = ds.xy
 
-        for n in range(niter):
-            W.setdiag(w)
-            Z = W + lam * DTD
-            z = spsolve(Z, w*ds.y)
-            w = p * (ds.y > z) + (1-p) * (ds.y < z)
+        return bg_alq(x, y, lam, p, niter)
 
-        return ds.x, z
-
-    def calc_background_SNIP(self, dataset):
+    def calc_background_SNIP(self, ds):
         niter = self.xrc_sl_SNIP_iteration.Value
-        x, y = dataset.xy
+        if self.xrc_chk_SNIP_mavg.IsChecked():
+            x, y = mavg_filter(ds, int(self.xrc_sl_SNIP_mavg.Value)).xy
+        else:
+            x, y = ds.xy
 
-        v = np.log(np.log(np.sqrt(y + 1) + 1) + 1)
-        l = v.shape[0]
-
-        # for p in range(1,self.niter+1):  # much better results with reverse indexing!!
-        for p in range(niter, 0, -1):
-            v[p:l - p] = np.minimum(v[p:l - p], (roll(v, -p)[p:l - p] + roll(v, +p)[p:l - p]) / 2)
-        v = np.power(np.exp(np.exp(v) - 1) - 1, 2) - 1
-        return x, v
+        return bg_snip(x, y, niter)
 
     def update_background(self):
         sel = self.controller.selection
@@ -113,6 +96,10 @@ class XRCModule(module.XRCModule):
                     return
                 self.plotme = 'Line', spec.Spec(x, y, 'bg_{}'.format(dataset.name))
                 pub.sendMessage((self.instid, 'updateplot'))
+
+    def OnCheckFilterSNIP(self, evt):
+        self.xrc_sl_SNIP_mavg.Enable(evt.IsChecked())
+        self.update_background()
 
     def OnNBChanged(self, evt):
         self.page = evt.GetSelection()

@@ -89,8 +89,8 @@ class WeightsGrid(wx.grid.Grid):
         self.table = WeightsTableBase()
         self.SetTable(self.table, True)
         self.SetRowLabelSize(0)
-        self.SetColLabelSize(20)
-        self.SetSizeHints(200,-1)
+        #self.SetColLabelSize(20)
+        #self.SetSizeHints(200,-1)
 
         self.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSelect)
         
@@ -99,7 +99,7 @@ class WeightsGrid(wx.grid.Grid):
             size += self.GetColSize(c)
         size += self.GetRowLabelSize()+1
 
-        self.SetSizeHints(size,-1)
+        self.SetSizeHints(size, -1)
         self.SetMinSize((size, -1))
 
         varlist = ['relative', 'absolute', 'both']

@@ -17,7 +17,7 @@ class FitInteractor(object):
         self.view.Bind(wx.EVT_TEXT, self.OnModelText, self.view.pan_model.txt_model)
         self.view.pan_model.btn_addfeature.Bind(wx.EVT_BUTTON, self.OnAddFeature)
         self.view.pan_model.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnFeatureSelected, self.view.pan_model.lst_features)
-        self.view.pan_model.lst_features.Bind(wx.EVT_LIST_KEY_DOWN, self.OnFeatureKeyDown)
+        self.view.pan_model.lst_features.Bind(wx.EVT_KEY_DOWN, self.OnFeatureKeyDown)
         self.view.pan_model.lst_features.Bind(wx.EVT_LEFT_DCLICK, self.OnAddFeature)
         self.view.Bind(wx.EVT_BUTTON, self.OnClearModel, self.view.pan_model.btn_modelclear)
 
