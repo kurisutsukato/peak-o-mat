@@ -46,6 +46,7 @@ class XRCModule(module.XRCModule):
         module.XRCModule.__init__(self, __file__, *args)
 
     def init(self):
+        print('mod background init')
         self.page = 0
 
         self.xrc_sl_SNIP_iteration.Bind(wx.EVT_SLIDER, self.OnSliderSNIP)

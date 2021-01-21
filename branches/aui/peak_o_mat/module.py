@@ -128,9 +128,12 @@ class MyModule(module.Module):
         if self.xmlres is not None:
             #self.panel = self.xmlres.LoadPanel(self.notebook, self.name)
             self.view = self.xmlres.LoadPanel(controller.view, self.name)
+            self.view.Fit()
+            self.view.SetMinSize(self.view.GetSize())
+
             misc_ui.WithMessage.__init__(self, self.view)
             controller.view._mgr.AddPane(self.view, aui.AuiPaneInfo().Float().
-                                         Dockable(True).Caption(self.title).
+                                         Dockable(True).Caption(self.title).MinSize(self.view.GetSize()).
                                          Name(self.title).Hide())
 
             controller.view._mgr.Update()
@@ -147,12 +150,10 @@ class MyModule(module.Module):
             controller.view.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClose)
             self.view.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
             wx.CallAfter(self.init)
-            wx.CallAfter(self.view.Layout)
         else:
             raise IOError(xrcfile+' not found')
 
         self.view.Bind(wx.EVT_BUTTON, self.OnHelp)
-
 
     def OnClose(self, evt):
         print('abstract method of XRCModule was called!!!', evt)

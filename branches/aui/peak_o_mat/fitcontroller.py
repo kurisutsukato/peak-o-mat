@@ -7,7 +7,7 @@ import re
 import time
 
 import numpy as np
-from scipy.signal import find_peaks, peak_widths
+from scipy.signal import find_peaks, peak_widths, peak_prominences
 
 from threading import Thread, Event
 
@@ -178,18 +178,19 @@ class FitController(object):
         p, s = self.selection
         if len(s) == 1 and self.model is not None:
             dset = s[0]
-            #width = (dset.x[-1]-dset.x[0])/200.0
-
 
             numpeaks = len([True for f in self.model if str(f) in ls.peak])
 
-            th = (dset.y.max() - dset.y.min())
+            #_, yb = filters.bg_snip(dset.x, dset.y, 50)
+            y = dset.y #-yb
+
+            th = (y.max() - y.min())
             lower = th*0.05
             upper = th*1.01
             step = 0
 
             for n in range(10):
-                idx,_ = find_peaks(dset.y, prominence=(lower, upper))
+                idx,_ = find_peaks(y, prominence=(lower, upper))
 
                 if len(idx) > numpeaks:
                     if step == 0:
@@ -205,12 +206,13 @@ class FitController(object):
                     lower = lower-step
                 else:
                     break
+            #p,l,r = peak_prominences(y, idx)
 
             if numpeaks == len(idx):
-                widths = peak_widths(dset.y, idx, rel_height=0.1)
+                widths = peak_widths(y, idx, rel_height=0.1)
 
                 pos = np.take(dset.x, idx)
-                amp = np.take(dset.y, idx)
+                amp = np.take(y, idx)
 
                 n = 0
                 for f in self.model:
