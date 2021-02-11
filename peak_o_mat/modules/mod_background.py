@@ -46,7 +46,6 @@ class XRCModule(module.XRCModule):
         module.XRCModule.__init__(self, __file__, *args)
 
     def init(self):
-        print('mod background init')
         self.page = 0
 
         self.xrc_sl_SNIP_iteration.Bind(wx.EVT_SLIDER, self.OnSliderSNIP)
@@ -127,6 +126,7 @@ class XRCModule(module.XRCModule):
                     pub.sendMessage((self.instid, 'updateplot'))
                 else:
                     self.controller.add_set(spec.Spec(x, y, 'bg_{}'.format(dataset.name)))
+        self.update_background()
 
     def update_values(self):
         self.xrc_lab_ALQ_iter.Label = str(self.xrc_sl_ALQ_iter.Value)
@@ -146,12 +146,11 @@ class XRCModule(module.XRCModule):
         if self.visible:
             self.update_background()
 
-    def OnClose(self, evt):
-        self.focus_changed()
-
     def focus_changed(self, newfocus=None):
-        if newfocus != self:
+        if newfocus == self.title:
+            self.update_background()
+            self.visible = True
+        else:
             self.plotme = None
             pub.sendMessage((self.instid, 'updateplot'))
-        else:
-            self.update_background()
+            self.visible = False

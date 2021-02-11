@@ -115,25 +115,18 @@ class Module(module.BaseModule):
         self.parent_controller.view.menu_factory.add_module(self.parent_controller.view.menubar, self.title)
         #menu.add_module(self.parent_controller.view.menubar, self.title)
 
-        pub.subscribe(self.OnSelectionChanged, (self.instid, 'selection','changed'))
+        pub.subscribe(self.OnSelectionChanged, (self.instid, 'selection', 'changed'))
 
     def init(self):
         self.calib = CalibrationModel([])
         self.view = Panel(self.parent_view, self.calib)
         super(Module, self).init()
 
-        #self.calib = Calibration()
-        #self.xmlres.AttachUnknownControl('xrc_grid', CalibGrid(self.panel, self.calib))
-        #self.grid.GetParent().SetMinSize(self.grid.GetMinSize())
-        #self.grid.GetParent().Refresh()
-        #self.panel.Layout()
-
         self.init_ctrls()
         
         self.view.Bind(wx.EVT_TEXT, self.OnTol, self.view.txt_tol)
         self.view.Bind(wx.EVT_TEXT, self.OnOffset, self.view.txt_offset)
 
-        #self.panel.Bind(wx.EVT_CHOICE, self.OnElement, self.panel.ch_elem)
         self.view.Bind(wx.EVT_BUTTON, self.OnElement, self.view.btn_elem)
 
         self.view.Bind(wx.EVT_CHOICE, self.OnUnit, self.view.ch_unit)
@@ -141,13 +134,14 @@ class Module(module.BaseModule):
         self.view.Bind(wx.EVT_BUTTON, self.OnStore, self.view.btn_storesearch)
         self.view.Bind(wx.EVT_BUTTON, self.OnRestore, self.view.btn_restoresearch)
         self.view.Bind(wx.EVT_BUTTON, self.OnDispersion, self.view.btn_dispersion)
+
         #self.panel.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.OnCellChanged, self.panel.grid)
         self.view.Bind(dv.EVT_DATAVIEW_ITEM_VALUE_CHANGED, self.OnDataChanged, self.view.grid)
         self.view.Bind(wx.EVT_CHECKBOX, self.OnShow, self.view.chk_speclines)
         self.view.Bind(wx.EVT_BUTTON, self.OnStoreCalibration, self.view.btn_storecalibration)
 
-        self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToImport, self.view.ch_unit)
-        #self.panel.Bind(wx.EVT_UPDATE_UI, self.OnReadyToImport, self.panel.ch_elem)
+        #self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToImport, self.view.ch_unit)
+
         self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToCalibrate, self.view.btn_calibrate)
         self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApply, self.view.btn_storesearch)
         self.view.Bind(wx.EVT_UPDATE_UI, self.OnReadyToApply, self.view.btn_dispersion)
@@ -216,11 +210,15 @@ class Module(module.BaseModule):
         #self.panel.btn_update.Enable(self.parent_controller.active_set is not None)
 
     def focus_changed(self, newfocus=None):
-        if newfocus != self:
+        if newfocus != self.title:
             self.plotme = None
-            self.view.chk_speclines.Value = False
+            #self.view.chk_speclines.Value = False
             pub.sendMessage((self.instid, 'updateplot'))
+            self.visible = False
         else:
+            self.visible = True
+            if self.view.chk_speclines.Value:
+                self.plotme = 'Spikes', spec.Spec(*self.calib.spectrum)
             self.update()
 
     def OnDispersion(self, evt):
