@@ -10,7 +10,8 @@ from . import misc_ui
 
 from . import misc
 
-#TODO: implement a 'set attribute changed' event
+
+# TODO: implement a 'set attribute changed' event
 
 class Interactor(object):
     def Install(self, controller, view):
@@ -30,14 +31,14 @@ class Interactor(object):
         self.view.Bind(wx.EVT_MENU, self.OnMenuClose, id=menu_ids['Quit'])
         self.view.Bind(wx.EVT_MENU, self.OnImport, id=menu_ids['Import...'])
         self.view.Bind(wx.EVT_MENU, self.OnExport, id=menu_ids['Export...'])
-        
+
         self.view.Bind(wx.EVT_MENU, self.OnShowCodeeditor, id=menu_ids['Code Editor'])
         self.view.Bind(wx.EVT_MENU, self.OnShowDatagrid, id=menu_ids['Data Grid'])
         self.view.Bind(wx.EVT_MENU, self.OnShowNotes, id=menu_ids['Notepad'])
 
         self.view.Bind(wx.EVT_MENU, self.OnAbout, id=menu_ids['About'])
 
-        for mid,name in module_menu_ids.items():
+        for mid, name in module_menu_ids.items():
             if type(name) == str:
                 self.view.Bind(wx.EVT_MENU, lambda evt, mid=mid: self.OnMenuShowHideModule(evt, mid), id=mid)
 
@@ -53,6 +54,7 @@ class Interactor(object):
         self.view.Bind(wx.EVT_TEXT, self.OnEditAnnotations, self.view.txt_annotations)
 
         self.view._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnModuleCloseButton)
+        self.view._mgr.Bind(aui.EVT_AUI_PANE_ACTIVATED, self.OnModuleActivated)
 
         pub.subscribe(self.pubOnMessage, (self.view.instid, 'message'))
         pub.subscribe(self.OnTreeSelect, (self.view.instid, 'tree', 'select'))
@@ -71,13 +73,13 @@ class Interactor(object):
         pub.subscribe(self.pubOnAddPlot, (self.view.instid, 'tree', 'addplot'))
         pub.subscribe(self.OnTreeCopy, (self.view.instid, 'tree', 'copy'))
         pub.subscribe(self.OnTreePaste, (self.view.instid, 'tree', 'paste'))
-        
+
         pub.subscribe(self.OnSetFromGrid, (self.view.instid, 'grid', 'newset'))
 
         pub.subscribe(self.OnCanvasErase, (self.view.instid, 'canvas', 'erase'))
-        #em.eventManager.Register(self.OnGotPars, misc_ui.EVT_GOTPARS, self.view.canvas)
+        # em.eventManager.Register(self.OnGotPars, misc_ui.EVT_GOTPARS, self.view.canvas)
         self.view.canvas.Bind(misc_ui.EVT_GOTPARS, self.OnGotPars)
-        
+
         pub.subscribe(self.OnLoadSetFromModel, (self.view.instid, 'fitctrl', 'loadset'))
         pub.subscribe(self.OnFitPars2DataGrid, (self.view.instid, 'fitctrl', 'parexport'))
         pub.subscribe(self.pubOnStartFit, (self.view.instid, 'fitctrl', 'fit'))
@@ -121,7 +123,7 @@ class Interactor(object):
         self.controller.new_datagrid(data, name=name)
 
     def pubOnGenerateDataset(self, spec, target):
-        #print('interactor: gen dataset',spec,target)
+        # print('interactor: gen dataset',spec,target)
         if target == 0:
             target = self.controller.add_plot()
         else:
@@ -149,26 +151,20 @@ class Interactor(object):
     def OnModuleCloseButton(self, evt):
         m = evt.GetPane().name
         self.controller._modules[m].hide()
-        print('pane close main interactor)', m)
         for mid, name in self.view.menu_factory.module_menu_ids.items():
             if name == m:
                 self.view.check_module_menu(mid, False)
         evt.Skip()
 
+    def OnModuleActivated(self, evt):
+        pub.sendMessage((self.view.instid, 'module', 'focuschanged'), newfocus=evt.GetPane().name)
+
     def OnMenuShowHideModule(self, evt, mid):
         self.view._mgr.GetPane(self.view.menu_factory.module_menu_ids[mid]).Show(evt.IsChecked())
         m = self.controller._modules[self.view.menu_factory.module_menu_ids[mid]]
-        #print('show',evt.IsChecked())
+        print('show', evt.IsChecked())
         m.show(evt.IsChecked())
         self.view._mgr.Update()
-
-    def OnStartServer(self, evt):
-        menu = self.view.GetMenuBar().GetMenu(3)
-        mi = menu.FindItemByPosition(0)
-        if self.controller.start_plot_server():
-            menu.SetLabel(mi.GetId(), 'Stop plot server')
-        else:
-            menu.SetLabel(mi.GetId(), 'Start plot server')
 
     def OnFigureClose(self):
         self.controller.create_or_show_figure(False, discard=True)
@@ -204,11 +200,11 @@ class Interactor(object):
             if self.controller.virgin:
                 self.controller.open_project(path)
             else:
-                pub.sendMessage((self.view.instid, 'new'),path=path)
+                pub.sendMessage((self.view.instid, 'new'), path=path)
         else:
             self.view.msg_dialog('File not found: \'{}\''.format(path), 'Error')
 
-    #TODO: obnsolete
+    # TODO: obnsolete
     def OnNotebookPageChanged(self, evt):
         pub.sendMessage((self.view.instid, 'notebook', 'pagechanged'), msg=evt.GetEventObject().GetCurrentPage())
 
@@ -232,7 +228,7 @@ class Interactor(object):
 
     def pubOnAddPlot(self, msg):
         self.controller.add_plot()
-        
+
     def OnTreeUnmask(self):
         self.controller.rem_attr('mask', only_sel=True)
 
@@ -254,16 +250,16 @@ class Interactor(object):
         self.controller.load_set_from_model(model, which, xr, pts)
 
     def OnGotPars(self, evt):
-        mapping = {misc_ui.GOTPARS_MOVE: 'edit', # edit scheints nicht zu geben
+        mapping = {misc_ui.GOTPARS_MOVE: 'edit',  # edit scheints nicht zu geben
                    misc_ui.GOTPARS_MOVE: 'move',
                    misc_ui.GOTPARS_DOWN: 'down',
                    misc_ui.GOTPARS_END: 'end'}
-        self.controller.model_updated(action = mapping[evt.cmd])
+        self.controller.model_updated(action=mapping[evt.cmd])
         evt.Skip()
 
     def OnEditPars(self, msg):
         self.controller.model_updated()
-        
+
     def OnStartPickPars(self, msg):
         self.controller.start_pick_pars(*msg)
 
@@ -272,7 +268,7 @@ class Interactor(object):
 
     def OnTreeCopyToGrid(self, msg):
         self.controller.selection_to_grid()
-        
+
     def OnTreeSelect(self, selection):
         self.controller.selection = selection
 
@@ -280,7 +276,7 @@ class Interactor(object):
         self.controller.delete_selection()
 
     def OnTreeRename(self, msg):
-        #TODO: wird vermutlich nicht mehr benutzt
+        # TODO: wird vermutlich nicht mehr benutzt
         print('interactor:ontreerename')
         plot, set, name = msg
         wx.CallAfter(self.controller.rename_set, name, (plot, set))
@@ -302,24 +298,24 @@ class Interactor(object):
 
     def OnCanvasNewRange(self, evt):
         xr, yr = evt.range
-        self.controller.set_plot_range(xr,yr)
+        self.controller.set_plot_range(xr, yr)
 
     def OnCanvasButton(self, evt):
-        callmap = {'btn_peaks':self.OnCanvasButtonPeaks,
-                   'btn_logx':self.OnCanvasButtonLogX,
-                   'btn_logy':self.OnCanvasButtonLogY,
-                   'btn_style':self.OnCanvasButtonStyle,
-                   'btn_zoom':self.OnCanvasButtonZoom,
-                   'btn_drag':self.OnCanvasButtonDrag,
-                   'btn_erase':self.OnCanvasButtonErase,
-                   'btn_auto':self.OnCanvasButtonAuto,
-                   'btn_autox':self.OnCanvasButtonAutoX,
-                   'btn_autoy':self.OnCanvasButtonAutoY,
-                   'btn_auto2fit':self.OnCanvasButtonAuto2Fit,
-                   'btn_fast':self.OnCanvasButtonFast}
+        callmap = {'btn_peaks': self.OnCanvasButtonPeaks,
+                   'btn_logx': self.OnCanvasButtonLogX,
+                   'btn_logy': self.OnCanvasButtonLogY,
+                   'btn_style': self.OnCanvasButtonStyle,
+                   'btn_zoom': self.OnCanvasButtonZoom,
+                   'btn_drag': self.OnCanvasButtonDrag,
+                   'btn_erase': self.OnCanvasButtonErase,
+                   'btn_auto': self.OnCanvasButtonAuto,
+                   'btn_autox': self.OnCanvasButtonAutoX,
+                   'btn_autoy': self.OnCanvasButtonAutoY,
+                   'btn_auto2fit': self.OnCanvasButtonAuto2Fit,
+                   'btn_fast': self.OnCanvasButtonFast}
 
         tid = evt.GetEventObject().GetName()
-        callmap[tid](evt.GetEventObject(), evt.GetId())
+        callmap[tid](evt.GetEventObject(), evt.instid)
         evt.Skip()
 
     def OnCanvasButtonFast(self, tb, id):
@@ -338,48 +334,48 @@ class Interactor(object):
 
     def OnCanvasButtonAuto2Fit(self, *args):
         self.controller.autoscale(fit=True)
-        
+
     def OnCanvasButtonPeaks(self, tb, id):
         state = tb.GetValue()
         self.controller.app_state.show_peaks = state
         self.controller.update_plot()
-        
+
     def OnCanvasButtonLogY(self, tb, id):
         state = tb.GetValue()
         self.controller.autoscale()
         self.view.canvas.setLogScale([None, state])
         self.controller.update_plot()
-        
+
     def OnCanvasButtonLogX(self, tb, id):
         state = tb.GetValue()
         self.controller.autoscale()
         self.view.canvas.setLogScale([state, None])
         self.controller.update_plot()
-        
+
     def OnCanvasButtonStyle(self, tb, id):
         state = tb.GetValue()
         self.controller.app_state.line_style = state
         self.controller.update_plot()
-        
+
     def OnCanvasButtonZoom(self, tb, id):
         state = tb.GetValue()
-        mode = [None,'zoom'][state]
+        mode = [None, 'zoom'][state]
         self.controller.set_canvas_mode(mode)
-        
+
     def OnCanvasButtonDrag(self, tb, id):
         state = tb.GetValue()
-        mode = [None,'drag'][state]
+        mode = [None, 'drag'][state]
         self.controller.set_canvas_mode(mode)
-                
+
     def OnCanvasButtonErase(self, tb, id):
         state = tb.GetValue()
-        mode = [None,'erase'][state]
+        mode = [None, 'erase'][state]
         self.controller.set_canvas_mode(mode)
 
     def OnImport(self, evt):
-        res = self.view.import_dialog(misc.cwd(),misc.wildcards())
+        res = self.view.import_dialog(misc.cwd(), misc.wildcards())
         if res is not None:
-            path,one_plot_each = res
+            path, one_plot_each = res
             self.controller.import_data(path, one_plot_each)
 
     def OnExport(self, evt):
@@ -387,7 +383,7 @@ class Interactor(object):
 
     def OnShowDatagrid(self, evt):
         self.controller.show_datagrid(evt.IsChecked())
-                
+
     def OnShowNotes(self, evt):
         self.controller.show_notes(evt.IsChecked())
 
@@ -406,10 +402,10 @@ class Interactor(object):
             evt.Skip()
         else:
             evt.Veto()
-        
+
     def OnNotesClose(self, evt):
         self.controller.notes_close()
-        
+
     def OnNew(self, evt):
         pub.sendMessage(('new'))
 
@@ -421,7 +417,7 @@ class Interactor(object):
                 if self.controller.virgin:
                     self.controller.open_project(path)
                 else:
-                    pub.sendMessage(('new'),path=path)
+                    pub.sendMessage((self.view.instid, 'new'), path=path)
                     print('send new message')
             else:
                 self.view.msg_dialog('File not found: \'{}\''.format(path), 'Error')

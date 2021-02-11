@@ -93,7 +93,6 @@ class XRCModule(module.XRCModule):
         self.xrc_btn_trafo_remove.Enable(False)
         pub.subscribe(self.OnSetinfoUpdate, (self.instid, 'setattrchanged'))
 
-
     def OnSetinfoUpdate(self):
         if not self._updating:
             self.update()

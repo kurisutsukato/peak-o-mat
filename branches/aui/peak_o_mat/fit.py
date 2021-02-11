@@ -184,6 +184,20 @@ class Fit:
         msg = out.stopreason
         return (pars,errors),msg
 
+
+def fit(ds, maxit):
+    func = QuickEvaluate(ds.model)
+    fitmodel = FitModel(func)
+    data = FitData(ds)
+
+    guess = list(func.par_fit.values())
+
+    odr = O.ODR(data, fitmodel, guess, job=2, maxit=maxit)
+    out = odr.run()
+    pars, errors = func.fill(out.beta, out.sd_beta)
+    ds.model.update_from_fit(((pars, errors), out.stopreason))
+    return out.stopreason
+
 def test1():
     bp = BatchParameters(name='test', par='amp')
     bp['LO1'].append(1,45.6)

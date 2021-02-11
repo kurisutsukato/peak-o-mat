@@ -28,21 +28,14 @@ from . import misc_ui
 from . import controls
 from . import menu
 
-class Module:
-    last_focus = None
-
-    # this means that the module will plot something
-    # it will steal the focus from any other module
-    need_attention = False
-
-#TODO: remove similiar code from XRCModule and BaseModule
-
-class BaseModule(misc_ui.WithMessage, Module):
+class BaseModule(misc_ui.WithMessage):
 
     def __init__(self, controller, view):
         self.visible = False
-        self._last_page = None
+        self.need_attention = False
         self.plotme = None
+        self._last_page = None
+
         self.parent_view = view
         self.parent_controller = controller
         self.project = controller.project
@@ -54,23 +47,13 @@ class BaseModule(misc_ui.WithMessage, Module):
         assert hasattr(self, 'title')
         misc_ui.WithMessage.__init__(self, self.view)
 
-        self.view.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
-        self.view.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClose)
-        pub.subscribe(self.OnSelectionChanged, (self.instid, 'selection','changed'))
+        self.parent_controller.view._mgr.Update()
+
+        pub.subscribe(self.OnSelectionChanged, (self.instid, 'selection', 'changed'))
         pub.subscribe(self.focus_changed, (self.instid, 'module', 'focuschanged'))
 
     def focus_changed(self, newfocus):
         pass
-
-    def OnClose(self, evt):
-        print('abstract method of BaseModule was called!!!', evt)
-
-    def OnEnter(self, evt):
-        if(self.view.HitTest(evt.Position) == wx.HT_WINDOW_INSIDE) and Module.last_focus != self:
-            if self.need_attention:
-                pub.sendMessage((self.instid,'module','focuschanged'),newfocus=self)
-                Module.last_focus = self
-            self.show()
 
     def OnSelectionChanged(self, plot, dataset):
         if self.visible:
@@ -80,16 +63,22 @@ class BaseModule(misc_ui.WithMessage, Module):
         pass
 
     def show(self, state=True):
-        #TODO: check which modules are visible on startup
+        # TODO: check which modules are visible on startup
+        print(self, 'show', state)
         self.visible = state
         self.focus_changed(self)
 
     def hide(self):
         self.show(False)
 
-class XRCModule(Module):
 
+class XRCModule(misc_ui.WithMessage):
     def __init__(self, module, controller, doc):
+        self.visible = False
+        self.need_attention = False
+        self.plotme = None
+        self._last_page = None
+
         if module is None:
             raise Exception("""
 A module's constructor must look like this:
@@ -103,30 +92,23 @@ class MyModule(module.Module):
         self.controller = controller
         self.project = controller.project
         self.doc = doc
-        self.plotme = None
-        self.visible = False
 
         assert hasattr(self, 'title')
 
-        self._last_page = None
-        self.visible = False
-
-        #self.notebook = controller.view.nb_modules
         module_dir = os.path.dirname(module)
         module = os.path.splitext(os.path.basename(module))[0]
 
-        if hasattr(sys,"frozen") and sys.frozen in ['windows_exe','console_exe']:
-            xrcfile = os.path.join(misc.frozen_base, 'xrc', module+'.xrc')
-        elif hasattr(sys,"frozen") and sys.platform == "darwin":
-            xrcfile = os.path.join(misc.darwin_base, 'xrc', module+'.xrc')
+        if hasattr(sys, "frozen") and sys.frozen in ['windows_exe', 'console_exe']:
+            xrcfile = os.path.join(misc.frozen_base, 'xrc', module + '.xrc')
+        elif hasattr(sys, "frozen") and sys.platform == "darwin":
+            xrcfile = os.path.join(misc.darwin_base, 'xrc', module + '.xrc')
         else:
-            xrcfile = os.path.join(module_dir, module+'.xrc')
+            xrcfile = os.path.join(module_dir, module + '.xrc')
 
         self.name = module
         self.xmlres = xrc.XmlResource(xrcfile)
 
         if self.xmlres is not None:
-            #self.panel = self.xmlres.LoadPanel(self.notebook, self.name)
             self.view = self.xmlres.LoadPanel(controller.view, self.name)
             self.view.Fit()
             self.view.SetMinSize(self.view.GetSize())
@@ -135,28 +117,25 @@ class MyModule(module.Module):
             controller.view._mgr.AddPane(self.view, aui.AuiPaneInfo().Float().
                                          Dockable(True).Caption(self.title).MinSize(self.view.GetSize()).
                                          Name(self.title).Hide())
-
             controller.view._mgr.Update()
+
             if self.view is None:
-                raise IOError('unable to load wx.Panel \'%s\' from %s'%(self.name,xrcfile))
-            print('registering module \'%s\''%(self.name))
-            #self.notebook.AddPage(self.panel, self.title, select=False)
-            #pub.subscribe(self.OnPageChanged, (self.instid, 'notebook','pagechanged'))
-            #menu.add_module(controller.view.menubar, self.title)
+                raise IOError('unable to load wx.Panel \'%s\' from %s' % (self.name, xrcfile))
+            print('registering module \'%s\'' % (self.name))
+
             controller.view.menu_factory.add_module(controller.view.menubar, self.title)
-            pub.subscribe(self.OnSelectionChanged, (self.instid, 'selection','changed'))
+            pub.subscribe(self.OnSelectionChanged, (self.instid, 'selection', 'changed'))
             pub.subscribe(self.focus_changed, (self.instid, 'module', 'focuschanged'))
 
-            controller.view.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnClose)
-            self.view.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
             wx.CallAfter(self.init)
         else:
-            raise IOError(xrcfile+' not found')
+            raise IOError(xrcfile + ' not found')
 
         self.view.Bind(wx.EVT_BUTTON, self.OnHelp)
 
-    def OnClose(self, evt):
-        print('abstract method of XRCModule was called!!!', evt)
+    def init(self):
+        pass
+        # should be overridden
 
     def __getattr__(self, name):
         if name.find('xrc_') == 0:
@@ -170,13 +149,6 @@ class MyModule(module.Module):
 
     def focus_changed(self, newfocus=None):
         pass
-
-    def OnEnter(self, evt):
-        if(self.view.HitTest(evt.Position) == wx.HT_WINDOW_INSIDE) and Module.last_focus != self:
-            if self.need_attention:
-                pub.sendMessage((self.instid,'module','focuschanged'),newfocus=self)
-                Module.last_focus = self
-            self.show()
 
     def message(self, msg, target=1, blink=False):
         event = misc_ui.ShoutEvent(-1, msg=msg, target=target, blink=blink, forever=False)
@@ -202,13 +174,38 @@ class MyModule(module.Module):
         pass
 
     def page_changed(self, me):
-        print('page_changed deprecated in module',self.title)
+        print('page_changed deprecated in module', self.title)
         pass
 
     def show(self, state=True):
+        print(self, 'show', state)
         self.visible = state
         self.focus_changed(self)
 
     def hide(self):
         self.show(False)
 
+
+if __name__ == '__main__':
+    class Frame(wx.Frame):
+        def __init__(self):
+            super(Frame, self).__init__(parent=None)
+
+            self.Bind(wx.EVT_LEFT_DOWN, self.OnClick)
+
+        def OnClick(self, evt):
+            print('base class evt handler')
+
+
+    class MyFrame(Frame):
+        def __init__(self):
+            super(MyFrame, self).__init__()
+
+        def OnClick(self, evt):
+            print('derived class evt handler')
+
+
+    a = wx.App()
+    f = MyFrame()
+    f.Show()
+    a.MainLoop()

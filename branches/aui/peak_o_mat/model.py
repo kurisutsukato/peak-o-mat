@@ -173,10 +173,13 @@ tokens: a space separated list of valid function symbols
         raise AttributeError('%s has no Attribute \'%s\''%(repr(self),attr))
 
     def __getitem__(self, item):
-        if type(item) in (int,slice):
+        if type(item) in (int, slice):
             return list.__getitem__(self, item)
         else:
-            return getattr(self,item)
+            try:
+                return getattr(self, item)
+            except AttributeError:
+                raise KeyError('TokenModel has no feature \'{}\''.format(item))
 
     def __eq__(self, other):
         if not hasattr(other, 'tokens'):

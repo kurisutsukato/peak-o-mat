@@ -181,8 +181,7 @@ class FitController(object):
 
             numpeaks = len([True for f in self.model if str(f) in ls.peak])
 
-            #_, yb = filters.bg_snip(dset.x, dset.y, 50)
-            y = dset.y #-yb
+            y = dset.y
 
             th = (y.max() - y.min())
             lower = th*0.05
@@ -190,7 +189,7 @@ class FitController(object):
             step = 0
 
             for n in range(10):
-                idx,_ = find_peaks(y, prominence=(lower, upper))
+                idx,res = find_peaks(y, prominence=(lower, upper), width=3)
 
                 if len(idx) > numpeaks:
                     if step == 0:
@@ -206,20 +205,20 @@ class FitController(object):
                     lower = lower-step
                 else:
                     break
-            #p,l,r = peak_prominences(y, idx)
+
+            amp = res['prominences']
+
+            widths = peak_widths(y, idx, rel_height=0.1)[0] * np.diff(dset.x).mean()
 
             if numpeaks == len(idx):
-                widths = peak_widths(y, idx, rel_height=0.1)
-
                 pos = np.take(dset.x, idx)
-                amp = np.take(y, idx)
 
                 n = 0
                 for f in self.model:
                     if str(f) in ls.peak:
                         f.pos.value = pos[n]
                         f.amp.value = amp[n]
-                        f.fwhm.value = widths[0][n]
+                        f.fwhm.value = widths[n]
                         n += 1
                     for k,v in f.items():
                         if not np.isfinite(v.value):
