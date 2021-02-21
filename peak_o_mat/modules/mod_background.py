@@ -46,6 +46,8 @@ class XRCModule(module.XRCModule):
         module.XRCModule.__init__(self, __file__, *args)
 
     def init(self):
+        self._has_attention = False
+
         self.page = 0
 
         self.xrc_sl_SNIP_iteration.Bind(wx.EVT_SLIDER, self.OnSliderSNIP)
@@ -98,14 +100,20 @@ class XRCModule(module.XRCModule):
                 pub.sendMessage((self.instid, 'updateplot'))
 
     def OnCheckFilterSNIP(self, evt):
+        self.obtain_focus()
+
         self.xrc_sl_SNIP_mavg.Enable(evt.IsChecked())
         self.update_background()
 
     def OnNBChanged(self, evt):
+        self.obtain_focus()
+
         self.page = evt.GetSelection()
         self.update_background()
 
     def OnBtn(self, evt):
+        self.obtain_focus()
+
         p, s = self.controller.selection
         if len(s) == 1:
             if self.xrc_chk_group.IsChecked():
@@ -136,15 +144,21 @@ class XRCModule(module.XRCModule):
         self.xrc_lab_ALQ_p.Label = onedigit(val)
 
     def OnSliderSNIP(self, evt):
+        self.obtain_focus()
         self.update_background()
 
     def OnSliderALQ(self, evt):
+        self.obtain_focus()
         self.update_values()
         self.update_background()
 
     def selection_changed(self):
         if self.visible:
             self.update_background()
+
+    def obtain_focus(self):
+        if not self._has_attention:
+            pub.sendMessage((self.instid, 'module', 'focuschanged'), newfocus=self.title)
 
     def focus_changed(self, newfocus=None):
         if newfocus == self.title:

@@ -1,10 +1,9 @@
-
 import wx
 import wx.aui as aui
 
-#import wx.lib.platebtn as platebtn
+# import wx.lib.platebtn as platebtn
 
-import  wx.lib.buttons  as  buttons
+import wx.lib.buttons  as  buttons
 from pubsub import pub
 from wx.lib import layoutf
 import wx.stc as stc
@@ -14,15 +13,16 @@ import string
 from . import misc_ui
 from . import images
 
+
 class MultipleChoice(wx.Dialog):
     def __init__(self, parent, title, choices):
-        super(MultipleChoice, self).__init__(parent, -1, title, size=(200,-1))
+        super(MultipleChoice, self).__init__(parent, -1, title, size=(200, -1))
 
         p = wx.Panel(self)
 
-        #wx.StaticText(self, -1, "This example uses the wxCheckListBox control.", (45, 15))
+        # wx.StaticText(self, -1, "This example uses the wxCheckListBox control.", (45, 15))
 
-        self.lb = wx.CheckListBox(p, -1, size=(120,-1), choices=choices+['Custom'])
+        self.lb = wx.CheckListBox(p, -1, size=(120, -1), choices=choices + ['Custom'])
         self.Bind(wx.EVT_CHECKLISTBOX, self.EvtCheckListBox, self.lb)
         self.lb.SetSelection(0)
 
@@ -32,11 +32,11 @@ class MultipleChoice(wx.Dialog):
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(wx.Window(p), 1, wx.EXPAND)
         hbox.Add(self.btn_ok, 0, wx.EXPAND)
-        hbox.Add(self.btn_cancel, 0, wx.EXPAND|wx.LEFT, 10)
+        hbox.Add(self.btn_cancel, 0, wx.EXPAND | wx.LEFT, 10)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(self.lb, 1, wx.EXPAND|wx.ALL,15)
-        vbox.Add(hbox, 0, wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT, 15)
+        vbox.Add(self.lb, 1, wx.EXPAND | wx.ALL, 15)
+        vbox.Add(hbox, 0, wx.EXPAND | wx.BOTTOM | wx.LEFT | wx.RIGHT, 15)
         p.SetSizer(vbox)
 
     def EvtCheckListBox(self, evt):
@@ -58,9 +58,10 @@ class MultipleChoice(wx.Dialog):
         self.lb.SetCheckedStrings(selections)
         self.selection = selections
 
+
 class ScrolledMessageDialog(wx.Dialog):
     def __init__(self, parent, msg, caption,
-                 pos=wx.DefaultPosition, size=(500,300),
+                 pos=wx.DefaultPosition, size=(500, 300),
                  style=wx.DEFAULT_DIALOG_STYLE):
         wx.Dialog.__init__(self, parent, -1, caption, pos, size, style)
         x, y = pos
@@ -69,14 +70,15 @@ class ScrolledMessageDialog(wx.Dialog):
 
         pt = wx.SystemSettings_GetFont(wx.SYS_SYSTEM_FONT).GetPointSize()
 
-        self.text = text = wx.TextCtrl(self, -1, '', 
+        self.text = text = wx.TextCtrl(self, -1, '',
                                        style=wx.TE_MULTILINE | wx.TE_READONLY)
-        self.text.SetDefaultStyle(wx.TextAttr(wx.BLACK, wx.WHITE, wx.Font(pt, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)))
+        self.text.SetDefaultStyle(wx.TextAttr(wx.BLACK, wx.WHITE, wx.Font(pt, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL,
+                                                                          wx.FONTWEIGHT_NORMAL)))
 
         self.text.WriteText(msg)
         ok = wx.Button(self, wx.ID_OK, "OK")
         ok.SetDefault()
-        lc = layoutf.Layoutf('t=t5#1;b=t5#2;l=l5#1;r=r5#1', (self,ok)) 
+        lc = layoutf.Layoutf('t=t5#1;b=t5#2;l=l5#1;r=r5#1', (self, ok))
         text.SetConstraints(lc)
 
         lc = layoutf.Layoutf('b=b5#1;x%w50#1;w!80;h*', (self,))
@@ -84,23 +86,24 @@ class ScrolledMessageDialog(wx.Dialog):
         self.SetAutoLayout(1)
         self.Layout()
 
+
 class Status(wx.StatusBar):
 
     def __init__(self, parent):
         wx.StatusBar.__init__(self, parent, -1)
 
         self.SetFieldsCount(2)
-        self.SetStatusWidths([-2,-5])
+        self.SetStatusWidths([-2, -5])
 
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.OnTime)
 
         parent.Bind(misc_ui.EVT_SHOUT, self.OnMessage)
-        
+
         self.counter = 0
         self.forever = False
         self.blink = False
-        
+
     def OnMessage(self, evt):
         """\
         error handler for a misc_ui.ShoutEvent type message
@@ -126,13 +129,13 @@ class Status(wx.StatusBar):
         else:
             self.shortmessage(evt.msg)
         evt.Skip()
-            
+
     def OnTime(self, evt):
         if self.blink:
             if self.counter < 7 or self.forever:
                 msg = self.GetStatusText(1)
                 self.SetStatusText('', 1)
-                wx.CallLater(150,self.message, 500, msg, self.forever)
+                wx.CallLater(150, self.message, 500, msg, self.forever)
                 self.counter += 1
             else:
                 self.timer.Stop()
@@ -144,11 +147,12 @@ class Status(wx.StatusBar):
 
     def shortmessage(self, msg):
         self.SetStatusText(msg, 0)
-            
+
     def message(self, time, msg, forever=False):
         self.forever = forever
         self.timer.Start(time, wx.TIMER_ONE_SHOT)
         self.SetStatusText(msg, 1)
+
 
 class HistTextCtrl(wx.ComboBox):
     def __init__(self, parent, id, value, **kwargs):
@@ -160,8 +164,9 @@ class HistTextCtrl(wx.ComboBox):
 
     def _get_last_op(self):
         return self._history[-1]
+
     last_op = property(_get_last_op)
-        
+
     def OnKey(self, evt):
         key = evt.KeyCode
         if key == wx.WXK_UP:
@@ -170,7 +175,7 @@ class HistTextCtrl(wx.ComboBox):
             self.History(back=False)
         else:
             evt.Skip()
-        
+
     def Store(self):
         if len(self._history) > 0:
             last = self._history[-1]
@@ -181,7 +186,7 @@ class HistTextCtrl(wx.ComboBox):
         self._cycle = len(self._history)
         self.Insert(self.GetValue(), 0)
         self.SetValue('')
-        
+
     def History(self, back=True):
         if self._cycle is None:
             return
@@ -197,6 +202,7 @@ class HistTextCtrl(wx.ComboBox):
                 self._cycle = 0
         self.SetValue(self._history[self._cycle])
 
+
 class TGButton(buttons.GenBitmapToggleButton):
     def InitColours(self):
         """
@@ -206,39 +212,40 @@ class TGButton(buttons.GenBitmapToggleButton):
 
         faceClr = self.GetBackgroundColour()
         r, g, b, a = faceClr
-        fr, fg, fb = min(255,r-60), min(255,g-60), min(255,b+32)
+        fr, fg, fb = min(255, r - 60), min(255, g - 60), min(255, b + 32)
         self.faceDnClr = wx.Colour(fr, fg, fb)
-        sr, sg, sb = max(0,r-32), max(0,g-32), max(0,b-32)
-        self.shadowPenClr = wx.Colour(sr,sg,sb)
-        hr, hg, hb = min(255,r+64), min(255,g+64), min(255,b+64)
-        self.highlightPenClr = wx.Colour(hr,hg,hb)
+        sr, sg, sb = max(0, r - 32), max(0, g - 32), max(0, b - 32)
+        self.shadowPenClr = wx.Colour(sr, sg, sb)
+        hr, hg, hb = min(255, r + 64), min(255, g + 64), min(255, b + 64)
+        self.highlightPenClr = wx.Colour(hr, hg, hb)
         self.focusClr = wx.Colour(hr, hg, hb)
+
 
 class Toolbar(misc_ui.WithMessage, wx.Panel):
     tbdata = [
-        ['logx.png','btn_logx', 'toggle Xlog/lin scale', 1, False],
-        ['logy.png','btn_logy', 'toggle Ylog/lin scale', 1, False],
-        ['linestyle.png','btn_style', 'toggle line/dot linestyle', 1, False],
-        ['peaks.png','btn_peaks', 'toggle show single peaks', 1, False],
-        ['eraser.png','btn_erase', 'remove bad data points', 2, True],
-        ['hand.png','btn_drag', 'drag visible region', 2, True],
-        ['zoomxy.png','btn_zoom', 'zoom to rectangular region', 2, True],
-        ['auto.png','btn_auto', 'autoscale', 0, False],
-        ['scalex.png','btn_autox', 'autoscale x', 0, False],
-        ['scaley.png','btn_autoy', 'autoscale y', 0, False],
-        ['auto2fit.png','btn_auto2fit', 'autoscale to fit region', 0, False],
+        ['logx.png', 'btn_logx', 'toggle Xlog/lin scale', 1, False],
+        ['logy.png', 'btn_logy', 'toggle Ylog/lin scale', 1, False],
+        ['linestyle.png', 'btn_style', 'toggle line/dot linestyle', 1, False],
+        ['peaks.png', 'btn_peaks', 'toggle show single peaks', 1, False],
+        ['eraser.png', 'btn_erase', 'remove bad data points', 2, True],
+        ['hand.png', 'btn_drag', 'drag visible region', 2, True],
+        ['zoomxy.png', 'btn_zoom', 'zoom to rectangular region', 2, True],
+        ['auto.png', 'btn_auto', 'autoscale', 0, False],
+        ['scalex.png', 'btn_autox', 'autoscale x', 0, False],
+        ['scaley.png', 'btn_autoy', 'autoscale y', 0, False],
+        ['auto2fit.png', 'btn_auto2fit', 'autoscale to fit region', 0, False],
         ['fast.png', 'btn_fast', 'toggle fast display', 1, False],
-        ]
+    ]
 
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, -1)
         misc_ui.WithMessage.__init__(self)
-        
+
         self.action = []
-        
+
         sizer = wx.BoxSizer(wx.VERTICAL)
-        
-        for image,name,help,btn,action in self.tbdata:
+
+        for image, name, help, btn, action in self.tbdata:
             bmp_sel = None
             if type(image) == tuple:
                 bmp = images.get_bmp(image[0])
@@ -246,21 +253,21 @@ class Toolbar(misc_ui.WithMessage, wx.Panel):
             else:
                 bmp = images.get_bmp(image)
 
-            if btn in [1,2]:
-                btn = TGButton(self, -1, bmp, name=name)#, style=wx.BORDER_NONE)
+            if btn in [1, 2]:
+                btn = TGButton(self, -1, bmp, name=name)  # , style=wx.BORDER_NONE)
                 btn.SetBezelWidth(0)
                 btn.SetInitialSize()
-                #btn.SetBackgroundColour(wx.Colour(100,120,150))
+                # btn.SetBackgroundColour(wx.Colour(100,120,150))
                 if bmp_sel is not None:
-                    #btn.SetBitmapSelected(bmp_sel)
+                    # btn.SetBitmapSelected(bmp_sel)
                     pass
-                #btn.SetBitmap(bmp)
+                # btn.SetBitmap(bmp)
             elif btn == 0:
-                btn = buttons.GenBitmapButton(self, -1, bmp, name=name)#, style=wx.BORDER_NONE)
+                btn = buttons.GenBitmapButton(self, -1, bmp, name=name)  # , style=wx.BORDER_NONE)
                 btn.SetBezelWidth(0)
                 btn.SetInitialSize()
-                #btn.SetBitmap(bmp)
-            #btn.SetMinSize((20,20))
+                # btn.SetBitmap(bmp)
+            # btn.SetMinSize((20,20))
             if action:
                 self.ActionButton(btn)
             btn.SetToolTip(wx.ToolTip(help))
@@ -269,34 +276,34 @@ class Toolbar(misc_ui.WithMessage, wx.Panel):
         self.SetSizer(sizer)
         self.Fit()
         self.SetMinSize(self.GetSize())
-        #self.SetMinSize((20,-1))
 
-        pub.subscribe(self.OnNewMode, (self.instid,'canvas','newmode'))
+        pub.subscribe(self.OnNewMode, (self.instid, 'canvas', 'newmode'))
 
     def _set_silent(self, state):
         self.SetEvtHandlerEnabled(not state)
+
     silent = property(fset=_set_silent)
 
     def OnNewMode(self, mode):
         self.silent = True
-        btns = ['zoom','drag','erase']
+        btns = ['zoom', 'drag', 'erase']
         if mode in btns:
             btn = btns.pop(btns.index(mode))
-            btn = self.FindWindowByName('btn_'+btn)
+            btn = self.FindWindowByName('btn_' + btn)
             btn.SetValue(True)
         for b in btns:
-            b = self.FindWindowByName('btn_'+b)
+            b = self.FindWindowByName('btn_' + b)
             b.SetValue(False)
         self.silent = False
-        
+
     def Enable(self, state=True):
         for child in self.GetChildren():
             child.Enable(state)
         wx.Panel.Enable(self, state)
-        
+
     def Disable(self):
         self.Enable(False)
-        
+
     def ActionButton(self, btn):
         self.action.append(btn)
         btn.Bind(wx.EVT_BUTTON, self.OnActionButton)
@@ -312,10 +319,12 @@ class Toolbar(misc_ui.WithMessage, wx.Panel):
                     btn.SetValue(False)
         self.silent = False
 
+
 ALPHA_ONLY = 1
 INT_ONLY = 2
 FLOAT_ONLY = 3
 DIGIT_ONLY = 4
+
 
 class InputValidator(wx.Validator):
     def __init__(self, flag=None, pyVar=None):
@@ -323,7 +332,7 @@ class InputValidator(wx.Validator):
         self.flag = flag
         self.Bind(wx.EVT_CHAR, self.OnChar)
 
-        #self.Bind(wx.EVT_TEXT, self.OnText)
+        # self.Bind(wx.EVT_TEXT, self.OnText)
 
     def OnText(self, evt):
         evt.Skip()
@@ -369,17 +378,17 @@ class InputValidator(wx.Validator):
         if self.flag == ALPHA_ONLY and chr(key) in string.letters:
             event.Skip()
             return
-        if self.flag == INT_ONLY and chr(key) in string.digits+'-+':
+        if self.flag == INT_ONLY and chr(key) in string.digits + '-+':
             event.Skip()
             return
         if self.flag == DIGIT_ONLY and chr(key) in string.digits:
             event.Skip()
             return
-        if self.flag == FLOAT_ONLY and chr(key) in string.digits+'.-+e':
+        if self.flag == FLOAT_ONLY and chr(key) in string.digits + '.-+e':
             event.Skip()
             return
 
-        #if not wx.Validator_IsSilent():
+        # if not wx.Validator_IsSilent():
         #    wx.Bell()
 
         # Returning without calling even.Skip eats the event before it
@@ -392,8 +401,10 @@ class InputValidator(wx.Validator):
     def TransferFromWindow(self):
         return True
 
+
 import re
 import types
+
 
 class FormatValidator(wx.Validator):
     def __init__(self, expr, pyVar=None):
@@ -440,35 +451,37 @@ class FormatValidator(wx.Validator):
     def TransferFromWindow(self):
         return True
 
-import  keyword
 
-import  wx
-import  wx.stc  as  stc
+import keyword
+
+import wx
+import wx.stc  as  stc
 
 if wx.Platform == '__WXMSW__':
-    faces = { 'times': 'Times New Roman',
-              'mono' : 'Courier New',
-              'helv' : 'Arial',
-              'other': 'Comic Sans MS',
-              'size' : 10,
-              'size2': 8,
+    faces = {'times': 'Times New Roman',
+             'mono': 'Courier New',
+             'helv': 'Arial',
+             'other': 'Comic Sans MS',
+             'size': 10,
+             'size2': 8,
              }
 elif wx.Platform == '__WXMAC__':
-    faces = { 'times': 'Times New Roman',
-              'mono' : 'Monaco',
-              'helv' : 'Arial',
-              'other': 'Comic Sans MS',
-              'size' : 11,
-              'size2': 10,
+    faces = {'times': 'Times New Roman',
+             'mono': 'Monaco',
+             'helv': 'Arial',
+             'other': 'Comic Sans MS',
+             'size': 11,
+             'size2': 10,
              }
 else:
-    faces = { 'times': 'Times',
-              'mono' : 'DejaVuSansMono',
-              'helv' : 'Helvetica',
-              'other': 'new century schoolbook',
-              'size' : 11,
-              'size2': 10,
+    faces = {'times': 'Times',
+             'mono': 'DejaVuSansMono',
+             'helv': 'Helvetica',
+             'other': 'new century schoolbook',
+             'size': 11,
+             'size2': 10,
              }
+
 
 class PythonSTC(stc.StyledTextCtrl):
     def __init__(self, parent, ID,
@@ -484,7 +497,7 @@ class PythonSTC(stc.StyledTextCtrl):
 
         self.SetProperty("fold", "1")
         self.SetProperty("tab.timmy.whinge.level", "1")
-        self.SetMargins(0,0)
+        self.SetMargins(0, 0)
 
         self.SetViewWhiteSpace(False)
 
@@ -503,15 +516,15 @@ class PythonSTC(stc.StyledTextCtrl):
         self.SetTabWidth(1)
 
         # Global default styles for all languages
-        self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     "face:%(mono)s,size:%(size)d" % faces)
+        self.StyleSetSpec(stc.STC_STYLE_DEFAULT, "face:%(mono)s,size:%(size)d" % faces)
         self.StyleClearAll()  # Reset all to be like the default
 
         # Global default styles for all languages
-        self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     "face:%(mono)s,size:%(size)d" % faces)
-        self.StyleSetSpec(stc.STC_STYLE_LINENUMBER,  "back:#C0C0C0,face:%(mono)s,size:%(size2)d" % faces)
+        self.StyleSetSpec(stc.STC_STYLE_DEFAULT, "face:%(mono)s,size:%(size)d" % faces)
+        self.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "back:#C0C0C0,face:%(mono)s,size:%(size2)d" % faces)
         self.StyleSetSpec(stc.STC_STYLE_CONTROLCHAR, "face:%(other)s" % faces)
-        self.StyleSetSpec(stc.STC_STYLE_BRACELIGHT,  "fore:#0000FF,back:#DDFFDD,bold")
-        self.StyleSetSpec(stc.STC_STYLE_BRACEBAD,    "fore:#000000,back:#FFAAAA,bold")
+        self.StyleSetSpec(stc.STC_STYLE_BRACELIGHT, "fore:#0000FF,back:#DDFFDD,bold")
+        self.StyleSetSpec(stc.STC_STYLE_BRACEBAD, "fore:#000000,back:#FFAAAA,bold")
 
         # Python styles
         # Default
@@ -551,7 +564,6 @@ class PythonSTC(stc.StyledTextCtrl):
         self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
         self.SetMarginWidth(1, 25)
 
-
     def OnKeyPressed(self, event):
         if self.CallTipActive():
             self.CallTipCancel()
@@ -588,16 +600,18 @@ class PythonSTC(stc.StyledTextCtrl):
         if braceAtCaret >= 0:
             braceOpposite = self.BraceMatch(braceAtCaret)
 
-        if braceAtCaret != -1  and braceOpposite == -1:
+        if braceAtCaret != -1 and braceOpposite == -1:
             self.BraceBadLight(braceAtCaret)
         else:
             self.BraceHighlight(braceAtCaret, braceOpposite)
-            #pt = self.PointFromPosition(braceOpposite)
-            #self.Refresh(True, wxRect(pt.x, pt.y, 5,5))
-            #print pt
-            #self.Refresh(False)
+            # pt = self.PointFromPosition(braceOpposite)
+            # self.Refresh(True, wxRect(pt.x, pt.y, 5,5))
+            # print pt
+            # self.Refresh(False)
+
 
 import wx.dataview as dv
+
 
 class ListModel(dv.DataViewIndexListModel):
     def __init__(self, data):
@@ -607,6 +621,7 @@ class ListModel(dv.DataViewIndexListModel):
     @property
     def data(self):
         return self._data
+
     @data.setter
     def data(self, data):
         self._data = data
@@ -615,8 +630,8 @@ class ListModel(dv.DataViewIndexListModel):
     def update(self, obj, value):
         idx = self._data.index(obj)
         self._data[idx] = value
-        #TODO: next line releases the plot references, obj is a multiplotmodel
-        #obj.release()
+        # TODO: next line releases the plot references, obj is a multiplotmodel
+        # obj.release()
         print('update mpm, releasing original', obj)
         del obj
         self.Cleared()
@@ -639,6 +654,7 @@ class ListModel(dv.DataViewIndexListModel):
     def get_selected(self, dataviewitem):
         return self.data[self.GetRow(dataviewitem)]
 
+
 class FigureListController:
     def __init__(self, parent_view, data):
         self.parent_view = parent_view
@@ -646,7 +662,7 @@ class FigureListController:
 
         self.create_ui()
 
-        pub.subscribe(self.refresh_view, (self.view.instid, 'figurelist','needsupdate'))
+        pub.subscribe(self.refresh_view, (self.view.instid, 'figurelist', 'needsupdate'))
 
     def refresh_view(self):
         print('refresh figure list')
@@ -655,40 +671,41 @@ class FigureListController:
     def create_ui(self):
         self.view = FigureListCtrl(self.parent_view, self.model, self)
         self.parent_view._mgr.AddPane(self.view, aui.AuiPaneInfo().
-                        TopDockable(False).BottomDockable(False).
-                        Name("flc").Caption("Figures").Right().
-                        Position(1).CloseButton(False).MinSize((150,100)).
-                        FloatingSize(wx.Size(250, 300)).Layer(1))
+                                      TopDockable(False).BottomDockable(False).
+                                      Name("flc").Caption("Figures").Right().
+                                      Position(1).CloseButton(False).MinSize((150, 100)).
+                                      FloatingSize(wx.Size(250, 300)).Layer(1))
         self.parent_view._mgr.Update()
-        #self.parent_view.pan_tree.GetSizer().Add(self.view,0,wx.EXPAND)
-        #self.parent_view.pan_tree.Layout()
+        # self.parent_view.pan_tree.GetSizer().Add(self.view,0,wx.EXPAND)
+        # self.parent_view.pan_tree.Layout()
 
 
 class FigureListCtrl(misc_ui.WithMessage, wx.Panel):
     def __init__(self, parent, model, controller):
-        wx.Panel.__init__(self, parent, size=(-1,150))
+        wx.Panel.__init__(self, parent, size=(-1, 150))
         misc_ui.WithMessage.__init__(self)
-        self.model = model # ugly: this should be refe renced here
+        self.model = model  # ugly: this should be refe renced here
 
         self.controller = controller
 
-        self.lst = dv.DataViewCtrl(self,style=dv.DV_NO_HEADER)
+        self.lst = dv.DataViewCtrl(self, style=dv.DV_NO_HEADER)
 
         self.lst.AssociateModel(self.model)
 
-        self.lst.AppendTextColumn("Figure", 0, width=200)#, mode=dv.DATAVIEW_CELL_EDITABLE|dv.DATAVIEW_CELL_ACTIVATABLE)
+        self.lst.AppendTextColumn("Figure", 0,
+                                  width=200)  # , mode=dv.DATAVIEW_CELL_EDITABLE|dv.DATAVIEW_CELL_ACTIVATABLE)
 
         self.btn_fig_create = wx.Button(self, label='Create', style=wx.BU_EXACTFIT)
-        #self.btn_fig_create.Disable()
+        # self.btn_fig_create.Disable()
         self.btn_fig_del = wx.Button(self, label='Delete', style=wx.BU_EXACTFIT)
         self.btn_fig_clone = wx.Button(self, label='Clone', style=wx.BU_EXACTFIT)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(self.lst, 1, wx.EXPAND)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(self.btn_fig_create, 0, wx.EXPAND|wx.ALL, 1)
-        hbox.Add(self.btn_fig_del, 0, wx.EXPAND|wx.ALL, 1)
-        hbox.Add(self.btn_fig_clone, 0, wx.EXPAND|wx.ALL, 1)
+        hbox.Add(self.btn_fig_create, 0, wx.EXPAND | wx.ALL, 1)
+        hbox.Add(self.btn_fig_del, 0, wx.EXPAND | wx.ALL, 1)
+        hbox.Add(self.btn_fig_clone, 0, wx.EXPAND | wx.ALL, 1)
         vbox.Add(hbox, 0, wx.EXPAND)
         self.SetSizer(vbox)
 
@@ -698,8 +715,8 @@ class FigureListCtrl(misc_ui.WithMessage, wx.Panel):
         self.btn_fig_clone.Bind(wx.EVT_BUTTON, self.OnCloneFigure)
         self.Bind(wx.EVT_IDLE, self.OnIdle)
 
-        pub.subscribe(self.OnFigureClose, (self.instid, 'figure','discard'))
-        pub.subscribe(self.OnFigureClose, (self.instid, 'figure','save'))
+        pub.subscribe(self.OnFigureClose, (self.instid, 'figure', 'discard'))
+        pub.subscribe(self.OnFigureClose, (self.instid, 'figure', 'save'))
 
         self.set_tooltips()
 
@@ -718,10 +735,10 @@ class FigureListCtrl(misc_ui.WithMessage, wx.Panel):
     def OnCloneFigure(self, evt):
         if self.lst.HasSelection():
             sel = self.model.get_selected((self.lst.GetSelection()))
-            pub.sendMessage((self.instid, 'figurelist','clone'), msg=sel)
+            pub.sendMessage((self.instid, 'figurelist', 'clone'), msg=sel)
 
     def OnCreateFigure(self, evt):
-        pub.sendMessage((self.instid, 'figurelist','create'), msg=None)
+        pub.sendMessage((self.instid, 'figurelist', 'create'), msg=None)
 
     def OnShow(self, evt):
         try:
@@ -729,19 +746,19 @@ class FigureListCtrl(misc_ui.WithMessage, wx.Panel):
         except IndexError:
             return
 
-        pub.sendMessage((self.instid, 'figurelist','show'), msg=sel)
+        pub.sendMessage((self.instid, 'figurelist', 'show'), msg=sel)
         evt.Skip()
         self.Enable(False)
 
     def OnDeleteFigure(self, event):
         if self.lst.HasSelection():
             sel = self.model.get_selected((self.lst.GetSelection()))
-            pub.sendMessage((self.instid, 'figurelist','del'), msg=sel)
+            pub.sendMessage((self.instid, 'figurelist', 'del'), msg=sel)
 
 
 if __name__ == '__main__':
     app = wx.App()
-    dlg = MultipleChoice(None, 'Select elements', ['eins','zwei','drei'])
+    dlg = MultipleChoice(None, 'Select elements', ['eins', 'zwei', 'drei'])
     dlg.ShowModal()
     print(dlg.selection)
     dlg.Destroy()

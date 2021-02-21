@@ -31,8 +31,9 @@ from peak_o_mat import module,spec,controls,misc_ui
 
 from peak_o_mat.symbols import pom_globals
 
-Mtk = lambda n, t, k: t**(k)*(1-t)**(n-k)*nOk(n,k)
-bezierM = lambda ts,l: np.matrix([[Mtk(l-1,t,k) for k in range(l)] for t in ts])
+#Mtk = lambda n, t, k: t**(k)*(1-t)**(n-k)*nOk(n,k)
+Mtk = lambda n, t, k: np.power(t,k)*np.power(1-t,n-k)*nOk(n,k)
+bezierM = lambda ts,l: np.array([[Mtk(l-1,t,k) for k in range(l)] for t in ts])
 
 
 class DummyEvent:
@@ -49,11 +50,12 @@ class XRCModule(module.XRCModule):
     def __init__(self, *args):
         module.XRCModule.__init__(self, __file__, *args)
         self.plot = None
+        self.has_attention = False
 
     def init(self):
         self.xrc_btn_bez_load.Disable()
         self.xrc_btn_bez_load.Bind(wx.EVT_BUTTON, self.OnAnchor)
-        self.xrc_btn_place_handles.Bind(wx.EVT_TOGGLEBUTTON, self.OnPlaceHandles)
+        self.xrc_btn_place_handles.Bind(wx.EVT_TOGGLEBUTTON, self.OnBtnPlaceHandles)
         pub.subscribe(self.OnCanvasMode, ('canvas','newmode'))
 
         self.xrc_btn_eq_load.Bind(wx.EVT_BUTTON, self.OnLoad)
@@ -99,12 +101,17 @@ class XRCModule(module.XRCModule):
             self.xrc_cb_bez_pts.Value = True
             self.xrc_cb_bez_fromset.Enable(False)
 
+    def obtain_focus(self):
+        if not self._has_attention:
+            pub.sendMessage((self.instid, 'module', 'focuschanged'), newfocus=self.title)
 
     def focus_changed(self, newfocus=None):
-        if newfocus != self:
+        if newfocus != self.title:
             self.plotme = None
             self.leave()
             pub.sendMessage((self.instid, 'updateplot'))
+        else:
+            self._has_attention = True
 
     def selection_changed(self):
         try:
@@ -135,7 +142,9 @@ class XRCModule(module.XRCModule):
         if mode != 'handle':
             self.xrc_btn_place_handles.SetValue(False)
 
-    def OnPlaceHandles(self, evt):
+    def OnBtnPlaceHandles(self, evt):
+        self.obtain_focus()
+
         if self.xrc_btn_place_handles.GetValue():
             self.controller.view.canvas.set_handles(self.handles)
             self.controller.view.canvas.state.set('handle','xy')
@@ -145,7 +154,7 @@ class XRCModule(module.XRCModule):
             self.controller.view.canvas.set_handles(self.handles)
             self.controller.view.canvas.state.set(None)
             self.controller.update_plot()
-            
+
     def OnHandles(self, evt):
         handles = evt.handles
         if handles.ndim < 2:
@@ -153,8 +162,8 @@ class XRCModule(module.XRCModule):
         if handles.ndim == 2 and len(handles) > 1:
             v = np.linspace(0,1,20)
             M = bezierM(v, len(handles))
-            points = M*handles
-            evx, evy = [np.ravel(q) for q in points.T]
+            points = M@handles
+            evx, evy = points.T
             self.controller.plot(floating=spec.Spec(evx,evy,'{:d} pt. bezier'.format(len(handles))))
             self.xrc_btn_bez_load.Enable()
 
@@ -180,22 +189,21 @@ class XRCModule(module.XRCModule):
         self.handles = handles
 
     def OnAnchor(self, evt):
+        self.obtain_focus()
         pts = int(self.xrc_spn_bez_pts.GetValue())
 
         if self.xrc_cb_bez_pts.Value:
-            v = np.linspace(0,1,pts)
+            v = np.linspace(0.0,1.0,pts)
         elif self.xrc_cb_bez_fromset.Value:
             s = self.controller.active_plot[self.xrc_cmb_bez_fromset.GetSelection()]
             #v = self.controller.active_plot[s].x
-            v = np.linspace(0,1,len(s))
+            v = np.linspace(0.0,1.0,len(s))
 
         M = bezierM(v, len(self.handles))
-        points = M*self.handles
-        x, y = [np.ravel(q) for q in points.T]
-
+        points = M@self.handles
+        x, y = points.T
         if self.xrc_cb_bez_pts.Value:
             set_bez = spec.Spec(x,y,'{:d} pt. Bezi\u00E9r'.format(len(self.handles)))
-
         elif self.xrc_cb_bez_fromset.Value:
             tmp = spec.Spec(x,y,'tmp')
             tmp = s*0+tmp
@@ -210,6 +218,8 @@ class XRCModule(module.XRCModule):
         self.controller.update_plot()
         
     def OnLoad(self, evt):
+        self.obtain_focus()
+
         mode = int(self.xrc_cb_eq_fromset.GetValue())
 
         if mode == 0 and not self.xrc_pan_eq.Validate():
@@ -236,6 +246,3 @@ class XRCModule(module.XRCModule):
         else:
             self.controller.add_set(spec.Spec(x,y,eq))
             self.controller.update_plot()
-            
-        
-        

@@ -14,6 +14,7 @@
 ##     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import numpy as np
+
 np.seterr(over='ignore')
 
 import wx
@@ -61,13 +62,15 @@ from .appdata import configdir, logfile
 if hasattr(sys, 'frozen') and sys.frozen == 'windows_exe':
     # in case peak-o-mat has been compiled with py2exe
     from .modules import mod_op, mod_eval, mod_setinfo, mod_calib, \
-                        mod_shell, mod_ruby, mod_map, mod_background
+        mod_shell, mod_ruby, mod_map, mod_background
+
 
 def split(path):
     rs = os.path.normpath(path).split(os.path.sep)
     if rs[0] == '':
         rs.pop(0)
     return rs
+
 
 class State:
     active_plot = None
@@ -77,6 +80,7 @@ class State:
     show_peaks = False
     fast_display = False
 
+
 class ModulesContainer(dict):
     def append(self, item):
         self[item.title] = item
@@ -85,14 +89,15 @@ class ModulesContainer(dict):
         for m in self.values():
             try:
                 if m.plotme is not None:
-                    yield(m.plotme)
+                    yield (m.plotme)
             except AttributeError:
                 pass
+
 
 class Controller(object):
     def __init__(self, proj, view, interactor, lpj_path):
         self.datagrid = None
-        #self.app_path = os.path.abspath(sys.argv[0])
+        # self.app_path = os.path.abspath(sys.argv[0])
 
         self.project = proj
         self.view = view
@@ -118,12 +123,13 @@ class Controller(object):
             fitview = fitpanel.FitPanel(self.view, self.view.canvas)
 
             self.view._mgr.AddPane(fitview, aui.AuiPaneInfo().Name('fit').
-                              Caption('Fit').
-                              Bottom().MinSize(350, 250).
-                              CloseButton(False).MaximizeButton(False))
+                                   Caption('Fit').
+                                   Bottom().MinSize(350, 250).
+                                   CloseButton(False).MaximizeButton(False))
             self.view._mgr.Update()
 
-            self.fit_controller = fitcontroller.FitController(self.selection_callback, fitview, fitinteractor.FitInteractor())
+            self.fit_controller = fitcontroller.FitController(self.selection_callback, fitview,
+                                                              fitinteractor.FitInteractor())
             self.codeeditor = codeeditor.new(self, view)
 
             self.datagrid = datagrid.create(self, self.view)
@@ -172,23 +178,24 @@ class Controller(object):
 
     def save_filehistory(self):
         hist = self.view.get_filehistory()
-            
+
         recent = os.path.join(configdir(), 'filehistory')
         if not os.path.exists(configdir()):
             try:
                 os.mkdir(configdir())
-            except: return
+            except:
+                return
 
         f = codecs.open(recent, 'w', 'utf-8')
         f.write(os.linesep.join(hist))
         f.close()
-        
+
     def _set_modified(self, arg):
         title = self.view.title
         if title[-1] == '*':
             title = title[:-1]
         if arg:
-            self.view.title = title+'*'
+            self.view.title = title + '*'
         else:
             self.view.title = title
         self._modified = arg
@@ -196,10 +203,11 @@ class Controller(object):
 
     def _get_modified(self):
         return self._modified
+
     project_modified = property(_get_modified, _set_modified)
-        
+
     def new_project(self, path=None):
-        print('new_project',path)
+        print('new_project', path)
         new_controller(path)
 
     def open_project(self, path):
@@ -221,10 +229,10 @@ class Controller(object):
                 self.save_filehistory()
             self.project_modified = False
             misc.set_cwd(path)
-            #self.selection = (0,None) # needed because if loading a project on the ecommand line, nothing will be selected
-            self.view.tree.selection = 0,0
+            # self.selection = (0,None) # needed because if loading a project on the ecommand line, nothing will be selected
+            self.view.tree.selection = 0, 0
 
-            pub.sendMessage((self.view.instid, 'figurelist','needsupdate'))
+            pub.sendMessage((self.view.instid, 'figurelist', 'needsupdate'))
 
     def open_recent(self, num):
         path = self.view.filehistory.GetHistoryFile(num)
@@ -243,19 +251,19 @@ class Controller(object):
             self.view.error_dialog(msg)
         else:
             self.view.SetTitle(self.project.name)
-            self.view.msg_dialog('Project saved as \'%s\''%(self.project.path))
+            self.view.msg_dialog('Project saved as \'%s\'' % (self.project.path))
             self.view.filehistory.AddFileToHistory(self.project.path)
             self.save_filehistory()
         self.project_modified = False
         # wozu war denn das hier??
-        #self.view.tree.build(self.project)
+        # self.view.tree.build(self.project)
         if path is not None:
             misc.set_cwd(path)
-        
+
     def notes_close(self):
         self.view.frame_annotations.Show(False)
         self.view.check_menu('Notepad', False)
-        
+
     def close(self):
         if not self.project_modified or self.view.close_project_dialog(self.project.name):
             perspective = self.view._mgr.SavePerspective()
@@ -286,8 +294,8 @@ class Controller(object):
             path = [path]
         for p in path:
             try:
-                _,ext = os.path.splitext(p)
-                labels,data = fio.loaders.get(ext)(p)
+                _, ext = os.path.splitext(p)
+                labels, data = fio.loaders.get(ext)(p)
             except (misc.PomError) as e:
                 self.view.msg_dialog('{}\n\n{}'.format(p, e.value))
                 continue
@@ -305,7 +313,7 @@ class Controller(object):
                                 self._multicolumn_config = True
                         else:
                             continue
-                        order = {1:'xyxy',0:'xyyy',2:custom}.get(ordering)
+                        order = {1: 'xyxy', 0: 'xyyy', 2: custom}.get(ordering)
                 else:
                     plotname = None
                     order = 'xyyy'
@@ -323,11 +331,11 @@ class Controller(object):
         misc.set_cwd(p)
 
         if added_plot:
-            #self.update_tree()
-            self.view.tree.selection = (plot,0)
+            # self.update_tree()
+            self.view.tree.selection = (plot, 0)
 
     def show_export_dialog(self):
-        if self.active_set is None: # multiple selections
+        if self.active_set is None:  # multiple selections
             res = self.view.export_dialog_multi(misc.cwd())
             if res is not None:
                 path, ext, only_vis, overwrite = res
@@ -336,12 +344,12 @@ class Controller(object):
             path = self.view.export_dialog_single(misc.cwd(), self.active_set.name)
             if path is not None:
                 self.export_data(path)
-                
+
     def export_data(self, path, options=False):
         nall = 0
         nwritten = 0
         if self.active_set is None:
-            p,s = self.selection
+            p, s = self.selection
             sets = iter([self.project[p][q] for q in s])
             ext, only_vis, overwrite = options
             for dataset in sets:
@@ -351,30 +359,30 @@ class Controller(object):
                 name = dataset.name
                 if ext is not None:
                     if name.find('.') == -1:
-                        name = name+'.'+ext
+                        name = name + '.' + ext
                     else:
-                        name = re.sub(r'\.(\w*$)', '.'+ext, name)
-                nwritten += int(dataset.write(os.path.join(path, name),overwrite))
+                        name = re.sub(r'\.(\w*$)', '.' + ext, name)
+                nwritten += int(dataset.write(os.path.join(path, name), overwrite))
             misc.set_cwd(path)
-            self.message('saved %d of %d set(s)'%(nwritten,nall))
+            self.message('saved %d of %d set(s)' % (nwritten, nall))
         else:
             if self.active_set.write(path):
                 misc.set_cwd(path)
-                self.message('saved as %s'%(path))
-        
+                self.message('saved as %s' % (path))
+
     def reload_modules(self):
         self.view.silent = True
         for n in range(self.view.nb_modules.GetPageCount())[::-1]:
-            if self.view.nb_modules.GetPageText(n) not in ['Fit','Annotations']:
+            if self.view.nb_modules.GetPageText(n) not in ['Fit', 'Annotations']:
                 p = self.view.nb_modules.GetPage(n)
                 self.view.nb_modules.DeletePage(n)
         self.load_modules()
         self.view.silent = False
-        
+
     def load_modules(self):
         from . import modules
         print('loading system modules')
-        if hasattr(sys,"frozen") and sys.frozen == "windows_exe":
+        if hasattr(sys, "frozen") and sys.frozen == "windows_exe":
             # in case peak-o-mat has been compiled with py2exe
             for name in modules.__all__:
                 try:
@@ -393,7 +401,7 @@ class Controller(object):
         else:
             for mod in modules.__all__:
                 try:
-                    mod = import_module('.'+mod,'peak_o_mat.modules')
+                    mod = import_module('.' + mod, 'peak_o_mat.modules')
                 except Exception as _e:
                     print('unable to load module \'{}\''.format(mod))
                     logging.error(logging.traceback.format_exc())
@@ -406,16 +414,16 @@ class Controller(object):
                             elif hasattr(obj, '__base__') and obj.__base__ == module.BaseModule:
                                 m = obj(self, self.view)
                                 self._modules.append(m)
-        #user modules 
-        moddir = os.path.join(configdir(),'modules')
-        print('loading user modules from',moddir)
-        mods = [os.path.basename(x).split('.')[0] for x in glob.glob(os.path.join(moddir,'*.py'))]
+        # user modules
+        moddir = os.path.join(configdir(), 'modules')
+        print('loading user modules from', moddir)
+        mods = [os.path.basename(x).split('.')[0] for x in glob.glob(os.path.join(moddir, '*.py'))]
         sys.path.append(moddir)
 
         for name in mods:
             try:
-                #f,fname,descr = imp.find_module(name)
-                #mod = imp.load_module(name, f, fname, descr)
+                # f,fname,descr = imp.find_module(name)
+                # mod = imp.load_module(name, f, fname, descr)
                 mod = import_module(name)
             except Exception as _e:
                 logging.error('unable to load module \'{}\''.format(name))
@@ -430,17 +438,17 @@ class Controller(object):
                             m = obj(self, self.view)
                             self._modules.append(m)
 
-        #print(self._modules)
+        # print(self._modules)
 
     def annotations_changed(self, txt):
         self.project.annotations = txt
         pub.sendMessage((self.view.instid, 'changed'))
-        
+
     def set2clipboard(self):
         if wx.TheClipboard.Open():
             do = wx.CustomDataObject('selection')
             if self.selection.isplot:
-                data = pickle.dumps(self.active_plot,1)
+                data = pickle.dumps(self.active_plot, 1)
             else:
                 plot, sel = self.selection
                 data = pickle.dumps([self.project[plot][q] for q in sel], 1)
@@ -448,7 +456,7 @@ class Controller(object):
             wx.TheClipboard.SetData(do)
             wx.TheClipboard.Close()
             self.message('copied current selection to clipboard', blink=True)
-    
+
     def clipboard2set(self):
         if wx.TheClipboard.Open():
             do = wx.CustomDataObject('selection')
@@ -500,16 +508,16 @@ class Controller(object):
         Rename a plot or set. 'item' is a tuple containing plot and set number. If the set
         number is None, rename the plot.
         """
-        plot,set = item
+        plot, set = item
         if set is not None:
             self.project[plot][set].name = name
-            #self.update_tree(plot)
+            # self.update_tree(plot)
         else:
             self.project[plot].name = name
-            #self.update_tree()
+            # self.update_tree()
         pub.sendMessage((self.view.instid, 'setattrchanged'))
         self.project_modified = True
-        
+
     def insert_plot(self, ind):
         """\
         Insert an empty plot at index 'ind'.
@@ -517,18 +525,18 @@ class Controller(object):
         self.project.insert(ind, project.Plot())
         self.update_tree()
         self.project_modified = True
-        
+
     def add_plot(self, name=None):
         """\
         Add an empty plot.
         """
         added = self.project.add(project.Plot(name=name))
-        #self.update_tree()
+        # self.update_tree()
         self.view.tree.selection = added
         self.project_modified = True
         pub.sendMessage((self.view.instid, 'plot_added'), plotlist=['p{}'.format(n) for n in range(len(self.project))])
         return added
-        
+
     def add_set(self, data, plot=None):
         """\
         Add a set to the current plot.
@@ -542,23 +550,23 @@ class Controller(object):
                 plot = self.project.index(self.active_plot)
         else:
             added = self.project[plot].add(data)
-        #self.update_tree()
+        # self.update_tree()
         self.view.tree.selection = plot, added
         self.project_modified = True
 
-        #TODO: no receivers
-        #pub.sendMessage((self.view.instid, 'dataset_added'), datasetlist=[q.name for q in self.project[plot]])
-        #self.update_plot()
+        # TODO: no receivers
+        # pub.sendMessage((self.view.instid, 'dataset_added'), datasetlist=[q.name for q in self.project[plot]])
+        # self.update_plot()
         return added
 
     def rem_attr(self, attr, only_sel=False):
-        if attr not in ['weights','trafo','mod','mask']:
+        if attr not in ['weights', 'trafo', 'mod', 'mask']:
             raise ValueError('unkown set attribute')
         if only_sel:
-            p,sel = self.selection
+            p, sel = self.selection
             for s in sel:
                 setattr(self.project[p][s], attr, None)
-            #if attr == 'mod':
+            # if attr == 'mod':
             #    self.update_tree(p)
         else:
             for p in self.project:
@@ -578,22 +586,21 @@ class Controller(object):
         plot = self.add_plot()
         gridname, data = source()
         self.project[plot].name = gridname
-        for (x,y),name in data:
-            sp = spec.Spec(x,y,'%s_%s'%(gridname,name))
+        for (x, y), name in data:
+            sp = spec.Spec(x, y, '%s_%s' % (gridname, name))
             added = self.project[plot].add(sp)
         self.update_tree()
-        self.view.tree.selection = plot,added
-        self.message('created sets from grid data',blink=True)
+        self.view.tree.selection = plot, added
+        self.message('created sets from grid data', blink=True)
         self.project_modified = True
-        
+
     def update_tree(self, plot=None):
         """\
         Synchronize the tree with the project data. If 'plot' is not None, update only
         the nodes contained in 'plot'.
         """
-        #TODO: should not be necesary anymore
+        # TODO: should not be necesary anymore
         return
-
 
         if plot is None:
             self.view.tree.update_node(-1, [x.name for x in self.project])
@@ -604,7 +611,7 @@ class Controller(object):
             hides = []
             models = []
             if len(self.project[plot]) > 0:
-                names, hides, models = list(zip(*[(x.name,x.hide,x.model is not None) for x in self.project[plot]]))
+                names, hides, models = list(zip(*[(x.name, x.hide, x.model is not None) for x in self.project[plot]]))
             self.view.tree.update_node(plot, names, hides, models)
 
     def hide_selection(self):
@@ -612,15 +619,15 @@ class Controller(object):
         Toggle the visibility of the current selectionp.
         """
         plot, sel = self.selection
-        for n,set in enumerate(self.project[plot]):
+        for n, set in enumerate(self.project[plot]):
             if n in sel:
                 set.hide = not set.hide
         self.update_tree(plot)
         self.update_plot()
         self.project_modified = True
-        
-    def delete_selection(self): # wholeplot=False)
-        #TODO wholeplot sollte man cniht mehr brauchen.
+
+    def delete_selection(self):  # wholeplot=False)
+        # TODO wholeplot sollte man cniht mehr brauchen.
         """\
         Delete the current selection. If 'wholeplot' is True, delete the whole plot
         including all sets.
@@ -630,17 +637,17 @@ class Controller(object):
             if self.project.delete(plot) is None:
                 self.view.msg_dialog('Plot cannot be deleted. It is referenced by a figure object.')
             else:
-                #self.update_tree()
+                # self.update_tree()
                 if len(self.project) > 0:
-                    self.view.tree.selection = min(len(self.project)-1,plot)
+                    self.view.tree.selection = min(len(self.project) - 1, plot)
                 else:
                     self._selection = None
-                    #self.update_plot()
+                    # self.update_plot()
         else:
             self.project[plot].delete(sel)
             self.update_tree(plot)
             if len(self.project[plot]) > 0:
-                set = max( min(max(sel)-len(sel)+1, len(self.project[plot])-1) , 0)
+                set = max(min(max(sel) - len(sel) + 1, len(self.project[plot]) - 1), 0)
                 self.view.tree.selection = (plot, set)
             else:
                 self.view.tree.selection = plot
@@ -651,12 +658,12 @@ class Controller(object):
         if self.selection.isplot:
             dupl = self.project.copy(plot)
             plot = self.project.add(dupl)
-            #self.update_tree()
+            # self.update_tree()
             self.view.tree.selection = plot
         else:
             dupl = self.project[plot].copy(sel)
             set = self.project[plot].add(dupl)
-            #self.update_tree(plot)
+            # self.update_tree(plot)
             self.view.tree.selection = (plot, set)
         self.project_modified = True
 
@@ -676,22 +683,23 @@ class Controller(object):
         self.update_tree()
         self.view.tree.selection = (newplot, set)
         self.project_modified = True
-                
+
     def selection_to_grid(self):
         plot, sel = self.selection
         if len(sel) > 1:
             name = 'from plot {}'.format(plot)
         else:
-            name = 'p{}s{}'.format(plot,sel[0],self.project[plot][sel[0]].name)
+            name = 'p{}s{}'.format(plot, sel[0], self.project[plot][sel[0]].name)
 
         m = max([len(self.project[plot][s]) for s in sel])
-        data = np.zeros((len(sel)*2,m))
+        data = np.zeros((len(sel) * 2, m))
 
-        for n,s in enumerate(sel):
-            data[n*2:n*2+2,:len(self.project[plot][s])] = self.project[plot][s].xy
+        for n, s in enumerate(sel):
+            data[n * 2:n * 2 + 2, :len(self.project[plot][s])] = self.project[plot][s].xy
         self.new_datagrid((data.T, [], []), name=name)
         self.project_modified = True
-        self.message('Copied {} set{} to datagrid. Press CTRL-D to open the datagrid.'.format(len(sel),'s' if len(sel) > 1 else ''))
+        self.message('Copied {} set{} to datagrid. Press CTRL-D to open the datagrid.'.format(len(sel), 's' if len(
+            sel) > 1 else ''))
 
     def xrng_callback(self):
         xr = self.view.canvas.GetXCurrentRange()
@@ -707,9 +715,11 @@ class Controller(object):
 
     def _get_selection(self):
         return self._selection
+
     def _set_selection(self, selection):
         class Selection(tuple):
             isplot = False
+
         plot, ds = selection
         if ds is None:
             ds = list(range(len(self.project[plot])))
@@ -719,19 +729,20 @@ class Controller(object):
             self._selection = Selection((plot, ds))
         plot_sel = self.project[plot]
         dataset_sel = [self.project[plot][s] for s in ds]
-        wx.CallAfter(pub.sendMessage,(self.view.instid, 'selection', 'changed'),
+        wx.CallAfter(pub.sendMessage, (self.view.instid, 'selection', 'changed'),
                      plot=plot_sel, dataset=dataset_sel)
         self.update_plot()
+
     selection = property(_get_selection, _set_selection, doc="the current tree selection")
 
     def update_plot(self, *args, **kwargs):
-        #print('update plot')
+        # print('update plot')
         if not self._updating:
             self.view.Bind(wx.EVT_IDLE, lambda x: self._update(x, *args, **kwargs))
             self._updating = True
         else:
             pass
-            #still updating
+            # still updating
 
     def _update(self, evt, *args, **kwargs):
         self._updating = False
@@ -739,14 +750,14 @@ class Controller(object):
         self.plot(*args, **kwargs)
         pub.sendMessage((self.view.instid, 'setattrchanged'))
 
-        #wx.CallAfter(self.update_setinfo)
+        # wx.CallAfter(self.update_setinfo)
 
     def a_update_setinfo(self):
         pub.sendMessage((self.view.instid, 'setinfo', 'update'))
 
     def _get_active_set(self):
         try:
-            p,s = self.selection
+            p, s = self.selection
         except:
             return None
         else:
@@ -754,21 +765,24 @@ class Controller(object):
                 return self.project[p][s[0]]
             else:
                 return None
+
     active_set = property(_get_active_set)
 
     def _get_active_plot(self):
         try:
-            p,s = self.selection
+            p, s = self.selection
         except:
             return None
         else:
             return self.project[p]
+
     active_plot = property(_get_active_plot)
 
     def set_canvas_mode(self, mode):
-        #if mode is None:
+        print('controller set canvas mode',mode)
+        # if mode is None:
         #    self.view.canvas.RestoreLastMode()
-        #else:
+        # else:
         self.view.canvas.state.set(mode)
 
     def set_plot_range(self, *args, **kwargs):
@@ -780,7 +794,7 @@ class Controller(object):
         """
         if len(args) == 2:
             xr, yr = args
-            self.project[self.selection[0]].rng = xr,yr
+            self.project[self.selection[0]].rng = xr, yr
         else:
             if 'xr' in list(kwargs.keys()):
                 self.project[self.selection[0]].xrng = kwargs['xr']
@@ -788,9 +802,9 @@ class Controller(object):
                 self.project[self.selection[0]].yrng = kwargs['yr']
 
     def autoscale(self, **kwargs):
-        p,s = self.selection
+        p, s = self.selection
         if len(kwargs) == 0:
-            self.project[self.selection[0]].rng = None,None
+            self.project[self.selection[0]].rng = None, None
         else:
             if 'X' in list(kwargs.keys()) and kwargs['X']:
                 self.set_plot_range(xr=None)
@@ -798,11 +812,11 @@ class Controller(object):
                 self.set_plot_range(yr=None)
             if 'fit' in list(kwargs.keys()) and kwargs['fit']:
                 self.set_plot_range(xr=self.project[p][s[0]].limits)
-                
+
         self.update_plot()
 
     def delete_points(self, bbox):
-        plot,sets = self.selection
+        plot, sets = self.selection
         for set in sets:
             self.project[plot][set].delete(bbox)
         self.update_plot()
@@ -812,42 +826,41 @@ class Controller(object):
         self.pp_notify = [[self.fit_controller.model[i].name, ind[i]] for i in range(len(ind))]
         self.update_plot(fit=self.fit_controller.model)
         self.freeze_canvas = True
-        name,count = self.pp_notify[0]
-        self.message('pick %s'%name)
+        name, count = self.pp_notify[0]
+        self.message('pick %s' % name)
         self.view.canvas.report(pickers)
 
     def attach_weights_to_set(self, weights):
         self.active_set.weights = weights
         self.update_plot()
-        wx.CallAfter(pub.sendMessage,(self.view.instid, 'selection', 'changed'),
+        wx.CallAfter(pub.sendMessage, (self.view.instid, 'selection', 'changed'),
                      plot=self.active_plot, dataset=[self.active_set])
-        #msg=self.active_set)
 
     def model_updated(self, action=None):
         self.plot(fit=self.fit_controller.model)
         if action != 'move' and len(self.pp_notify) > 0:
-            name,count = self.pp_notify[0]
-            if count-1 == 0:
+            name, count = self.pp_notify[0]
+            if count - 1 == 0:
                 self.pp_notify.pop(0)
                 if len(self.pp_notify) > 0:
-                    name,count = self.pp_notify[0]
-                    self.message('pick %s'%name)
+                    name, count = self.pp_notify[0]
+                    self.message('pick %s' % name)
             else:
                 self.pp_notify[0][1] -= 1
         if action == 'end':
             self.active_set.model = self.fit_controller.model
             self.freeze_canvas = False
-            
+
     def load_set_from_model(self, model, which, xr, pts):
-        x = np.linspace(xr[0],xr[1],pts)
+        x = np.linspace(xr[0], xr[1], pts)
 
         y = model.evaluate(x, restrict=which)
         name = ' '.join(which)
-        plot,sel = self.selection
+        plot, sel = self.selection
 
         if type(y) is tuple:
-            for n,yn in enumerate(y):
-                self.project[plot].add(spec.Spec(x,yn,'{}_{}'.format(name,n+1)))
+            for n, yn in enumerate(y):
+                self.project[plot].add(spec.Spec(x, yn, '{}_{}'.format(name, n + 1)))
         else:
             self.project[plot].add(spec.Spec(x, y, name))
         self.update_tree(plot)
@@ -855,8 +868,8 @@ class Controller(object):
         self.project_modified = True
 
     def show_notes(self, show=False):
-        #import constgrid
-        #constgrid.show_globals_frame()
+        # import constgrid
+        # constgrid.show_globals_frame()
         self.view.frame_annotations.Show(show)
         self.view.frame_annotations.CenterOnParent()
         self.view.check_menu('Notepad', show)
@@ -867,8 +880,6 @@ class Controller(object):
 
     def show_codeeditor(self, show=False):
         self.view.check_menu('Code Editor', show)
-        #import constgrid
-        #constgrid.show_globals_frame()
         self.codeeditor.view.Show(show)
 
     def delete_figure(self, fig):
@@ -889,7 +900,7 @@ class Controller(object):
                 self.__mpm_edit_combo = model, deepcopy(model)
             else:
                 self.__mpm_edit_combo = None, mplmodel.MultiPlotModel(self.project)
-            #TODO: nicht jedesmal neu erzeugen!
+            # TODO: nicht jedesmal neu erzeugen!
             self.mplplot = mplcontroller.new(self, self.view, self.__mpm_edit_combo[1])
 
             self.mplplot.view.Show(show)
@@ -899,8 +910,8 @@ class Controller(object):
             if not discard:
                 if self.__mpm_edit_combo[0] in self.project.figure_list:
                     self.figure_list_controller.model.update(*self.__mpm_edit_combo)
-                    #morig, mcopy = self.__mpm_edit_combo
-                    #del mcopy
+                    # morig, mcopy = self.__mpm_edit_combo
+                    # del mcopy
                 else:
                     self.figure_list_controller.model.data.append(self.__mpm_edit_combo[1])
             self.__mpm_edit_combo = None
@@ -921,30 +932,34 @@ class Controller(object):
 
         grid = self.datagrid.new(data, name, the_grid)
 
-        #self.show_datagrid(True)
+        # self.show_datagrid(True)
         self.project_modified = True
-            
+
     def datagrid_append(self, data):
         if self.datagrid is None or self.datagrid.the_grid is None:
             self.new_datagrid(the_grid=True)
-        
-        plot,sel = self.selection
+
+        plot, sel = self.selection
         self.datagrid.the_grid.add_par_row(data, self.project[plot][sel[0]].name)
         ctrl = 'CMD' if sys.platform == 'darwin' else 'CTRL'
-        self.message('Selected parameters have been appended to the data grid. Press {}-d to show the data grid.'.format(ctrl),blink=False)
+        self.message(
+            'Selected parameters have been appended to the data grid. Press {}-d to show the data grid.'.format(ctrl),
+            blink=False)
         self.project_modified = True
 
     def _set_freeze_canvas(self, state):
         self._freeze = state
+
     def _get_freeze_canvas(self):
         return self._freeze
+
     freeze_canvas = property(_get_freeze_canvas, _set_freeze_canvas)
-        
-    def plot(self, fit = None, floating = None, speclines = None):
+
+    def plot(self, fit=None, floating=None, speclines=None):
         if self.app_state.working:
             return
-        xr,yr = None,None
-        
+        xr, yr = None, None
+
         self.view.canvas.SetXSpec('min')
         self.view.canvas.SetYSpec('min')
 
@@ -963,28 +978,29 @@ class Controller(object):
             lines = []
             y = fit.evaluate(ds.x)
             if y is not False:
-                lines.append(Line(ds.xy,colour='red'))
-                lines.append(plotcanvas.Line([ds.x,y], colour=wx.Colour(0,200,50), width=2, skipbb=True))
-                self.view.canvas.Draw(plotcanvas.Graphics(lines),xr,yr)
+                lines.append(Line(ds.xy, colour='red'))
+                lines.append(plotcanvas.Line([ds.x, y], colour=wx.Colour(0, 200, 50), width=2, skipbb=True))
+                self.view.canvas.Draw(plotcanvas.Graphics(lines), xr, yr)
             return
         else:
             self.freeze_canvas = False
 
+        if floating is not None:
+            lines.append(
+                plotcanvas.Line([floating.x, floating.y], colour=wx.Colour(0, 0, 255, 130), width=1, skipbb=True))
         if self.selection is not None:
-            plot,sel = self.selection
-            if floating is not None:
-                lines.append(plotcanvas.Line([floating.x,floating.y], colour=wx.Colour(0,0,255,130), width=1, skipbb=True))
-            for sig,ds in enumerate(self.project[plot]):
+            plot, sel = self.selection
+            for sig, ds in enumerate(self.project[plot]):
                 if ds.hide and sig not in sel:
                     continue
                 if sig in sel:
                     lines.append(Line(ds.xy, 'red'))
                     if ds.weights is not None:
                         bounds_cb = ds.weights.getBounds
-                        lines.append(plotcanvas.VSpan(ds.xy,bounds_cb,colour=wx.Colour(0,0,255,80)))
+                        lines.append(plotcanvas.VSpan(ds.xy, bounds_cb, colour=wx.Colour(0, 0, 255, 80)))
                     elif self.fit_controller.weights is not None:
                         bounds_cb = self.fit_controller.weights.getBounds
-                        lines.append(plotcanvas.VSpan(ds.xy,bounds_cb,colour=wx.Colour(0,0,255,30)))
+                        lines.append(plotcanvas.VSpan(ds.xy, bounds_cb, colour=wx.Colour(0, 0, 255, 30)))
 
                     # coupled model
                     if len(sel) == len(self.project[plot]) and len(self.project[plot]) > 1:
@@ -1002,7 +1018,7 @@ class Controller(object):
                             x = ds.x_limited
                             if len(x) > 0:
                                 y = fit.evaluate(x)
-                                #print('check y', y is False, y is None)
+                                # print('check y', y is False, y is None)
                                 if y is not None:
                                     if len(sel) == len(self.project[plot]) and len(self.project[plot]) > 1:
                                         y = y[sig]
@@ -1012,9 +1028,10 @@ class Controller(object):
                             x = ds.x_limited
                             if len(x) > 0:
                                 y = ds.mod.evaluate(x)
-                                #print('check y', y is False, y is None)
+                                # print('check y', y is False, y is None)
                                 if y is not None:
-                                    if self.project[plot].model is not None and len(sel) == len(self.project[plot]) and len(self.project[plot]) > 1:
+                                    if self.project[plot].model is not None and len(sel) == len(
+                                            self.project[plot]) and len(self.project[plot]) > 1:
                                         y = y[sig]
                                     lines.append(plotcanvas.Line([x, y], colour=wx.Colour(0, 200, 50, 200), width=2,
                                                                  skipbb=True))
@@ -1027,21 +1044,20 @@ class Controller(object):
                                 lines.append(plotcanvas.Line(i, colour='blue', skipbb=True))
                 else:
                     if self.app_state.fast_display:
-                        skip = max(1,int(len(ds.x)/config.getint('display', 'fast_max_pts', fallback=200)+.5))
+                        skip = max(1, int(len(ds.x) / config.getint('display', 'fast_max_pts', fallback=200) + .5))
                     else:
                         skip = 1
-                    lines.append(Line(ds.xy[:,::skip], colour='black'))
+                    lines.append(Line(ds.xy[:, ::skip], colour='black'))
             xr, yr = self.project[plot].rng
         for ptype, spec in self._modules.get_plot_objects():
-            lines.append(getattr(plotcanvas,ptype)([spec.x,spec.y], colour=wx.Colour(0,0,250,180), width=2))
+            lines.append(getattr(plotcanvas, ptype)([spec.x, spec.y], colour=wx.Colour(0, 0, 250, 180), width=2))
 
         graphics = plotcanvas.Graphics(lines)
 
-        self.view.canvas.Draw(graphics,xr,yr)
+        self.view.canvas.Draw(graphics, xr, yr)
+
 
 if __name__ == '__main__':
     p = project.Project()
     p.load('../example.lpj')
-    c=Controller(p)
-
-    
+    c = Controller(p)

@@ -77,7 +77,7 @@ class Interactor(object):
         pub.subscribe(self.OnSetFromGrid, (self.view.instid, 'grid', 'newset'))
 
         pub.subscribe(self.OnCanvasErase, (self.view.instid, 'canvas', 'erase'))
-        # em.eventManager.Register(self.OnGotPars, misc_ui.EVT_GOTPARS, self.view.canvas)
+
         self.view.canvas.Bind(misc_ui.EVT_GOTPARS, self.OnGotPars)
 
         pub.subscribe(self.OnLoadSetFromModel, (self.view.instid, 'fitctrl', 'loadset'))
@@ -113,6 +113,11 @@ class Interactor(object):
         pub.subscribe(self.pubOnStopAll, (self.view.instid, 'stop_all'))
 
         pub.subscribe(self.pubOnUpdatePlot, (self.view.instid, 'updateplot'))
+
+        #pub.subscribe(self.pubOnCancelSpecialMode, (self.view.instid, 'canvasmode'))
+
+    #def pubOnCancelSpecialMode(self):
+    #    print('cancel')
 
     def pubOnStopAll(self):
         return
@@ -261,6 +266,8 @@ class Interactor(object):
         self.controller.model_updated()
 
     def OnStartPickPars(self, msg):
+        pub.sendMessage((self.view.instid, 'canvas', 'newmode'), mode=None)
+        self.controller.set_canvas_mode(None)
         self.controller.start_pick_pars(*msg)
 
     def OnSetFromGrid(self, data):
@@ -315,8 +322,8 @@ class Interactor(object):
                    'btn_fast': self.OnCanvasButtonFast}
 
         tid = evt.GetEventObject().GetName()
-        callmap[tid](evt.GetEventObject(), evt.instid)
-        evt.Skip()
+        callmap[tid](evt.GetEventObject(), evt.GetId())
+
 
     def OnCanvasButtonFast(self, tb, id):
         state = tb.GetValue()
