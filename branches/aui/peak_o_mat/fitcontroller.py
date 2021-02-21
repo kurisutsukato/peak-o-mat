@@ -89,7 +89,7 @@ class FitController(object):
                     self.model = self.model # this will update the pargrid 
                     self.update_parameter_panel()
         elif page == 2:
-            pub.sendMessage((self.view.instid, 'fitctrl','plot'), msg=None)
+            pub.sendMessage((self.view.instid, 'fitctrl', 'plot'), msg=None)
 
         if self._last_page == 2:
             self.stop_select_weights()
@@ -158,15 +158,16 @@ class FitController(object):
         
     def start_select_weights(self):
         handles = self._weights.getBorders()
+        self.view.canvas.state.set('handle', 'x')
         self.view.canvas.set_handles(handles)
-        self.view.canvas.state.set('handle','x')
         self.interactor.listen_to_handles()
 
     def stop_select_weights(self):
         self.interactor.listen_to_handles(False)
         self.view.canvas.set_handles(np.zeros((0,1)))
+        self.view.pan_weights.btn_placehandles.SetValue(False)
         self.weights_changed()
-        self.view.canvas.state.restore_last()
+        self.view.canvas.state.set(None)
 
     def attach_weights(self):
         pub.sendMessage((self.view.instid, 'fitctrl','attachweights'),msg=(self.view.pan_weights.weightsgrid.table.data))
@@ -280,7 +281,7 @@ class FitController(object):
         pub.sendMessage((self.view.instid, 'fitctrl','parexport'),
                         msg=(self.model.parameters_as_table(which,witherrors)))
 
-    def start_pick_pars(self):
+    def prepare_pick_pars(self):
         self.model = copy.deepcopy(self.model)
         self.view.enable_fit(False)
         self.pickers = []
@@ -298,7 +299,7 @@ class FitController(object):
         #cumtmp = tmp[:]
         #for i in range(1,len(tmp)):
         #    cumtmp[i] = cumtmp[i]+cumtmp[i-1]
-        pub.sendMessage((self.view.instid, 'fitctrl','pickpars'), msg=(tmp, reduce(add, self.pickers)))
+        pub.sendMessage((self.view.instid, 'fitctrl', 'pickpars'), msg=(tmp, reduce(add, self.pickers)))
 
     def got_pars(self):
         self.view.pan_pars.pargrid.refresh()
@@ -310,18 +311,6 @@ class FitController(object):
 
     def log(self, msg):
         self.view.log = msg
-
-    def _start_fit(self):
-        fitopts = dict([('fittype',self.view.fittype), ('maxiter',self.view.maxiter), \
-                        ('stepsize',self.view.stepsize), ('autostep',self.view.autostep)])
-
-        pub.sendMessage((self.view.instid, 'fitctrl','fit'),
-                                msg=(self.model,
-                                 self.view.limitfitrange,
-                                 fitopts))
-
-    def export(self):
-        pass
 
     def generate_dataset_check_xexpr(self, xexpr):
         pl,_ = self.selection

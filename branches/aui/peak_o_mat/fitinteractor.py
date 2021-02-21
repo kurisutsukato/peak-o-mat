@@ -62,6 +62,8 @@ class FitInteractor(object):
         pub.subscribe(self.pubOnPlotAdded, (self.view.instid, 'plot_added'))
         pub.subscribe(self.pubDelmod, (self.view.instid, 'delmod'))
 
+        pub.subscribe(self.pub_module_focus_set, (self.view.instid, 'module', 'focuschanged'))
+
     def listen_to_handles(self, listen=True):
         if listen:
             wx.GetTopLevelParent(self.view).Bind(misc_ui.EVT_HANDLES_CHANGED, self.OnHandles)
@@ -219,8 +221,12 @@ class FitInteractor(object):
         #else:
         self.controller.page_changed(evt.GetSelection())
 
+    def pub_module_focus_set(self, newfocus):
+        # cancel parameter picking and weight selection
+        self.view.canvas.state.set(None)# sends canvas mode message
 
     def OnCanvasMode(self, mode):
+        #print('fitinteractor canvas mode', mode)
         if mode != 'handle':
             self.view.pan_weights.btn_placehandles.SetValue(False)
             self.view.canvas.set_handles([])
@@ -275,7 +281,7 @@ class FitInteractor(object):
         self.controller.find_peaks()
 
     def OnPickParameters(self, evt):
-        self.controller.start_pick_pars()
+        self.controller.prepare_pick_pars()
 
     def OnClearModel(self, evt):
         self.view.model = ''

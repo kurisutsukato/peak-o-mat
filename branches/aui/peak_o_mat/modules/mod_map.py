@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw
 from .. import module
 from .. import plotcanvas
 from ..spec import Spec
-
+from .. import misc_ui
 
 def read():
     try:
@@ -148,14 +148,14 @@ class Map(wx.Window):
         self.Redraw()
 
     def OnPaint(self, evt):
-        #print('paint')
         dc = wx.BufferedPaintDC(self)
         dc.DrawBitmap(self._buffer, 0, 0)
+        if 'wxMac' not in wx.PlatformInfo:
+            dc = wx.GCDC(dc)
         self._draw_crosshair(dc)
         self._draw_line(dc)
 
     def OnSize(self, evt):
-        #print('size')
         w, h = self.GetClientSize()
         w = max(1, w)
         h = max(1, h)
@@ -166,12 +166,15 @@ class Map(wx.Window):
     def Redraw(self, full=False):
         if full:
             success = self.Draw()
-            dc = wx.BufferedDC(wx.ClientDC(self))
+            #dc = wx.BufferedDC(wx.ClientDC(self))
+            dc = wx.ClientDC(self)
         else:
             dc = wx.BufferedDC(wx.ClientDC(self))
             dc.DrawBitmap(self._buffer, 0, 0)
 
         if not full or success:
+            if 'wxMac' not in wx.PlatformInfo:
+                dc = wx.GCDC(dc)
             self._draw_crosshair(dc)
             self._draw_line(dc)
 
@@ -242,8 +245,7 @@ class Interactor:
 
         self.view.Bind(wx.EVT_BUTTON, self.OnTransfer)
 
-        pub.subscribe(self.pubOnWlSelect, ('plot', 'xmarker'))
-        pub.subscribe(self.pubOnPageChanged, ('notebook', 'pagechanged'))
+        pub.subscribe(self.pubOnWlSelect, (self.view.instid, 'plot', 'xmarker'))
 
     def OnTransfer(self, evt):
         coords = self.view.map.line_coords
@@ -391,9 +393,10 @@ class Module(module.BaseModule):
         self.view.plot.setLogScale([False,True])
         self.view.plot.Draw(pg)
 
-class ControlPanel(wx.Panel):
+class ControlPanel(misc_ui.WithMessage, wx.Panel):
     def __init__(self, parent):
-        super(ControlPanel, self).__init__(parent)
+        wx.Panel.__init__(self, parent)
+        misc_ui.WithMessage.__init__(self)
 
         self.setup_controls()
         self.layout()
