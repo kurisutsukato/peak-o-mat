@@ -153,7 +153,7 @@ class XRCModule(module.XRCModule):
         self.update_background()
 
     def selection_changed(self):
-        if self.visible:
+        if self.visible and self._has_attention:
             self.update_background()
 
     def obtain_focus(self):
@@ -161,10 +161,13 @@ class XRCModule(module.XRCModule):
             pub.sendMessage((self.instid, 'module', 'focuschanged'), newfocus=self.title)
 
     def focus_changed(self, newfocus=None):
+        #print('mod {}} got informed that {} wants the focus'.format(self.title, newfocus))
         if newfocus == self.title:
             self.update_background()
-            self.visible = True
+            #self.visible = True
+            self._has_attention = True
         else:
             self.plotme = None
             pub.sendMessage((self.instid, 'updateplot'))
-            self.visible = False
+            #self.visible = False
+            self._has_attention = False

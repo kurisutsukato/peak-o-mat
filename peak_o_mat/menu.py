@@ -59,7 +59,7 @@ class MenuFactory(object):
 
         mb.Append(file_menu, 'File')
         mb.Append(data_menu, 'Data')
-        mb.Append(view_menu, 'View')
+        mb.Append(view_menu, 'Tools')
 
         mb.Append(help_menu, "&Help")
 

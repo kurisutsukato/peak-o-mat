@@ -7,7 +7,7 @@ import re
 import time
 
 import numpy as np
-from scipy.signal import find_peaks, peak_widths, peak_prominences
+from scipy.signal import find_peaks as fp, peak_widths, peak_prominences
 
 from threading import Thread, Event
 
@@ -190,7 +190,7 @@ class FitController(object):
             step = 0
 
             for n in range(10):
-                idx,res = find_peaks(y, prominence=(lower, upper), width=3)
+                idx,res = fp(y, prominence=(lower, upper), width=3)
 
                 if len(idx) > numpeaks:
                     if step == 0:
