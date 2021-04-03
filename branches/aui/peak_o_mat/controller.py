@@ -152,7 +152,7 @@ class Controller(object):
             except:
                 pass
             else:
-                wx.CallAfter(self.view._mgr.LoadPerspective, perspective, True)
+                wx.CallAfter(self.view.aui_restore_perspective, perspective, self._modules)
 
             sfile = os.path.join(configdir(), 'geom')
             try:

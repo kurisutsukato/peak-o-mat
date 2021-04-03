@@ -63,14 +63,11 @@ class BaseModule(misc_ui.WithMessage):
         pass
 
     def show(self, state=True):
-        # TODO: check which modules are visible on startup
-        print(self, 'show', state)
         self.visible = state
         self.focus_changed(self)
 
     def hide(self):
         self.show(False)
-
 
 class XRCModule(misc_ui.WithMessage):
     def __init__(self, module, controller, doc):

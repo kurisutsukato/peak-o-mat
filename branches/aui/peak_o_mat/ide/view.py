@@ -4,7 +4,6 @@ import wx
 import wx.dataview as dv
 import wx.lib.agw.flatnotebook as fnb
 
-from ..menu import menu_ids
 from ..controls import PythonSTC
 import os
 

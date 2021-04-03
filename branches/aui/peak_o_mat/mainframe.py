@@ -72,6 +72,7 @@ class MainFrame(wx.Frame):
         self.layout_controls()
 
     def OnClosePane(self, evt):
+        #TODO: not ever called
         print('mainframe, on close pane: hallo?')
         evt.Veto()
         evt.GetPane().Hide()
@@ -98,6 +99,7 @@ class MainFrame(wx.Frame):
         self._mgr.Update()
 
     def AAlayout(self):
+        #TODO: obsolete
         box = wx.BoxSizer(wx.VERTICAL)
         box.Add(self.splitwin,1,wx.EXPAND)
         self.SetSizer(box)
@@ -154,6 +156,13 @@ class MainFrame(wx.Frame):
         mb = self.menu_factory.create()
         self.menubar = mb
         self.SetMenuBar(mb)
+
+    def aui_restore_perspective(self, perspective, modules):
+        self._mgr.LoadPerspective(perspective, True)
+        for mid, name in self.menu_factory.module_menu_ids.items():
+            if self._mgr.GetPane(name).IsShown():
+                self.check_module_menu(mid, True)
+                modules[name].visible = True
 
     def check_menu(self, item, state):
         self.menubar.Check(self.menu_factory.menu_ids[item], state)

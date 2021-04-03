@@ -14,6 +14,7 @@ class TreeListModel(dv.PyDataViewModel):
         self._selection = []
         self.data = data
         self.data.attach_dvmodel(self)
+
     @property
     def selection(self):
         #print('dvmodel selection property')
@@ -111,6 +112,7 @@ class TreeListModel(dv.PyDataViewModel):
         if isinstance(obj, Plot):
             if obj.model is not None:
                 attr.SetColour(wx.GREEN)
+                attr.SetBold(True)
                 return True
             else:
                 return False
@@ -118,10 +120,12 @@ class TreeListModel(dv.PyDataViewModel):
             attr.SetStrikethrough(True)
             if obj.model is not None:
                 attr.SetColour(wx.Colour(0,120,0))
+                attr.SetBold(True)
             return True
         else:
             if obj.model is not None:
                 attr.SetColour(wx.Colour(0,120,0))
+                attr.SetBold(True)
                 return True
         return False
 

@@ -104,7 +104,7 @@
                                     <object class="sizeritem">
                                         <flag>wxEXPAND</flag>
                                         <object class="wxSlider" name="xrc_sl_ALQ_iter">
-                                            <min>2</min>
+                                            <min>1</min>
                                             <max> 10</max>
                                             <value>5</value>
                                         </object>

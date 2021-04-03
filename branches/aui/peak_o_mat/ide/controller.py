@@ -6,9 +6,22 @@ from pubsub import pub
 class AutoSortList(list):
     def append(self, item):
         super(AutoSortList, self).append(item)
-        self[:] = sorted(self,key)
+        self[:] = sorted(self)
         print('sort')
 
+class Group(object):
+    def __init__(self, label=''):
+        self.scripts = ScriptGroup(label='Scripts')
+        self.models = ModelGroup(label='Models')
+
+        self.children = []
+        self.label = label
+
+    def add_script(self, label):
+        pass
+
+    def add_model(self, model):
+        pass
 
 class ScriptGroup(Group):
     isentry = False
@@ -45,20 +58,6 @@ class Entry:
     @property
     def islocal(self):
         return self.parent.type == 'local'
-
-class Group(object):
-    def __init__(self, label=''):
-        self.scripts = ScriptGroup(label='Scripts')
-        self.models = ModelGroup(label='Models')
-
-        self.children = []
-        self.label = label
-
-    def add_script(self, label):
-        pass
-
-    def add_model(self, model):
-        pass
 
 class LocalGroup(Group):
     type = 'local'
