@@ -92,6 +92,7 @@ import array
 import numpy as np
 
 def spa_loader(path):
+    print('spa loader')
     with open(path, 'rb') as f:
         f.seek(30)
         cmt = f.read(255).strip(b'\x00').decode('utf-8')
@@ -138,6 +139,8 @@ guess the columns delimiter and ignoring comments.
                 datafile.readline()
             if cl:
                 collabels = mat.split(datafile.readline().rstrip().rstrip(delimiter))[int(rl):]
+                if collabels[0] == '':
+                    collabels.pop(0)
             for line in datafile:
                 line = line.rstrip().rstrip(delimiter)
                 if fpc:

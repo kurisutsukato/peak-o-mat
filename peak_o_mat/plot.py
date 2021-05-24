@@ -4,6 +4,7 @@ from pubsub import pub
 
 import numpy as np
 from scipy.interpolate import interp1d
+import time
 
 from . import misc_ui
 
@@ -119,7 +120,7 @@ class PolyLine(PolyPoints):
         pen = wx.Pen(colour, width, style)
         pen.SetCap(wx.CAP_BUTT)
         dc.SetPen(pen)
-        dc.DrawLines(self.scaled)
+        dc.DrawLines(self.scaled.astype(int))
 
     def getSymExtent(self):
         """Width and Height of Marker"""
@@ -197,14 +198,14 @@ class PolyMarker(PolyPoints):
         f(dc, coords, size)
 
     def _dot(self, dc, coords, size=1):
-        dc.DrawPointList(coords)
+        dc.DrawPointList(coords.astype(int))
 
     def _square(self, dc, coords, size=1):
         fact= 2.5*size
         wh= 5.0*size
         rect= np.zeros((len(coords),4),dtype='float')+[0.0,0.0,wh,wh]
         rect[:,0:2]= coords-[fact,fact]
-        dc.DrawRectangleList(rect.astype('float'))
+        dc.DrawRectangleList(rect.astype(int))
 
 class Spikes(PolyPoints):
     dataspace = 'mixed'
@@ -235,7 +236,7 @@ class Spikes(PolyPoints):
             try:
                 self.scaled[:,1] = off_y-height*points[:,1]/points[:,1].max()
             except ValueError:
-                print(off_y,height,points)
+                print('ValueError',off_y,height,points)
                 return
             self.currentScale= scale
             self.currentShift= shift
@@ -253,7 +254,7 @@ class Spikes(PolyPoints):
         pen = wx.Pen(colour, width, style)
         pen.SetCap(wx.CAP_BUTT)
         dc.SetPen(pen)
-        dc.DrawLineList(self.scaled)
+        dc.DrawLineList(self.scaled.astype(int))
 
 class VSpan(PolyLine):
     _attributes = {'colour': 'black',
@@ -291,7 +292,7 @@ class VSpan(PolyLine):
         pen = wx.Pen(colour, width, style)
         pen.SetCap(wx.CAP_BUTT)
         dc.SetPen(pen)
-        dc.DrawLineList(self.scaled)
+        dc.DrawLineList(self.scaled.astype(int))
 
 
 class PlotGraphics:
@@ -711,7 +712,10 @@ class State:
             self.view.SetCursor(cursors[modes.index(mode)])
         else:
             self.view.SetCursor(wx.Cursor(wx.CURSOR_CROSS))
-        pub.sendMessage((self.view.instid, 'canvas', 'newmode'), mode=mode)
+        try:
+            pub.sendMessage((self.view.instid, 'canvas', 'newmode'), mode=mode)
+        except AttributeError:
+            pass
 
         self._last = self._mode
         self._mode = mode
@@ -746,7 +750,7 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
 
         self._logscale = [False, False]
 
-        self._Buffer = None
+        self._buffer = None
 
         # Drawing Variables
         self.last_draw = None
@@ -835,7 +839,7 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
             self._draw_overlay(dc)
 
     def Clear(self):
-        dc = wx.BufferedDC(wx.ClientDC(self.canvas), self._Buffer)
+        dc = wx.BufferedDC(wx.ClientDC(self.canvas), self._buffer)
         dc.Clear()
         self.last_draw = None
 
@@ -868,12 +872,7 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
         return self._Draw(graphics, xAxis, yAxis)
 
     def _Draw(self, graphics, xAxis=None, yAxis=None):
-        """\
-        Draw objects in graphics with specified x and y axis.
-        graphics- instance of PlotGraphics with list of PolyXXX objects
-        xAxis - tuple with (min, max) axis range to view
-        yAxis - same as xAxis
-        """
+        #print(time.time(), '_draw')
         #log.print('draw')
         if self._buffer is not None:
             dc = wx.BufferedDC(wx.ClientDC(self.canvas), self._buffer)
@@ -909,13 +908,13 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
             self.last_draw = (graphics, np.array(xAxis), np.array(yAxis))  # saves most recient values
 
             # Get ticks and textExtents for axis if required
-            if self._xSpec is not 'none':
+            if self._xSpec != 'none':
                 xticks = self._xticks(xAxis[0], xAxis[1])
                 xTextExtent = dc.GetTextExtent(xticks[-1][1])  # w h of x axis text last number on axis
             else:
                 xticks = None
                 xTextExtent = (0, 0)  # No text for ticks
-            if self._ySpec is not 'none':
+            if self._ySpec != 'none':
                 yticks = self._yticks(yAxis[0], yAxis[1])
                 if self.getLogScale()[1]:
                     yTextExtent = dc.GetTextExtent('-2e-2')  # largest text extension
@@ -946,16 +945,16 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
 
             # drawing title and labels text
             dc.SetFont(self._getFont(self._fontSizeTitle))
-            titlePos = (self.plotbox_origin[0] + lhsW + (self.plotbox_size[0] - lhsW - rhsW) / 2. - titleWH[0] / 2.,
-                        self.plotbox_origin[1] - self.plotbox_size[1])
+            titlePos = (int(self.plotbox_origin[0] + lhsW + (self.plotbox_size[0] - lhsW - rhsW) / 2. - titleWH[0] / 2.),
+                        int(self.plotbox_origin[1] - self.plotbox_size[1]))
             dc.DrawText(graphics.getTitle(), titlePos[0], titlePos[1])
             dc.SetFont(self._getFont(self._fontSizeAxis))
-            xLabelPos = (self.plotbox_origin[0] + lhsW + (self.plotbox_size[0] - lhsW - rhsW) / 2. - xLabelWH[0] / 2.,
-                         self.plotbox_origin[1] - xLabelWH[1])
+            xLabelPos = (int(self.plotbox_origin[0] + lhsW + (self.plotbox_size[0] - lhsW - rhsW) / 2. - xLabelWH[0] / 2.),
+                         int(self.plotbox_origin[1] - xLabelWH[1]))
             dc.DrawText(graphics.getXLabel(), xLabelPos[0], xLabelPos[1])
-            yLabelPos = (self.plotbox_origin[0],
-                         self.plotbox_origin[1] - bottomH - (self.plotbox_size[1] - bottomH - topH) / 2. + yLabelWH[
-                             0] / 2.)
+            yLabelPos = (int(self.plotbox_origin[0]),
+                         int(self.plotbox_origin[1] - bottomH - (self.plotbox_size[1] - bottomH - topH) / 2. + yLabelWH[
+                             0] / 2.))
             if graphics.getYLabel():  # bug fix for Linux
                 dc.DrawRotatedText(graphics.getYLabel(), yLabelPos[0], yLabelPos[1], 90)
 
@@ -1405,8 +1404,8 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
         c1 = np.array(corner1)
         c2 = np.array(corner2)
         # convert to screen coords
-        pt1 = c1 * self._pointScale + self._pointShift
-        pt2 = c2 * self._pointScale + self._pointShift
+        pt1 = (c1 * self._pointScale + self._pointShift).astype(int)
+        pt2 = (c2 * self._pointScale + self._pointShift).astype(int)
         # make height and width positive
         pul = np.minimum(pt1, pt2)  # Upper left corner
         plr = np.maximum(pt1, pt2)  # Lower right corner
@@ -1436,7 +1435,7 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
             if mod != 0:
                 upper = upper - mod + grid
             return lower, upper
-        elif type(spec) == type(()):
+        elif isinstance(spec, tuple):
             lower, upper = spec
             if lower <= upper:
                 return lower, upper
@@ -1470,35 +1469,35 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
 
         dc.SetPen(wx.Pen(self._gridColour, 1))
 
-        if self._xSpec is not 'none':
+        if self._xSpec != 'none':
             lower, upper = p1[0], p2[0]
             text = 1
             for y, d in [(p1[1], -xTickLength), (p2[1], xTickLength)]:  # miny, maxy and tick lengths
-                a1 = scale * np.array([lower, y]) + shift
-                a2 = scale * np.array([upper, y]) + shift
+                a1 = (scale * np.array([lower, y]) + shift).astype(int)
+                a2 = (scale * np.array([upper, y]) + shift).astype(int)
                 dc.DrawLine(a1[0], a1[1], a2[0], a2[1])  # draws upper and lower axis line
                 for x, label in xticks:
-                    pt = scale * np.array([x, y]) + shift
-                    dc.DrawLine(pt[0], pt[1], pt[0], pt[1] + d)  # draws tick mark d units
+                    pt = (scale * np.array([x, y]) + shift).astype(int)
+                    dc.DrawLine(pt[0], pt[1], pt[0], pt[1] + int(d))  # draws tick mark d units
                     if text:
-                        dc.DrawText(label, pt[0] - dc.GetTextExtent(label)[0] * 0.5,
+                        dc.DrawText(label, pt[0] - int(dc.GetTextExtent(label)[0] * 0.5),
                                     pt[1] - dc.GetTextExtent(label)[1] - 10)  # find something better than 25
                 text = 0  # axis values not drawn on top side
 
-        if self._ySpec is not 'none':
+        if self._ySpec != 'none':
             lower, upper = p1[1], p2[1]
             text = 1
             h = dc.GetCharHeight()
             for x, d in [(p1[0], -yTickLength), (p2[0], yTickLength)]:
-                a1 = scale * np.array([x, lower]) + shift
-                a2 = scale * np.array([x, upper]) + shift
+                a1 = (scale * np.array([x, lower]) + shift).astype(int)
+                a2 = (scale * np.array([x, upper]) + shift).astype(int)
                 dc.DrawLine(a1[0], a1[1], a2[0], a2[1])
                 for y, label in yticks:
-                    pt = scale * np.array([x, y]) + shift
-                    dc.DrawLine(pt[0], pt[1], pt[0] - d, pt[1])
+                    pt = (scale * np.array([x, y]) + shift).astype(int)
+                    dc.DrawLine(pt[0], pt[1], pt[0] - int(d), pt[1])
                     if text:
                         dc.DrawText(label, pt[0] + 10,
-                                    pt[1] - 0.5 * h)
+                                    pt[1] - int(0.5 * h))
                 text = 0  # axis values not drawn on right side
 
     def _xticks(self, *args):
@@ -1515,6 +1514,8 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
 
     def _logticks(self, lower, upper):
         ticks = []
+        lower = max(-300, lower)
+        upper = min(300, upper)
         mag = np.power(10, np.floor(lower))
         if upper - lower > 6:
             t = np.power(10, np.ceil(lower))
@@ -1527,7 +1528,7 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
 
             def inc(t):
                 return 10 ** int(np.floor(np.log10(t) + 1e-16))
-        majortick = int(np.log10(mag))
+        majortick = int(np.log10(mag + 1e-16))
         while t <= pow(10, upper):
             if majortick != int(np.floor(np.log10(t) + 1e-16)):
                 majortick = int(np.floor(np.log10(t) + 1e-16))
@@ -1588,7 +1589,7 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
         # horizontal scrollbar
         r_current = self._getXCurrentRange()
         r_max = list(self._getXMaxRange())
-        sbfullrange = float(self.sb_hor.GetRange())
+        sbfullrange = int(self.sb_hor.GetRange())
 
         r_max[0] = min(r_max[0], r_current[0])
         r_max[1] = max(r_max[1], r_current[1])
@@ -1610,7 +1611,7 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
         # vertical scrollbar
         r_current = self._getYCurrentRange()
         r_max = list(self._getYMaxRange())
-        sbfullrange = float(self.sb_vert.GetRange())
+        sbfullrange = int(self.sb_vert.GetRange())
 
         r_max[0] = min(r_max[0], r_current[0])
         r_max[1] = max(r_max[1], r_current[1])
@@ -1622,7 +1623,7 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
 
         if pos >= 0:
             pagesize = int((r_current[1] - r_current[0]) / unit)
-            pos = (sbfullrange - 1 - pos - pagesize)
+            pos = int((sbfullrange - 1 - pos - pagesize))
             self.sb_vert.SetScrollbar(pos, pagesize, sbfullrange, pagesize)
             self._sb_yunit = unit
             needScrollbars = needScrollbars or (pagesize != sbfullrange)
@@ -1721,9 +1722,17 @@ def test_plot():
     app = wx.App()
     f = wx.Frame(None)
     c = PlotCanvas(f)
+    c.OnSize(None)
     data = np.array([[1,2],[1.5,10.0],[2,2.5],[3,1.7]])
     s = Spikes(data)
     g = PlotGraphics([s],'Spikes','wave','int')
+
+    x = np.linspace(0,60,50000)
+    y = np.sin(x)
+    p = PolyLine([x,y])
+    g = PlotGraphics([p])
+
+
     c.Draw(g)
     c.state.set('drag')
     #c.setLogScale([True, True])
@@ -1731,6 +1740,5 @@ def test_plot():
     app.MainLoop()
 
 if __name__ == '__main__':
-    log.print('test')
-    log.print('test')
-    log.print('bla')
+    test_plot()
+

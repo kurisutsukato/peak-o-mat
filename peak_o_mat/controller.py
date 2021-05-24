@@ -295,7 +295,7 @@ class Controller(object):
         for p in path:
             try:
                 _, ext = os.path.splitext(p)
-                labels, data = fio.loaders.get(ext)(p)
+                labels, data = fio.loaders.get(ext.lower())(p)
             except (misc.PomError) as e:
                 self.view.msg_dialog('{}\n\n{}'.format(p, e.value))
                 continue
