@@ -402,7 +402,7 @@ Update the model with the results from a fit.
         if self.listener is not None:
             self.listener()
 
-    def detach_bounded(self):
+    def detach_stuck(self):
         for comp in self:
             for var in comp.values():
                 if var.constr == 2:

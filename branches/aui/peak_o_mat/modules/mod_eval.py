@@ -36,14 +36,14 @@ Mtk = lambda n, t, k: np.power(t, k) * np.power(1 - t, n - k) * nOk(n, k)
 bezierM = lambda ts, l: np.array([[Mtk(l - 1, t, k) for k in range(l)] for t in ts])
 
 
-class DummyEvent:
-    def __init__(self, obj):
-        obj.SetValue(True)
-        self.obj = obj
-
-    def GetEventObject(self):
-        return self.obj
-
+# class DummyEvent:
+#     def __init__(self, obj):
+#         obj.SetValue(True)
+#         self.obj = obj
+#
+#     def GetEventObject(self):
+#         return self.obj
+#
 
 class XRCModule(module.XRCModule):
     title = 'Evaluate'
@@ -61,6 +61,8 @@ class XRCModule(module.XRCModule):
         self.xrc_btn_place_handles.Bind(wx.EVT_TOGGLEBUTTON, self.OnBtnPlaceHandles)
         pub.subscribe(self.OnCanvasMode, ('canvas', 'newmode'))
         self.xrc_notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnNBChanged)
+        for ctrl in [self.xrc_txt_eq_range_from, self.xrc_txt_eq_range_to, self.xrc_spn_eq_range_pts]:
+            ctrl.Bind(wx.EVT_TEXT, self.OnText)
 
         # self.xrc_btn_bez_load.Disable()
         # self.xrc_btn_bez_load.Bind(wx.EVT_BUTTON, self.OnAnchor)
@@ -73,21 +75,19 @@ class XRCModule(module.XRCModule):
         # self.xrc_txt_eq.SetValidator(controls.InputValidator())
 
         self.handles = np.zeros((0, 2))
+        self._sync_controls()
 
     def _sync_controls(self):
         try:
             plot, sel = self.controller.selection
             if len(sel) == 0:
-                raise Exception
-        except:
-            self.plot = None
-        else:
-            if plot != self.plot:
-                self._abort()
-            self.plot = plot
+                raise TypeError
+        except TypeError:
+            plot = None
 
         self.xrc_cmb_eq_fromset.Clear()
         self.xrc_cmb_bez_fromset.Clear()
+
         if plot is not None:
             l = len(self.project[plot])
             if l > 0:
@@ -120,6 +120,9 @@ class XRCModule(module.XRCModule):
             self.xrc_cb_bez_fromset.Value = False
             self.xrc_cb_bez_pts.Value = True
             self.xrc_cb_bez_fromset.Enable(False)
+        if self.page == 0:
+            mode = int(self.xrc_cb_eq_fromset.GetValue())
+            self.xrc_btn_create.Enable(self.xrc_pan_eq.Validate() or mode == 1)
 
     def obtain_focus(self):
         #print('{} wants focus'.format(self.title))
@@ -152,9 +155,17 @@ class XRCModule(module.XRCModule):
 
         pub.sendMessage((self.instid, 'updateplot'))
 
+    def OnText(self, evt):
+        if self.visible and self.page == 0:
+            mode = int(self.xrc_cb_eq_fromset.GetValue())
+            self.xrc_btn_create.Enable(self.xrc_pan_eq.Validate() or mode == 1)
+
     def OnNBChanged(self, evt):
         self.obtain_focus()
         self.page = evt.GetSelection()
+        if self.page == 0:
+            mode = int(self.xrc_cb_eq_fromset.GetValue())
+            self.xrc_btn_create.Enable(self.xrc_pan_eq.Validate() or mode == 1)
 
     def OnCanvasMode(self, mode):
         if mode != 'handle':
@@ -184,7 +195,6 @@ class XRCModule(module.XRCModule):
             points = M @ handles
             evx, evy = points.T
             self.controller.plot(floating=spec.Spec(evx, evy, '{:d} pt. bezier'.format(len(handles))))
-            # self.xrc_btn_bez_load.Enable()
             self.xrc_btn_create.Enable()
 
             # handles = handles.take(np.argsort(handles[:,0]),0)

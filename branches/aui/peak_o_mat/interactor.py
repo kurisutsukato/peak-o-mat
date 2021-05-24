@@ -165,9 +165,11 @@ class Interactor(object):
         pub.sendMessage((self.view.instid, 'module', 'focuschanged'), newfocus=evt.GetPane().name)
 
     def OnMenuShowHideModule(self, evt, mid):
-        self.view._mgr.GetPane(self.view.menu_factory.module_menu_ids[mid]).Show(evt.IsChecked())
+        auipane = self.view._mgr.GetPane(self.view.menu_factory.module_menu_ids[mid])
+        if evt.IsChecked():
+            auipane.Float()
+        auipane.Show(evt.IsChecked())
         m = self.controller._modules[self.view.menu_factory.module_menu_ids[mid]]
-        print('show', evt.IsChecked())
         m.show(evt.IsChecked())
         self.view._mgr.Update()
 

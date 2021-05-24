@@ -13,6 +13,7 @@ def asfloat(arg):
         return float(arg)
 
 def guess_format(path):
+    print('guessing', path)
     data = []
 
     class Found(Exception):
@@ -68,7 +69,6 @@ def guess_format(path):
                         try:
                             assert len([float(x) for x in re.split(delimiter,line)[skipcol:] if x.strip() != '']) >= 2
                         except AssertionError:
-                            #print('asert')
                             pass
                         except ValueError as ve:
                             #print('value')
@@ -95,10 +95,10 @@ def guess_format(path):
                 text = rawdata.replace(',','.').rstrip().split('\n')
                 replace_comma = True
     except Found:
-        #print('delimiter identified at row {}: "{}"'.format(row,delimiter))
-        #print('floting comma:',replace_comma)
-        #print('has row label: {}'.format(bool(skipcol)))
-        #print(f'datastart: {row}')
+        print('delimiter identified at row {}: "{}"'.format(row,delimiter))
+        print('floting comma:',replace_comma)
+        print('has row label: {}'.format(bool(skipcol)))
+        print(f'datastart: {row}')
         datastart = row
     else:
         raise PomError('I tried my best but I am unable to identify the file format.')
@@ -125,6 +125,11 @@ def guess_format(path):
     collabels = []
     if datastart > 0:
         collabels = [x.strip() for x in mat.split(text[datastart-1].rstrip())]
+        # fuer den Fall dass die erste Spalte kein label hat, nehmen wir hier nur rstrip un erwarten
+        # dass das label der ersten Spalte ein Leerstring ist, sollte es aber '' sein, dann ist gibt
+        # es vermutlich nur ueberfluessige Leerzeichen zu Beginn der Label Zeile
+        if collabels[0] == '':
+            collabels.pop(0)
     has_collabels = len(collabels) == data.shape[1]+skipcol
 
     return enc, has_collabels, bool(skipcol), delimiter, replace_comma, datastart, data.shape[1]

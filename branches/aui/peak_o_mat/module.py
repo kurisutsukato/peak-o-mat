@@ -175,7 +175,6 @@ class MyModule(module.Module):
         pass
 
     def show(self, state=True):
-        print(self, 'show', state)
         self.visible = state
         self.focus_changed(self)
 

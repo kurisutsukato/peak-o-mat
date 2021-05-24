@@ -449,6 +449,7 @@ class FitController(object):
 
     def start_fit(self, limit, fitopts):
         pl,ds = self.selection
+        self._orig_model = self.model.copy()
         if len(pl) == len(ds) and len(pl) > 1:
             # fit multi model
             # multi spectra fit
@@ -464,7 +465,7 @@ class FitController(object):
             if limit:
                 xr = self.view.canvas.GetXCurrentRange()
                 ds.limits = xr
-            self.model.detach_bounded()
+            self.model.detach_stuck()
             job = (ds, self.model, fitopts)
             self._fitobject = ds
 
@@ -489,8 +490,10 @@ class FitController(object):
         self.message('%s: fit finshed' % self._fitobject.name)
 
         if self._fitobject is not None:
-            self.model.update_from_fit(self._worker.res)
-            self._fitobject.model = self.model.copy()
+            self._orig_model.update_from_fit(self._worker.res)
+            self._fitobject.model = self._orig_model
+            if self.model == self._orig_model:
+                self.model.update_from_fit(self._worker.res)
 
             self.sync_gui(fit_in_progress=False, batch=True)
 
@@ -540,7 +543,7 @@ class BatchWorker(Thread):
                 model = base.model
             ds.limits = base.limits
             ds.weights = weights
-            model.detach_bounded()
+            model.detach_stuck()
             f = fit.Fit(ds, model, **fitopts)
             res = f.run()
 

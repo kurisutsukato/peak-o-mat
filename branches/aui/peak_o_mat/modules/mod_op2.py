@@ -54,7 +54,7 @@ class Interactor:
         sel = self.controller.selection
         if sel is not None:
             pl, ds = sel
-            state = self.controller.submodules[name].valid and len(ds) > 0
+            state = pl is not None and self.controller.submodules[name].valid and len(ds) > 0
             self.view.btn_apply.Enable(state)
         else:
             self.view.btn_apply.Disable()
