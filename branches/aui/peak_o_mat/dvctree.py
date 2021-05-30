@@ -167,6 +167,19 @@ class TreeListModel(dv.PyDataViewModel):
             else:
                 dvctrl.Collapse(self.ObjectToItem(self.data[k]))
 
+class TreeCtrlPanel(wx.Panel, WithMessage):
+    def __init__(self, parent):
+        super(TreeCtrlPanel, self).__init__(parent)
+        WithMessage.__init__(self)
+
+        self.btn_addplot = wx.Button(self, label='Add plot')
+        self.tree = TreeCtrl(self)
+
+        box = wx.BoxSizer(wx.VERTICAL)
+        box.Add(self.tree, 1, wx.EXPAND)
+        box.Add(self.btn_addplot, 0, wx.EXPAND)
+        self.SetSizer(box)
+
 class TreeCtrl(dv.DataViewCtrl, WithMessage):
     def __init__(self, parent, standalone=False):
         dv.DataViewCtrl.__init__(self, parent, style=wx.BORDER_THEME|dv.DV_MULTIPLE|dv.DV_NO_HEADER)
@@ -181,8 +194,8 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         self._timer = wx.Timer(self)
         self._scrolllines = 0
 
-        self.AppendTextColumn("Container",   0, width=400)
-        self.AppendTextColumn("Element",   1, width=0)
+        self.AppendTextColumn("Container",   0)#, width=400)
+        #self.AppendTextColumn("Element",   1, width=0)
 
         self.Bind(dv.EVT_DATAVIEW_ITEM_BEGIN_DRAG, self.on_drag)
         if sys.platform == 'darwin':
@@ -205,7 +218,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
 
         parent.Bind(wx.EVT_ENTER_WINDOW, self.on_mouseenter)
 
-        wx.CallAfter(self.GetColumn(0).SetWidth, 300)
+        #wx.CallAfter(self.GetColumn(0).SetWidth, 300)
         # for some reason somtimes the column width is very small otherwise
 
     def on_mouseenter(self, evt):
@@ -223,8 +236,8 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         self.menumap = [#(-1, 'Rename', self.on_),
                         (-1, 'Delete', self.on_menudelete),
                         (-1, 'Duplicate', self.on_menuduplicate),
-                        #(-1, 'New sets from visible area', self.OnNewSetsFromVisArea),
-                        #(-1, 'Copy to data grid', self.OnSpreadsheet),
+                        (-1, 'New sets from visible area', self.on_menucrop),
+                        (-1, 'Copy to data grid', self.on_menuto_spreadsheat),
                         (wx.ID_SEPARATOR, '', None),
                         (-1, 'Toggle visibility', self.on_menuhide),
                         (wx.ID_SEPARATOR, '', None),
@@ -233,7 +246,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
                         (-1, 'Remove model', self.on_menuremfit),
                         (-1, 'Remove weights', self.on_menuremweights),
                         #(wx.ID_SEPARATOR, '', None),
-                        #(-1, 'Insert plot', self.OnInsertPlot),
+                        (-1, 'Insert plot', self.on_menuinsertplot),
                         (-1, 'Copy', self.on_menucopy),
                         (-1, 'Paste', self.on_menupaste)
                         ]
@@ -246,7 +259,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
             item = self.menu.Append(item)
             if act is not None:
                 self.Bind(wx.EVT_MENU, act, item)
-                if text.find('Plot') != -1:
+                if text.find('plot') != -1:
                     self.Bind(wx.EVT_UPDATE_UI, self.on_uimenu, item)
 
         #item = wx.MenuItem(self.minimal_menu, id=-1, text='paste')
@@ -280,6 +293,16 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
 
     def on_menuremtrafo(self, evt=None):
         pub.sendMessage((self.instid, 'tree', 'remtrafo'))
+
+    def on_menuinsertplot(self, evt):
+        if self.dataviewmodel.selection[1][0] is not None:
+            pub.sendMessage((self.instid, 'tree', 'insert'), msg=self.dataviewmodel.selection[1][0])
+
+    def on_menuto_spreadsheat(self, evt):
+        pub.sendMessage((self.instid, 'tree', 'togrid'))
+
+    def on_menucrop(self, evt):
+        pub.sendMessage((self.instid, 'tree', 'newfromvisarea'), msg=self.dataviewmodel.selection[0] is None)
 
     def on_menucopy(self, evt):
         pub.sendMessage((self.instid, 'tree', 'copy'))
@@ -461,7 +484,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         mod = evt.GetModel()
         if instid != self.instid:
             paritem = mod.GetParent(evt.GetItem())
-            if  paritem == dv.NullDataViewItem and isplot:
+            if paritem == dv.NullDataViewItem and isplot:
                 if evt.GetItem().IsOk():
                     target = mod.ItemToObject(evt.GetItem())
                     n = mod.data.index(target)

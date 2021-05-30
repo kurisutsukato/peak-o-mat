@@ -1,5 +1,4 @@
-
-import  wx
+import wx
 from pubsub import pub
 
 import numpy as np
@@ -7,6 +6,7 @@ from scipy.interpolate import interp1d
 import time
 
 from . import misc_ui
+
 
 class Log(object):
     def __init__(self):
@@ -22,36 +22,41 @@ class Log(object):
             print('\r{}'.format(arg), end='')
             self.last = arg
             self.count = 2
+
+
 log = Log()
+
 
 class PolyPoints:
     dataspace = 'user'
+
     def __init__(self, points, attr, skipbb=False):
         self.skipbb = skipbb
         points = np.array(points).astype('float')
-        r,c = points.shape
+        r, c = points.shape
         if r == 2:
             self._points = np.transpose(points)
         else:
             self._points = points
         self._logscale = [False, False]
-        self.currentScale= (1,1)
-        self.currentShift= (0,0)
+        self.currentScale = (1, 1)
+        self.currentShift = (0, 0)
         self.scaled = self.points
         self.attributes = {}
         self.attributes.update(self._attributes)
-        for name, value in list(attr.items()):   
+        for name, value in list(attr.items()):
             if name not in list(self._attributes.keys()):
-                raise KeyError("Style '%s' attribute incorrect. Should be one of %s" % (name, list(self._attributes.keys())))
+                raise KeyError(
+                    "Style '%s' attribute incorrect. Should be one of %s" % (name, list(self._attributes.keys())))
             self.attributes[name] = value
-        
+
     def setLogScale(self, logscale):
         self._logscale = logscale
 
     @property
     def points(self):
-        if len(self._points)>0:
-            data = np.array(self._points,copy=True)
+        if len(self._points) > 0:
+            data = np.array(self._points, copy=True)
             if self._logscale[0]:
                 data = self.log10(data, 0)
             if self._logscale[1]:
@@ -61,40 +66,47 @@ class PolyPoints:
             return self._points
 
     def log10(self, data, ind):
-        data = np.compress(data[:,ind]>0,data,0)
-        data[:,ind] = np.log10(data[:,ind])
+        data = np.compress(data[:, ind] > 0, data, 0)
+        data[:, ind] = np.log10(data[:, ind])
         return data
 
     def boundingBox(self):
         if len(self.points) == 0:
             # no curves to draw
             # defaults to (-1,-1) and (1,1) but axis can be set in Draw
-            minXY= np.array([-1.0,-1.0])
-            maxXY= np.array([ 1.0, 1.0])
+            minXY = np.array([-1.0, -1.0])
+            maxXY = np.array([1.0, 1.0])
         else:
-            minXY= np.minimum.reduce(self.points)
-            maxXY= np.maximum.reduce(self.points)
-            dx,dy = (maxXY-minXY)*0.1
-            minXY -= [dx,dy]
-            maxXY += [dx,dy]
+            minXY = np.minimum.reduce(self.points)
+            maxXY = np.maximum.reduce(self.points)
+            dx, dy = (maxXY - minXY) * 0.1
+            minXY -= [dx, dy]
+            maxXY += [dx, dy]
         return minXY, maxXY
 
-    def scaleAndShift(self, scale=(1,1), shift=(0,0)):
+    def scaleAndShift(self, scale=(1, 1), shift=(0, 0), bb=None):
         if len(self.points) == 0:
             # no curves to draw
             return
+        bb = np.asarray(bb)
+        # restrict to points actually visible in the current plot range
+        points = self.points[np.argsort(self.points[:,0])]
+        rng = np.searchsorted(points[:,0], bb[:,0])
+        points = points[rng[0]:rng[1]]
+
         if (scale is not self.currentScale) or (shift is not self.currentShift):
             # update point scaling
-            self.scaled = scale*self.points+shift
-            self.currentScale= scale
-            self.currentShift= shift
+            self.scaled = scale * points + shift
+            self.currentScale = scale
+            self.currentShift = shift
         # else unchanged use the current scaling
+
 
 class PolyLine(PolyPoints):
     """Class to define line type and style
         - All methods except __init__ are private.
     """
-    
+
     _attributes = {'colour': 'black',
                    'width': 1,
                    'style': wx.SOLID}
@@ -114,26 +126,27 @@ class PolyLine(PolyPoints):
     def draw(self, dc):
         colour = self.attributes['colour']
         width = self.attributes['width']
-        style= self.attributes['style']
+        style = self.attributes['style']
         if not isinstance(colour, wx.Colour):
             colour = wx.Colour(colour)
         pen = wx.Pen(colour, width, style)
         pen.SetCap(wx.CAP_BUTT)
         dc.SetPen(pen)
-        dc.DrawLines(self.scaled.astype(int))
+        if len(self.scaled) > 0:
+            dc.DrawLines(self.scaled.astype(int))
 
     def getSymExtent(self):
         """Width and Height of Marker"""
-        h= self.attributes['width']
-        w= 5 * h
-        return (w,h)
+        h = self.attributes['width']
+        w = 5 * h
+        return (w, h)
 
 
 class PolyMarker(PolyPoints):
     """Class to define marker type and style
         - All methods except __init__ are private.
     """
-  
+
     _attributes = {'colour': 'black',
                    'width': 1,
                    'size': 2,
@@ -162,10 +175,10 @@ class PolyMarker(PolyPoints):
                 - 'cross'
                 - 'plus'
         """
-      
+
         PolyPoints.__init__(self, points, attr, skipbb=skipbb)
 
-    def draw(self, dc, coord= None):
+    def draw(self, dc, coord=None):
         colour = self.attributes['colour']
         width = self.attributes['width']
         size = self.attributes['size']
@@ -177,35 +190,36 @@ class PolyMarker(PolyPoints):
             colour = wx.Colour(colour)
         if fillcolour and not isinstance(fillcolour, wx.Colour):
             fillcolour = wx.Colour(fillcolour)
-            
+
         dc.SetPen(wx.Pen(colour, width))
         if fillcolour:
-            dc.SetBrush(wx.Brush(fillcolour,fillstyle))
+            dc.SetBrush(wx.Brush(fillcolour, fillstyle))
         else:
             dc.SetBrush(wx.Brush(colour, fillstyle))
         if coord == None:
             self._drawmarkers(dc, self.scaled, marker, size)
         else:
-            self._drawmarkers(dc, coord, marker, size) # draw legend marker
+            self._drawmarkers(dc, coord, marker, size)  # draw legend marker
 
     def getSymExtent(self):
         """Width and Height of Marker"""
-        s= 5*self.attributes['size']
-        return (s,s)
+        s = 5 * self.attributes['size']
+        return (s, s)
 
-    def _drawmarkers(self, dc, coords, marker,size=1):
-        f = eval('self._' +marker)
+    def _drawmarkers(self, dc, coords, marker, size=1):
+        f = eval('self._' + marker)
         f(dc, coords, size)
 
     def _dot(self, dc, coords, size=1):
         dc.DrawPointList(coords.astype(int))
 
     def _square(self, dc, coords, size=1):
-        fact= 2.5*size
-        wh= 5.0*size
-        rect= np.zeros((len(coords),4),dtype='float')+[0.0,0.0,wh,wh]
-        rect[:,0:2]= coords-[fact,fact]
+        fact = 2.5 * size
+        wh = 5.0 * size
+        rect = np.zeros((len(coords), 4), dtype='float') + [0.0, 0.0, wh, wh]
+        rect[:, 0:2] = coords - [fact, fact]
         dc.DrawRectangleList(rect.astype(int))
+
 
 class Spikes(PolyPoints):
     dataspace = 'mixed'
@@ -226,23 +240,23 @@ class Spikes(PolyPoints):
             off_x, off_y = boxorigin
             width, height = boxsize
 
-            self.scaled = (scale*self.points+shift)
+            self.scaled = (scale * self.points + shift)
             points = self.points
-            xmin,xmax = bb[0][0],bb[1][0]
-            yrange = np.abs(bb[0][1]-bb[1][1])
-            sel = np.where(np.logical_and(points[:,0] >= xmin, points[:,0] <=xmax))[0]
+            xmin, xmax = bb[0][0], bb[1][0]
+            yrange = np.abs(bb[0][1] - bb[1][1])
+            sel = np.where(np.logical_and(points[:, 0] >= xmin, points[:, 0] <= xmax))[0]
             self.scaled = np.take(self.scaled, sel, axis=0)
             points = np.take(points, sel, axis=0)
             try:
-                self.scaled[:,1] = off_y-height*points[:,1]/points[:,1].max()
+                self.scaled[:, 1] = off_y - height * points[:, 1] / points[:, 1].max()
             except ValueError:
-                print('ValueError',off_y,height,points)
+                print('ValueError', off_y, height, points)
                 return
-            self.currentScale= scale
-            self.currentShift= shift
-            tmp = np.array((self.scaled*np.array([1,0])+np.array([0,height]),self.scaled))
-            tmp = tmp.transpose((1,0,2))
-            tmp = tmp.reshape((len(self.scaled),4))
+            self.currentScale = scale
+            self.currentShift = shift
+            tmp = np.array((self.scaled * np.array([1, 0]) + np.array([0, height]), self.scaled))
+            tmp = tmp.transpose((1, 0, 2))
+            tmp = tmp.reshape((len(self.scaled), 4))
             self.scaled = tmp
 
     def draw(self, dc):
@@ -256,6 +270,7 @@ class Spikes(PolyPoints):
         dc.SetPen(pen)
         dc.DrawLineList(self.scaled.astype(int))
 
+
 class VSpan(PolyLine):
     _attributes = {'colour': 'black',
                    'width': 1,
@@ -266,48 +281,52 @@ class VSpan(PolyLine):
         PolyPoints.__init__(self, points.T, attr)
         self.bounds_cb = bounds_cb
 
-    def scaleAndShift(self, scale=(1,1), shift=(0,0)):
-        PolyLine.scaleAndShift(self, scale, shift)
+    def scaleAndShift(self, scale=(1, 1), shift=(0, 0), bb=None):
+        if (scale is not self.currentScale) or (shift is not self.currentShift):
+            # update point scaling
+            self.scaled = scale * self.points + shift
+            self.currentScale = scale
+            self.currentShift = shift
+
         bounds = self.bounds_cb(self.points.T).T
-        bounds_low = self.currentScale*(np.take(bounds,[0,0],axis=1)*[0,1])+self.currentShift
-        bounds_high = self.currentScale*(np.take(bounds,[1,1],axis=1)*[0,1])+self.currentShift
+        bounds_low = self.currentScale * (np.take(bounds, [0, 0], axis=1) * [0, 1]) + self.currentShift
+        bounds_high = self.currentScale * (np.take(bounds, [1, 1], axis=1) * [0, 1]) + self.currentShift
 
-        x,y = self.scaled.T
-        nx = np.linspace(min(x[0],x[-1]),max(x[0],x[-1]),abs(int(x[-1]-x[0])))
+        x, y = self.scaled.T
+        nx = np.linspace(min(x[0], x[-1]), max(x[0], x[-1]), abs(int(x[-1] - x[0])))
 
-        ip = interp1d(x,bounds_low[:,1])
+        ip = interp1d(x, bounds_low[:, 1])
         ylow = ip(nx)
-        ip = interp1d(x,bounds_high[:,1])
+        ip = interp1d(x, bounds_high[:, 1])
         yhigh = ip(nx)
 
-        tmp = np.vstack((nx,ylow,nx,yhigh)).T.tolist()
+        tmp = np.vstack((nx, ylow, nx, yhigh)).T.tolist()
         self.scaled = tmp
 
     def draw(self, dc):
         colour = self.attributes['colour']
         width = self.attributes['width']
-        style= self.attributes['style']
+        style = self.attributes['style']
         if not isinstance(colour, wx.Colour):
             colour = wx.Colour(colour)
         pen = wx.Pen(colour, width, style)
         pen.SetCap(wx.CAP_BUTT)
         dc.SetPen(pen)
-        dc.DrawLineList(self.scaled.astype(int))
-
+        dc.DrawLineList(np.asarray(self.scaled, dtype=int))
 
 class PlotGraphics:
     """Container to hold PolyXXX objects and graph labels
         - All methods except __init__ are private.
     """
 
-    def __init__(self, objects, title='', xLabel='', yLabel= ''):
+    def __init__(self, objects, title='', xLabel='', yLabel=''):
         """Creates PlotGraphics object
         objects - list of PolyXXX objects to make graph
         title - title shown at top of graph
         xLabel - label shown on x-axis
         yLabel - label shown on y-axis
         """
-        if type(objects) not in [list,tuple]:
+        if type(objects) not in [list, tuple]:
             raise TypeError("objects argument should be list or tuple")
         self.objects = objects
         self.title = title
@@ -316,8 +335,8 @@ class PlotGraphics:
 
     def boundingBox(self):
         if len(self.objects) == 0:
-            return np.array([-1.0,-1.0]),np.array([1.0,1.0])
-        p1,p2 = np.array([-1.0,-1.0]),np.array([1.0,1.0])
+            return np.array([-1.0, -1.0]), np.array([1.0, 1.0])
+        p1, p2 = np.array([-1.0, -1.0]), np.array([1.0, 1.0])
         if len(self.objects) > 0:
             for o in self.objects:
                 if not o.skipbb:
@@ -330,7 +349,7 @@ class PlotGraphics:
                 p2 = np.maximum(p2, p2o)
         for o in self.objects:
             if o.skipbb:
-                o.bb = p1,p2
+                o.bb = p1, p2
         return p1, p2
 
     def setLogScale(self, logscale):
@@ -341,24 +360,24 @@ class PlotGraphics:
         for o in self.objects:
             o.setLogScale(logscale)
 
-    def scaleAndShift(self, scale=(1,1), shift=(0,0), bb=None, boxorigin=None, boxsize=None):
+    def scaleAndShift(self, scale=(1, 1), shift=(0, 0), bb=None, boxorigin=None, boxsize=None):
         for o in self.objects:
             if o.dataspace == 'user':
-                o.scaleAndShift(scale, shift)
-            elif o.dataspace in ['mixed','screen']:
+                o.scaleAndShift(scale, shift, bb)
+            elif o.dataspace in ['mixed', 'screen']:
                 o.scaleAndShift(scale, shift, bb, boxorigin, boxsize)
 
-    def setXLabel(self, xLabel= ''):
+    def setXLabel(self, xLabel=''):
         """Set the X axis label on the graph"""
-        self.xLabel= xLabel
+        self.xLabel = xLabel
 
-    def setYLabel(self, yLabel= ''):
+    def setYLabel(self, yLabel=''):
         """Set the Y axis label on the graph"""
-        self.yLabel= yLabel
-        
-    def setTitle(self, title= ''):
+        self.yLabel = yLabel
+
+    def setTitle(self, title=''):
         """Set the title at the top of graph"""
-        self.title= title
+        self.title = title
 
     def getXLabel(self):
         """Get x axis label string"""
@@ -368,7 +387,7 @@ class PlotGraphics:
         """Get y axis label string"""
         return self.yLabel
 
-    def getTitle(self, title= ''):
+    def getTitle(self, title=''):
         """Get the title at the top of graph"""
         return self.title
 
@@ -383,28 +402,29 @@ class PlotGraphics:
             oSymExt = o.getSymExtent()
             symExt = np.maximum(symExt, oSymExt)
         return symExt
-    
+
     def getLegendNames(self):
         """Returns list of legend names"""
-        lst = [None]*len(self)
+        lst = [None] * len(self)
         for i in range(len(self)):
-            lst[i]= self.objects[i].getLegend()
+            lst[i] = self.objects[i].getLegend()
         return lst
-            
+
     def __len__(self):
         return len(self.objects)
 
     def __getitem__(self, item):
         return self.objects[item]
 
+
 class Interactor:
     def __init__(self):
         # Zooming variables
-        self._zoomInFactor =  1/1.2
+        self._zoomInFactor = 1 / 1.2
         self._zoomOutFactor = 1.2
-        self._zoomCorner1= np.array([0.0, 0.0]) # left mouse down corner
-        self._zoomCorner2= np.array([0.0, 0.0])   # left mouse up corner
-        self._hasDragged= False
+        self._zoomCorner1 = np.array([0.0, 0.0])  # left mouse down corner
+        self._zoomCorner2 = np.array([0.0, 0.0])  # left mouse up corner
+        self._hasDragged = False
 
         self._mousestart = None
         self._mousestop = None
@@ -416,7 +436,7 @@ class Interactor:
 
     def install(self, view):
         self.view = view
-        
+
         # Create some mouse evts for zooming
         self.view.canvas.Bind(wx.EVT_LEFT_DOWN, self.OnMouseLeftDown)
         self.view.canvas.Bind(wx.EVT_LEFT_UP, self.OnMouseLeftUp)
@@ -440,7 +460,7 @@ class Interactor:
         # OnSize called to make sure the buffer is initialized.
         # This might result in OnSize getting called twice on some
         # platforms at initialization, but little harm done.
-        #wx.CallAfter(self.OnSize,None) # sets the initial size based on client size
+        # wx.CallAfter(self.OnSize,None) # sets the initial size based on client size
 
     def OnMouseEnter(self, evt):
         if wx.GetTopLevelParent(self.view).IsActive():
@@ -454,7 +474,7 @@ class Interactor:
     def Shout(self, msg, target=0):
         evt = misc_ui.ShoutEvent(self.view.GetId(), msg=msg, target=target)
         wx.PostEvent(self.view, evt)
-        
+
     def updatePlot(self, msg, cmd=None):
         if cmd is not None:
             if not self.view.state.eq('getpars'):
@@ -464,28 +484,29 @@ class Interactor:
             wx.PostEvent(self.view, evt)
         if msg is not None:
             self.Shout(str(msg), 1)
-            
+
     def range_changed(self):
         xr = self.view.GetXCurrentRange()
         yr = self.view.GetYCurrentRange()
-        evt = misc_ui.RangeEvent(self.view.GetId(), range=(xr,yr))
+        evt = misc_ui.RangeEvent(self.view.GetId(), range=(xr, yr))
         wx.PostEvent(self.view, evt)
 
     def handles_changed(self, data='x'):
-        self.view._handles['fix'] = self.view._handles['fix'].take(np.argsort(self.view._handles['fix'],axis=0)[:,0],axis=0)
+        self.view._handles['fix'] = self.view._handles['fix'].take(np.argsort(self.view._handles['fix'], axis=0)[:, 0],
+                                                                   axis=0)
         evt = misc_ui.HandlesChangedEvent(self.view.GetId(), handles=self.view._handles['fix'])
         wx.PostEvent(self.view, evt)
 
     # evt handlers **********************************
 
     def OnWheel(self, evt):
-        X,Y = self.view._getXY(evt)
+        X, Y = self.view._getXY(evt)
         if evt.GetWheelRotation() < 0:
-            zoom =  [1.0 if evt.ShiftDown() else  self._zoomOutFactor, 1.0 if evt.ControlDown() else  self._zoomOutFactor]
-            self.view.Zoom( (X,Y), zoom )
+            zoom = [1.0 if evt.ShiftDown() else self._zoomOutFactor, 1.0 if evt.ControlDown() else self._zoomOutFactor]
+            self.view.Zoom((X, Y), zoom)
         else:
-            zoom =  [1.0 if evt.ShiftDown() else  self._zoomInFactor, 1.0 if evt.ControlDown() else  self._zoomInFactor]
-            self.view.Zoom( (X,Y), zoom )
+            zoom = [1.0 if evt.ShiftDown() else self._zoomInFactor, 1.0 if evt.ControlDown() else self._zoomInFactor]
+            self.view.Zoom((X, Y), zoom)
         self.range_changed()
 
     def OnMotion(self, evt):
@@ -493,13 +514,13 @@ class Interactor:
         if self.view.state.eq('getpars') and len(self.view._cmds) > 0:
             cmd, cb = self.view._cmds[0]
             if 'm' in cmd:
-                x,y = self.view.GetXY(evt)
-                arg = {'x':x,'y':y,'xy':(x,y)}[cmd.stripm()]
+                x, y = self.view.GetXY(evt)
+                arg = {'x': x, 'y': y, 'xy': (x, y)}[cmd.stripm()]
                 cb(arg)
                 self.updatePlot(None, misc_ui.GOTPARS_MOVE)
         elif self.view.state.eq('erase') and evt.LeftIsDown():
             pt = self.view.GetXY(evt)
-            self.view._setRubberBand(self._mousestart, pt) # add new
+            self.view._setRubberBand(self._mousestart, pt)  # add new
             self.view.Redraw()
         elif self.view.state.eq('handle') and self._moving_handle:
             pt = self.view.GetXY(evt)
@@ -520,34 +541,35 @@ class Interactor:
                 self.view.SetCursor(wx.Cursor(wx.CURSOR_CROSS))
         elif self.view.state.eq('xmarker') and evt.LeftIsDown():
             self._mousestop = self.view.GetXY(evt)
-            self.view._setXMarker(rng=(self._mousestart[0],self._mousestop[0]))
+            self.view._setXMarker(rng=(self._mousestart[0], self._mousestop[0]))
             self.view.Redraw()
-            pub.sendMessage((self.view.instid, 'plot', 'xmarker'), wl=(self._mousestart[0],self._mousestop[0]))
+            pub.sendMessage((self.view.instid, 'plot', 'xmarker'), wl=(self._mousestart[0], self._mousestop[0]))
         elif self.view.state.eq('zoom') and evt.LeftIsDown():
             if self._hasDragged:
-                self.view._setRubberBand(self._zoomCorner1, self._zoomCorner2) # remove old
+                self.view._setRubberBand(self._zoomCorner1, self._zoomCorner2)  # remove old
             else:
                 self._hasDragged = True
             self._zoomCorner2[0], self._zoomCorner2[1] = self.view._getXY(evt)
-            self.view._setRubberBand(self._zoomCorner1, self._zoomCorner2) # add new
+            self.view._setRubberBand(self._zoomCorner1, self._zoomCorner2)  # add new
             self.view.Redraw()
         elif (self.view.state.eq('drag') and evt.LeftIsDown()) or evt.MiddleIsDown():
             coordinates = evt.GetPosition()
-            newpos, oldpos = [np.array(self.view.PositionScreenToUser(q)) for q in [coordinates, self._screenCoordinates]]
-            dist = [newpos-oldpos,np.log10(newpos/oldpos)]
+            newpos, oldpos = [np.array(self.view.PositionScreenToUser(q)) for q in
+                              [coordinates, self._screenCoordinates]]
+            dist = [newpos - oldpos, np.log10(newpos / oldpos)]
 
             self._screenCoordinates = coordinates
 
             if self.view.last_draw is not None:
-                graphics, xAxis, yAxis= self.view.last_draw
+                graphics, xAxis, yAxis = self.view.last_draw
                 dx = dist[int(self.view._logscale[0])][0]
                 dy = dist[int(self.view._logscale[1])][1]
                 yAxis -= dy
                 xAxis -= dx
-                self.view._Draw(graphics,xAxis,yAxis)
+                self.view._Draw(graphics, xAxis, yAxis)
 
-    def OnMouseLeftDown(self,evt):
-        self._zoomCorner1[0], self._zoomCorner1[1]= self.view._getXY(evt)
+    def OnMouseLeftDown(self, evt):
+        self._zoomCorner1[0], self._zoomCorner1[1] = self.view._getXY(evt)
         self._screenCoordinates = np.array(evt.GetPosition())
         self._mousestart = self._mousestop = self.view.GetXY(evt)
 
@@ -557,8 +579,8 @@ class Interactor:
             pub.sendMessage((self.view.instid, 'message'), msg='X-coordinate copied to clipboard.')
         if self.view.state.eq('getpars') and len(self.view._cmds) > 0:
             cmd, cb = self.view._cmds[0]
-            x,y = self.view.GetXY(evt)
-            arg = {'x':x,'y':y,'xy':(x,y)}[str(cmd)]
+            x, y = self.view.GetXY(evt)
+            arg = {'x': x, 'y': y, 'xy': (x, y)}[str(cmd)]
             cb(arg)
             self.view._cmds.pop(0)
             self.updatePlot(None, misc_ui.GOTPARS_DOWN)
@@ -573,12 +595,12 @@ class Interactor:
                 indx = list(range(self.view._handles['fix'].shape[0]))
                 indx.pop(is_close)
                 self.view._handles['moving'] = self.view._handles['fix'][is_close]
-                #self._drawHandle(pt)
+                # self._drawHandle(pt)
                 self._save = None
                 self._moving_handle = True
-                self.view._handles['fix'] = np.take(self.view._handles['fix'],indx,axis=0)
+                self.view._handles['fix'] = np.take(self.view._handles['fix'], indx, axis=0)
             else:
-                self.view._handles['fix'] = np.vstack((self.view._handles['fix'],np.atleast_2d(pt)))
+                self.view._handles['fix'] = np.vstack((self.view._handles['fix'], np.atleast_2d(pt)))
                 self._moving_handle = False
                 self.view.Redraw()
                 self.handles_changed()
@@ -600,16 +622,17 @@ class Interactor:
             self._mousestop = self.view.GetXY(evt)
             x1, y1 = self._mousestart
             x2, y2 = self._mousestop
-            pub.sendMessage((self.view.instid, 'canvas', 'erase'),msg=((min(x1,x2),min(y1,y2)),(max(x1,x2),max(y1,y2))))
+            pub.sendMessage((self.view.instid, 'canvas', 'erase'),
+                            msg=((min(x1, x2), min(y1, y2)), (max(x1, x2), max(y1, y2))))
             self._hasDragged = False
         elif self.view.state.eq('zoom'):
             if self._hasDragged == True:
-                self._zoomCorner2[0], self._zoomCorner2[1]= self.view._getXY(evt)
+                self._zoomCorner2[0], self._zoomCorner2[1] = self.view._getXY(evt)
                 self._hasDragged = False  # reset flag
-                minX, minY= np.minimum( self._zoomCorner1, self._zoomCorner2)
-                maxX, maxY= np.maximum( self._zoomCorner1, self._zoomCorner2)
+                minX, minY = np.minimum(self._zoomCorner1, self._zoomCorner2)
+                maxX, maxY = np.maximum(self._zoomCorner1, self._zoomCorner2)
                 if self.view.last_draw != None:
-                    self.view.Draw(self.view.last_draw[0], xAxis = (minX,maxX), yAxis = (minY,maxY))
+                    self.view.Draw(self.view.last_draw[0], xAxis=(minX, maxX), yAxis=(minY, maxY))
                     self.range_changed()
         elif self.view.state.eq('drag'):
             self.view.SetCursor(self.view.HandCursor)
@@ -620,29 +643,29 @@ class Interactor:
             pt = self.view.GetXY(evt)
             is_close = self.view._close_to_handle(pt)
             if is_close is False and not self.view._outside(pt):
-                self.view._handles['fix'] = np.vstack((self.view._handles['fix'],np.atleast_2d(pt)))
+                self.view._handles['fix'] = np.vstack((self.view._handles['fix'], np.atleast_2d(pt)))
             self.view._handles['moving'] = None
             self._moving_handle = False
             self.handles_changed()
         elif self.view.state.eq('xmarker'):
             if np.any(self._mousestart != self._mousestop):
-                pub.sendMessage((self.view.instid, 'plot','xmarker'), wl=(self._mousestart[0],self._mousestop[0]))
+                pub.sendMessage((self.view.instid, 'plot', 'xmarker'), wl=(self._mousestart[0], self._mousestop[0]))
 
-    def OnMouseDoubleClick(self,evt):
+    def OnMouseDoubleClick(self, evt):
         if self.view.state.eq('zoom'):
             # Give a little time for the click to be totally finished
             # before (possibly) removing the scrollbars and trigering
             # size evts, etc.
-            wx.FutureCall(200,self.view.Reset)
+            wx.FutureCall(200, self.view.Reset)
 
-    def OnMouseRightDown(self,evt):
+    def OnMouseRightDown(self, evt):
         if evt.ShiftDown():
             pt = self.view.GetXY(evt)
             write_clipboard('{}'.format(pt[1]))
             pub.sendMessage((self.view.instid, 'message'), msg='Y-coordinate copied to clipboard.')
         elif self.view.state.eq('zoom'):
-            X,Y = self.view._getXY(evt)
-            self.view.Zoom( (X,Y), (self._zoomOutFactor, self._zoomOutFactor) )
+            X, Y = self.view._getXY(evt)
+            self.view.Zoom((X, Y), (self._zoomOutFactor, self._zoomOutFactor))
         elif self.view.state.eq('handle'):
             pt = self.view.GetXY(evt)
             is_close = self.view._close_to_handle(pt)
@@ -657,14 +680,15 @@ class Interactor:
     def OnMouseMiddleUp(self, evt):
         if self.view.state.eq('drag'):
             self.view.state.restore_last()
+            self.range_changed()
 
     def OnMouseMiddleDown(self, evt):
         self._screenCoordinates = np.array(evt.GetPosition())
         self._mousestart = self._mousestop = self.view.GetXY(evt)
 
         if evt.ShiftDown():
-            x,y = self.view.GetXY(evt)
-            text = '{:.16f};{:.16f}'.format(x,y)
+            x, y = self.view.GetXY(evt)
+            text = '{:.16f};{:.16f}'.format(x, y)
             write_clipboard(text)
             pub.sendMessage((self.view.instid, 'message'), msg='Point-coordinate copied to clipboard.')
         else:
@@ -676,13 +700,13 @@ class Interactor:
             sbpos = evt.GetPosition()
 
             if evt.GetOrientation() == wx.VERTICAL:
-                fullrange,pagesize = self.view.sb_vert.GetRange(),self.view.sb_vert.GetPageSize()
-                sbpos = fullrange-pagesize-sbpos
-                dist = sbpos*self.view._sb_yunit-(self.view._getYCurrentRange()[0]-self.view._sb_yfullrange[0])
+                fullrange, pagesize = self.view.sb_vert.GetRange(), self.view.sb_vert.GetPageSize()
+                sbpos = fullrange - pagesize - sbpos
+                dist = sbpos * self.view._sb_yunit - (self.view._getYCurrentRange()[0] - self.view._sb_yfullrange[0])
                 self.view.ScrollUp(dist)
 
             if evt.GetOrientation() == wx.HORIZONTAL:
-                dist = sbpos*self.view._sb_xunit-(self.view._getXCurrentRange()[0]-self.view._sb_xfullrange[0])
+                dist = sbpos * self.view._sb_xunit - (self.view._getXCurrentRange()[0] - self.view._sb_xfullrange[0])
                 self.view.ScrollRight(dist)
 
             self.range_changed()
@@ -696,7 +720,7 @@ class State:
         self._opt = None
 
     def set(self, mode, arg=None):
-        modes = ['drag','zoom','erase','getpars', 'handle', 'xmarker', None]
+        modes = ['drag', 'zoom', 'erase', 'getpars', 'handle', 'xmarker', None]
         if mode not in modes:
             raise TypeError("mode has to be on of 'drag','zoom','erase','getpars','handle','xmarker',None")
 
@@ -731,7 +755,8 @@ class State:
     def restore_last(self):
         self.set(self._last, self._opt)
 
-class PlotCanvas(misc_ui.WithMessage,wx.Panel):
+
+class PlotCanvas(misc_ui.WithMessage, wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         misc_ui.WithMessage.__init__(self)
@@ -782,7 +807,7 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
         Interactor().install(self)
 
     def OnPaint(self, evt):
-        #log.print('paint')
+        # log.print('paint')
         dc = wx.BufferedPaintDC(self.canvas)
         dc.DrawBitmap(self._buffer, 0, 0)
         if 'wxMac' not in wx.PlatformInfo:
@@ -793,7 +818,7 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
         w, h = self.canvas.GetClientSize()
         w = max(1, w)
         h = max(1, h)
-        #log.print('on size ({}/{})'.format(w,h))
+        # log.print('on size ({}/{})'.format(w,h))
         self._buffer = wx.Bitmap(w, h)
         self._setSize()
         self.Redraw(True)
@@ -802,24 +827,24 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
         return
         # The Buffer init is done here, to make sure the buffer is always
         # the same size as the Window
-        Size  = self.view.canvas.GetClientSize()
+        Size = self.view.canvas.GetClientSize()
         if Size.width <= 0 or Size.height <= 0:
             return
 
         # Make new offscreen bitmap: this bitmap will always have the
         # current drawing in it, so it can be used to save the image to
         # a file, or whatever.
-        self.view._Buffer = wx.Bitmap(Size[0],Size[1])
+        self.view._Buffer = wx.Bitmap(Size[0], Size[1])
 
         if self.view.last_draw is None:
             self.view.Clear()
         else:
             graphics, xSpec, ySpec = self.view.last_draw
-            self.view._Draw(graphics,xSpec,ySpec)
+            self.view._Draw(graphics, xSpec, ySpec)
 
-            #if self.view.state.eq('handle') is not False and len(self.view._handles['fix']) > 0:
+            # if self.view.state.eq('handle') is not False and len(self.view._handles['fix']) > 0:
             #    self.view._drawHandles()
-            #if self.view.state.eq('xmarker') is not False:
+            # if self.view.state.eq('xmarker') is not False:
             #    self.view._drawXMarker()
 
     def Redraw(self, full=False):
@@ -832,7 +857,7 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
             dc = wx.BufferedDC(wx.ClientDC(self.canvas))
             dc.DrawBitmap(self._buffer, 0, 0)
 
-        #log.print('redraw full: {}, succes: {}'.format(full, success))
+        # log.print('redraw full: {}, succes: {}'.format(full, success))
         if not full or success:
             if 'wxMac' not in wx.PlatformInfo:
                 dc = wx.GCDC(dc)
@@ -872,8 +897,8 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
         return self._Draw(graphics, xAxis, yAxis)
 
     def _Draw(self, graphics, xAxis=None, yAxis=None):
-        #print(time.time(), '_draw')
-        #log.print('draw')
+        # print(time.time(), '_draw')
+        # log.print('draw')
         if self._buffer is not None:
             dc = wx.BufferedDC(wx.ClientDC(self.canvas), self._buffer)
             if 'wxMac' not in wx.PlatformInfo:
@@ -945,12 +970,14 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
 
             # drawing title and labels text
             dc.SetFont(self._getFont(self._fontSizeTitle))
-            titlePos = (int(self.plotbox_origin[0] + lhsW + (self.plotbox_size[0] - lhsW - rhsW) / 2. - titleWH[0] / 2.),
-                        int(self.plotbox_origin[1] - self.plotbox_size[1]))
+            titlePos = (
+            int(self.plotbox_origin[0] + lhsW + (self.plotbox_size[0] - lhsW - rhsW) / 2. - titleWH[0] / 2.),
+            int(self.plotbox_origin[1] - self.plotbox_size[1]))
             dc.DrawText(graphics.getTitle(), titlePos[0], titlePos[1])
             dc.SetFont(self._getFont(self._fontSizeAxis))
-            xLabelPos = (int(self.plotbox_origin[0] + lhsW + (self.plotbox_size[0] - lhsW - rhsW) / 2. - xLabelWH[0] / 2.),
-                         int(self.plotbox_origin[1] - xLabelWH[1]))
+            xLabelPos = (
+            int(self.plotbox_origin[0] + lhsW + (self.plotbox_size[0] - lhsW - rhsW) / 2. - xLabelWH[0] / 2.),
+            int(self.plotbox_origin[1] - xLabelWH[1]))
             dc.DrawText(graphics.getXLabel(), xLabelPos[0], xLabelPos[1])
             yLabelPos = (int(self.plotbox_origin[0]),
                          int(self.plotbox_origin[1] - bottomH - (self.plotbox_size[1] - bottomH - topH) / 2. + yLabelWH[
@@ -1101,28 +1128,25 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
         x, y = self.PositionScreenToUser(evt.GetPosition())
         return x, y
 
-    GetXY = _getXY
+    def GetXY(self, event):
+        """Wrapper around _getXY, which handles log scales"""
+        x, y = self._getXY(event)
+        if self.getLogScale()[0]:
+            x = np.power(10, x)
+        if self.getLogScale()[1]:
+            y = np.power(10, y)
+        return x, y
 
     def PositionUserToScreen(self, pntXY):
         """Converts User position to Screen Coordinates"""
-        x, y = pntXY
-        if self.getLogScale()[0]:
-            x = np.log10(x)
-        if self.getLogScale()[1]:
-            y = np.log10(y)
-        userPos = np.array((x, y))
+        userPos = np.array(pntXY)
         x, y = userPos * self._pointScale + self._pointShift
         return x, y
 
     def PositionScreenToUser(self, pntXY):
         """Converts Screen position to User Coordinates"""
-
         screenPos = np.array(pntXY)
         x, y = (screenPos - self._pointShift) / self._pointScale
-        if self.getLogScale()[0]:
-            x = np.power(10, x)
-        if self.getLogScale()[1]:
-            y = np.power(10, y)
         return x, y
 
     def SetXSpec(self, type='auto'):
@@ -1207,11 +1231,6 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
         if self.last_draw != None:
             (graphics, xAxis, yAxis) = self.last_draw
 
-            if self._logscale[0]:
-                x = np.log10(x)
-            if self._logscale[1]:
-                y = np.log10(y)
-
             xr = (x - xAxis[0]) / (xAxis[1] - xAxis[0])
             yr = (y - yAxis[0]) / (yAxis[1] - yAxis[0])
 
@@ -1220,20 +1239,6 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
             h = (yAxis[1] - yAxis[0]) * Ratio[1]
             yAxis = (y - h * yr, y + h * (1 - yr))
 
-            self._Draw(graphics, xAxis, yAxis)
-
-    def _Zoom(self, Center, Ratio):
-        """ Zoom on the plot
-            Centers on the X,Y coords given in Center
-            Zooms by the Ratio = (Xratio, Yratio) given
-        """
-        x, y = Center
-        if self.last_draw != None:
-            (graphics, xAxis, yAxis) = self.last_draw
-            w = (xAxis[1] - xAxis[0]) * Ratio[0]
-            h = (yAxis[1] - yAxis[0]) * Ratio[1]
-            xAxis = (x - w / 2, x + w / 2)
-            yAxis = (y - h / 2, y + h / 2)
             self._Draw(graphics, xAxis, yAxis)
 
     # Private Methods **************************************************
@@ -1265,7 +1270,7 @@ class PlotCanvas(misc_ui.WithMessage,wx.Panel):
             self._xmarker = x
         elif rng is not None:
             yr = self.GetYCurrentRange()
-            self._xmarker = (rng[0], yr[0]),(rng[1], yr[1])
+            self._xmarker = (rng[0], yr[0]), (rng[1], yr[1])
 
     def _drawXMarker(self, dc):
         if self._xmarker is not None:
@@ -1641,14 +1646,15 @@ def write_clipboard(text):
         wx.TheClipboard.SetData(do)
         wx.TheClipboard.Close()
 
-#----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
 from wx import ImageFromStream, BitmapFromImage
 import io, zlib
 
 
 def getMagPlusData():
     return zlib.decompress(
-'x\xda\x01*\x01\xd5\xfe\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x18\
+        'x\xda\x01*\x01\xd5\xfe\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x18\
 \x00\x00\x00\x18\x08\x06\x00\x00\x00\xe0w=\xf8\x00\x00\x00\x04sBIT\x08\x08\
 \x08\x08|\x08d\x88\x00\x00\x00\xe1IDATx\x9c\xb5U\xd1\x0e\xc4 \x08\xa3n\xff\
 \xff\xc5\xdb\xb8\xa7\xee<\x04\x86gFb\xb2\x88\xb6\x14\x90\x01m\x937m\x8f\x1c\
@@ -1659,19 +1665,22 @@ def getMagPlusData():
 \x12\xed?=\xb6a\xd8=\xcd\xa2\xc8T\xd5U2t\x11\x95d\xa3"\x9aQ\x9e\x12\xb7M\x19\
 I\x9f\xff\x1e\xd8\xa63#q\xff\x07U\x8b\xd2\xd9\xa7k\xe9\xa1U\x94,\xbf\xe4\x88\
 \xe4\xf6\xaf\x12x$}\x8a\xc2Q\xf1\'\x89\xf2\x9b\xfbKE\xae\xd8\x07+\xd2\xa7c\
-\xdf\x0e\xc3D\x00\x00\x00\x00IEND\xaeB`\x82\xe2ovy' )
+\xdf\x0e\xc3D\x00\x00\x00\x00IEND\xaeB`\x82\xe2ovy')
+
 
 def getMagPlusBitmap():
     return BitmapFromImage(getMagPlusImage())
+
 
 def getMagPlusImage():
     stream = io.StringIO(getMagPlusData())
     return ImageFromStream(stream)
 
-#----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
 def getGrabHandData():
     return zlib.decompress(
-'x\xda\x01Z\x01\xa5\xfe\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x18\
+        'x\xda\x01Z\x01\xa5\xfe\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x18\
 \x00\x00\x00\x18\x08\x06\x00\x00\x00\xe0w=\xf8\x00\x00\x00\x04sBIT\x08\x08\
 \x08\x08|\x08d\x88\x00\x00\x01\x11IDATx\x9c\xb5U\xd1\x12\x830\x08Kh\xff\xff\
 \x8b7\xb3\x97\xd1C\xa4Zw\x93;\x1fJ1\t\x98VJ\x92\xb5N<\x14\x04 I\x00\x80H\xb4\
@@ -1684,19 +1693,22 @@ yD\xab\x1f\xf3\xec\x1cY\x06\x89$\xbf\x80\xfb\x14\\dw\x90x\x12\xa3+\xeeD\x16%\
 I\xe3\x1c\xb8\xc7c\'\xd5Y8S\x9f\xc3Zg\xcf\x89\xe8\xaao\'\xbbk{U\xfd\xc0\xacX\
 \xab\xbb\xe8\xae\xfa)AEr\x15g\x86(\t\xfe\x19\xa4\xb5\xe9f\xfem\xde\xdd\xbf$\
 \xf8G<>\xa2\xc7\t>\tE\xfc\x8a\xf6\x8dqc\x00\x00\x00\x00IEND\xaeB`\x82\xdb\
-\xd0\x8f\n' )
+\xd0\x8f\n')
+
 
 def getGrabHandBitmap():
     return BitmapFromImage(getGrabHandImage())
+
 
 def getGrabHandImage():
     stream = io.StringIO(getGrabHandData())
     return ImageFromStream(stream)
 
-#----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
 def getHandData():
     return zlib.decompress(
-'x\xda\x01Y\x01\xa6\xfe\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x18\
+        'x\xda\x01Y\x01\xa6\xfe\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x18\
 \x00\x00\x00\x18\x08\x06\x00\x00\x00\xe0w=\xf8\x00\x00\x00\x04sBIT\x08\x08\
 \x08\x08|\x08d\x88\x00\x00\x01\x10IDATx\x9c\xad\x96\xe1\x02\xc2 \x08\x849\
 \xf5\xfd\x9fx\xdb\xf5\'\x8c!\xa8\xab\xee\x975\xe5\x83\x0b\\@\xa9\xb2\xab\xeb\
@@ -1709,36 +1721,38 @@ def getHandData():
 7\x80}h?\xff\xa2\xa2\xe5e\x90\xact\xaf\xe8B\x14y[4\x83|\x13\xdc\x9e\xeb\x16e\
 \x90\xa7\xf2I\rw\x91\x87d\xd7p\x96\xbd\xd70\x07\xda\xe3v\x9a\xf5\xc5\xb2\xb2\
 +\xb24\xbc\xaew\xedZe\x9f\x02"\xc8J\xdb\x83\xf6oa\xf5\xb7\xa5\xbf8\x12\xffW\
-\xcf_\xbd;\xe4\x8c\x03\x10\xdb^\x00\x00\x00\x00IEND\xaeB`\x82\xd1>\x97B' )
+\xcf_\xbd;\xe4\x8c\x03\x10\xdb^\x00\x00\x00\x00IEND\xaeB`\x82\xd1>\x97B')
+
 
 def getHandBitmap():
     return BitmapFromImage(getHandImage())
 
+
 def getHandImage():
     stream = io.StringIO(getHandData())
     return ImageFromStream(stream)
+
 
 def test_plot():
     app = wx.App()
     f = wx.Frame(None)
     c = PlotCanvas(f)
     c.OnSize(None)
-    data = np.array([[1,2],[1.5,10.0],[2,2.5],[3,1.7]])
+    data = np.array([[1, 2], [1.5, 10.0], [2, 2.5], [3, 1.7]])
     s = Spikes(data)
-    g = PlotGraphics([s],'Spikes','wave','int')
+    g = PlotGraphics([s], 'Spikes', 'wave', 'int')
 
-    x = np.linspace(0,60,50000)
+    x = np.linspace(0, 60, 50000)
     y = np.sin(x)
-    p = PolyLine([x,y])
+    p = PolyLine([x, y])
     g = PlotGraphics([p])
-
 
     c.Draw(g)
     c.state.set('drag')
-    #c.setLogScale([True, True])
+    # c.setLogScale([True, True])
     f.Show()
     app.MainLoop()
 
+
 if __name__ == '__main__':
     test_plot()
-

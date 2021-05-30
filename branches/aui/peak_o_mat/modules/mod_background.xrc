@@ -33,7 +33,7 @@
                                         <flag>wxALIGN_CENTER_VERTICAL</flag>
                                         <object class="wxSlider" name="xrc_sl_SNIP_iteration">
                                             <min>1</min>
-                                            <max> 150</max>
+                                            <max> 550</max>
                                             <style>wxSL_HORIZONTAL|wxSL_LABELS</style>
                                             <value>20</value>
                                         </object>
@@ -123,7 +123,7 @@
                                         <flag>wxEXPAND</flag>
                                         <object class="wxSlider" name="xrc_sl_ALQ_lam">
                                             <min>10</min>
-                                            <max> 90</max>
+                                            <max> 160</max>
                                             <value>40</value>
                                         </object>
                                     </object>

@@ -87,7 +87,7 @@ class MainFrame(wx.Frame):
                         Name("canvas").CenterPane().MinSize(300,300).
                         CloseButton(False).MaximizeButton(False))
 
-        self._mgr.AddPane(self.tree, aui.AuiPaneInfo().
+        self._mgr.AddPane(self.treepanel, aui.AuiPaneInfo().
                         Name("tree").Caption("Project").Right().
                         TopDockable(False).BottomDockable(False).
                         Position(0).CloseButton(False).MinSize((150,100)).
@@ -134,9 +134,9 @@ class MainFrame(wx.Frame):
         self.panplot.SetSizer(box)
         self.panplot.Fit()
         self.panplot.SetMinSize(self.panplot.GetSize())
-        print('panplot', self.panplot.GetSize())
 
-        self.tree = dvctree.TreeCtrl(self)
+        self.treepanel = dvctree.TreeCtrlPanel(self)
+        self.tree = self.treepanel.tree
 
         self.res = xrc_resource()
         #self.frame_annotations = self.res.LoadFrame(self, 'frame_annotations')

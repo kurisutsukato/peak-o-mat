@@ -518,12 +518,9 @@ class Controller(object):
         pub.sendMessage((self.view.instid, 'setattrchanged'))
         self.project_modified = True
 
-    def insert_plot(self, ind):
-        """\
-        Insert an empty plot at index 'ind'.
-        """
-        self.project.insert(ind, project.Plot())
-        self.update_tree()
+    def insert_plot(self, item):
+        self.project.insert_before(item, project.Plot())
+        #self.update_tree()
         self.project_modified = True
 
     def add_plot(self, name=None):
@@ -736,7 +733,7 @@ class Controller(object):
     selection = property(_get_selection, _set_selection, doc="the current tree selection")
 
     def update_plot(self, *args, **kwargs):
-        # print('update plot')
+        #print('update plot')
         if not self._updating:
             self.view.Bind(wx.EVT_IDLE, lambda x: self._update(x, *args, **kwargs))
             self._updating = True
@@ -751,7 +748,7 @@ class Controller(object):
         pub.sendMessage((self.view.instid, 'setattrchanged'))
 
         # wx.CallAfter(self.update_setinfo)
-
+    # TODO: remove?
     def a_update_setinfo(self):
         pub.sendMessage((self.view.instid, 'setinfo', 'update'))
 
