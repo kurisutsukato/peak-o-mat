@@ -176,13 +176,15 @@ class FitController(object):
         pub.sendMessage((self.view.instid, 'fitctrl','plot'), msg=None)
 
     def find_peaks(self):
+        self.model.clear()
         p, s = self.selection
         if len(s) == 1 and self.model is not None:
+            xr = self.view.canvas.GetXCurrentRange()
             dset = s[0]
+            dset.limits = xr
+            x, y = dset.get_xy_range(xr)
 
             numpeaks = len([True for f in self.model if str(f) in ls.peak])
-
-            y = dset.y
 
             th = (y.max() - y.min())
             lower = th*0.05
@@ -209,10 +211,10 @@ class FitController(object):
 
             amp = res['prominences']
 
-            widths = peak_widths(y, idx, rel_height=0.1)[0] * np.diff(dset.x).mean()
+            widths = peak_widths(y, idx, rel_height=0.1)[0] * np.diff(x).mean()
 
             if numpeaks == len(idx):
-                pos = np.take(dset.x, idx)
+                pos = np.take(x, idx)
 
                 n = 0
                 for f in self.model:

@@ -497,16 +497,19 @@ bbox : boundingbox of points to be removed
         else:
             return self.y
 
-    def _get_xy_limited(self):
-        if self.limits is not None:
+    def _get_xy_limited(self, limits=None):
+        limits = limits if limits is not None else self.limits
+        if limits is not None:
             si = np.argsort(self.x)
             xs = np.take(self.x, si)
-            low,up = np.searchsorted(xs, self.limits)
+            low,up = np.searchsorted(xs, limits)
             idx = np.sort(si[low:up])
             res = np.take(self.xy, idx, axis = 1)
             return res
         else:
             return self.xy
+
+    get_xy_range = _get_xy_limited
 
     x = property(_get_x, doc='returns masked x-data including trafos')
     y = property(_get_y, doc='returns masked y-data including trafos')

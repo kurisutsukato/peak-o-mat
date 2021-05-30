@@ -163,6 +163,8 @@ class ExtraBase(list):
             obj = PlotItem.from_spec(obj)
         list.insert(self, n, obj)
         if self.has_notifier:
+            if isinstance(obj, Plot):
+                obj.attach_dvmodel(self.dvmodel)
             dvi = self.dvmodel.ObjectToItem(obj)
             self.dvmodel.ItemAdded(self.dvmodel.GetParent(dvi), dvi)
 
@@ -182,10 +184,9 @@ class ExtraBase(list):
         if self.has_notifier:
             dvi = self.dvmodel.ObjectToItem(obj)
             dvipa = self.dvmodel.GetParent(dvi)
-        ret = list.remove(self, obj)
+        list.remove(self, obj)
         if self.has_notifier:
             self.dvmodel.ItemDeleted(dvipa, dvi)
-        return ret
 
     def __setitem__(self, item, obj):
         if self.has_notifier:
@@ -563,6 +564,15 @@ class Project(LData):
 
     def append_plot(self, name=None):
         return self.add(Plot(name=name))
+
+    def insert_before(self, item, obj):
+        if isinstance(obj, Spec):
+            obj = PlotItem.from_spec(obj)
+        n = self.index(item)
+        list.insert(self, n, obj)
+        if self.has_notifier:
+            dvi = self.dvmodel.ObjectToItem(obj)
+            self.dvmodel.ItemAdded(self.dvmodel.GetParent(dvi), dvi)
 
     def index(self, value):
         for n,p in enumerate(self):

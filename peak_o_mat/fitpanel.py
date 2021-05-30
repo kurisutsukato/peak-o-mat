@@ -359,13 +359,14 @@ class FitParsPanel(wx.Panel):
         row.Add(self.btn_guesspars, 0, rowstyle|wx.LEFT, 15)
         col.Add(row, 0, wx.EXPAND|wx.BOTTOM, 20)
 
-        col.Add(self.btn_generateset, 0, wx.EXPAND|wx.BOTTOM, 5)
-        col.Add(self.btn_parexport, 0, wx.EXPAND|wx.BOTTOM, 20)
-
         row = wx.BoxSizer(wx.HORIZONTAL)
         #row.Add(wx.Window(self), 1)
         row.Add(self.btn_fit_quick, 0, rowstyle)
-        col.Add(row, 0, wx.EXPAND)
+        col.Add(row, 0, wx.EXPAND|wx.BOTTOM, 20)
+
+        col.Add(self.btn_generateset, 0, wx.EXPAND|wx.BOTTOM, 5)
+        col.Add(self.btn_parexport, 0, wx.EXPAND|wx.BOTTOM, 20)
+
         outer.Add(col, 0, wx.EXPAND|wx.ALL, 5)
 
         outer.Add(self.pargrid, 1, wx.EXPAND|wx.ALL|wx.FIXED_MINSIZE, 5)
