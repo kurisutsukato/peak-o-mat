@@ -28,11 +28,13 @@ class CodeList(dv.DataViewCtrl):
         parent.Bind(EVT_CODELIST_SELECTED, self.OnUnselect)
 
     def OnUnselect(self, evt):
+        logger.warning('unselect event from {} received by {}'.format(evt.name, self.GetName()))
         if evt.name != self.GetName():
             self.UnselectAll()
         evt.Skip()
 
     def OnSelect(self, evt):
+        logger.warning('select event at {}'.format(self.GetName()))
         item = evt.GetItem()
         model = evt.GetModel()
         if item.IsOk():
