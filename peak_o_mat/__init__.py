@@ -1,7 +1,5 @@
 # set version string here
 # if run from svn checkout, the svn revision will be picked up instead
-
-__version__ = '1.1.9'
     
 import sys
 import types
@@ -9,6 +7,7 @@ import numpy as np
 from numbers import Number
 import configparser
 import os
+import logging
 
 from .appdata import configdir
 from .symbols import pom_globals
@@ -78,6 +77,8 @@ from .version import __version__
 
 from . import lineshapes, lineshapebase
 
+logger = logging.getLogger('pom')
+
 def load_peaks():
     pkg = __import__('peak_o_mat',fromlist=['lineshapes'])
     mod = getattr(pkg, 'lineshapes')
@@ -89,16 +90,15 @@ def load_peaks():
 def load_userfunc():
     sys.path.append(configdir())
     try:
-        mod = __import__('userfunc',fromlist=[])
+        mod = __import__('userfunc', fromlist=[])
     except ImportError:
         #traceback.print_exc()
-        print('no userfunc.py')
+        logger.info('no userfunc.py')
     else:
         for name in dir(mod):
             sym = getattr(mod, name)
-            if type(sym) in [types.FunctionType,np.ufunc] or isinstance(sym, Number):
+            if type(sym) in [types.FunctionType, np.ufunc] or isinstance(sym, Number):
                 pom_globals.update({name: sym})
-
 
 defaultconfig = {'general':{'floating_point_is_comma':False,
                             'default_encoding':'utf-8',
@@ -108,7 +108,6 @@ defaultconfig = {'general':{'floating_point_is_comma':False,
                            },
                  'encodings':{'utf-8':'','iso8859-1':'','iso2022-jp-2':''}
                  }
-
 
 class Config(configparser.RawConfigParser):
     def write(self):

@@ -22,11 +22,14 @@ import wx.aui as aui
 from wx import xrc
 from pubsub import pub
 import os, sys
+import logging
 
 from . import misc
 from . import misc_ui
 from . import controls
 from . import menu
+
+logger = logging.getLogger('pom')
 
 class BaseModule(misc_ui.WithMessage):
 
@@ -118,7 +121,7 @@ class MyModule(module.Module):
 
             if self.view is None:
                 raise IOError('unable to load wx.Panel \'%s\' from %s' % (self.name, xrcfile))
-            print('registering module \'%s\'' % (self.name))
+            logger.info('registering module \'%s\'' % (self.name))
 
             controller.view.menu_factory.add_module(controller.view.menubar, self.title)
             pub.subscribe(self.OnSelectionChanged, (self.instid, 'selection', 'changed'))

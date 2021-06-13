@@ -263,7 +263,7 @@ class ExportView(wx.Dialog):
         vbox = wx.BoxSizer(wx.VERTICAL)
         box = wx.BoxSizer(wx.HORIZONTAL)
         box.Add(wx.StaticText(self, label='Export to'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        box.Add(self.cho_workbook, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5)
+        box.Add(self.cho_workbook, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         vbox.Add(box, 0, wx.EXPAND|wx.ALL, 10)
 
         box = wx.BoxSizer(wx.HORIZONTAL)

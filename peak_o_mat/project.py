@@ -245,16 +245,12 @@ class LData(ExtraBase):
 
     def delete(self, item):
         if type(item) == list:
-            out = []
-            for i in item:
-                out.append(self[i])
             item.sort()
             item.reverse()
             for i in item:
                 self.pop(i)
-            return out
         else:
-            return self.pop(item)
+            self.pop(item)
 
     def clear(self):
         del self[:]

@@ -117,7 +117,11 @@ class Controller(object):
                 app.ScreenUpdating = False
                 for y,row in enumerate(self.current.table.data):
                     for x,val in enumerate(row):
-                        ws.Cells(y+1,x+1).Value = float(val)
+                        ws.Cells(y+2,x+2).Value = float(val)
+                for y, lab in enumerate(self.current.table.rowLabels):
+                    ws.Cells(y + 2, 1).Value = lab
+                for x, lab in enumerate(self.current.table.colLabels):
+                    ws.Cells(1, x+2).Value = lab
                 app.ScreenUpdating = True
                 app.Visible = True
 
@@ -182,11 +186,11 @@ class GridController(misc_ui.WithMessage):
 
     @property
     def has_row_selection(self):
-        return self.selection is not None and self._selection_size()[0] == self.table.data.shape[1] and self.view.selection_type == 'row'
+        return self.selection is not None and self._selection_size()[0] == self.table.data.shape[1] and self.view.grid.selection_type == 'row'
 
     @property
     def has_col_selection(self):
-        return self.selection is not None and self._selection_size()[1] == self.table.data.shape[0] and self.view.selection_type == 'col'
+        return self.selection is not None and self._selection_size()[1] == self.table.data.shape[0] and self.view.grid.selection_type == 'col'
 
     def set_name(self, name):
         self._name = name

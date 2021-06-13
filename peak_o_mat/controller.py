@@ -62,7 +62,7 @@ from .appdata import configdir, logfile
 if hasattr(sys, 'frozen') and sys.frozen == 'windows_exe':
     # in case peak-o-mat has been compiled with py2exe
     from .modules import mod_op, mod_eval, mod_setinfo, mod_calib, \
-        mod_shell, mod_ruby, mod_map, mod_background
+        mod_shell, mod_ruby, mod_map, mod_background, mod_op2
 
 
 def split(path):
@@ -474,35 +474,6 @@ class Controller(object):
                         self.add_set(s)
         self.update_tree()
 
-    def move_set(self, s_plot, s_sets, t_plot, t_set):
-        """\
-        Move a list of sets 's_sets' or a single set from source plot 's_plot' to
-        target plot 't_plot' inserting them before set 't_set'.
-        If 's_sets' and 't_set' are None, insert plot 's_plot' before 't_plot'.
-        """
-        self.view.tree.Freeze()
-        if s_sets is None:
-            # move plot
-            self.project.move(s_plot, t_plot)
-            self.update_tree()
-            sel = t_plot
-        else:
-            # move set
-            if s_plot == t_plot:
-                self.project[s_plot].move(s_sets, t_set)
-                self.update_tree(s_plot)
-            else:
-                move = self.project[s_plot].delete(s_sets)
-                if t_set is None:
-                    t_set = 0
-                self.project[t_plot].insert(t_set, move)
-                self.update_tree(t_plot)
-                self.update_tree(s_plot)
-            sel = (t_plot, t_set)
-        self.view.tree.Thaw()
-        self.view.tree.selection = sel
-        self.project_modified = True
-
     def rename_set(self, name, item):
         """\
         Rename a plot or set. 'item' is a tuple containing plot and set number. If the set
@@ -630,11 +601,11 @@ class Controller(object):
         including all sets.
         """
         plot, sel = self.selection
+        print('about to delete',plot,sel)
         if self.selection.isplot:
             if self.project.delete(plot) is None:
                 self.view.msg_dialog('Plot cannot be deleted. It is referenced by a figure object.')
             else:
-                # self.update_tree()
                 if len(self.project) > 0:
                     self.view.tree.selection = min(len(self.project) - 1, plot)
                 else:

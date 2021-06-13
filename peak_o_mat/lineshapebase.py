@@ -3,6 +3,10 @@ __author__ = 'ck'
 from .pickers import DummyPicker
 import re
 import sys
+from RestrictedPython import compile_restricted
+import logging
+
+logger = logging.getLogger()
 
 class StripDict(dict):
     """\
@@ -37,10 +41,10 @@ class LineShape:
         for k,v in kwargs.items():
             setattr(self, k, v)
         try:
-            setattr(self, 'code', compile(self.func,'<string>','eval'))
+            setattr(self, 'code', compile_restricted(self.func,'<string>','eval'))
         except:
             tp,msg,tb = sys.exc_info()
-            print(tp,msg,'in user func',self.func)
+            logger.warning(tp,msg,'in user func',self.func)
 
 class LineShapes(StripDict):
     def __init__(self, data):

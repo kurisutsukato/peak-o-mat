@@ -1,4 +1,5 @@
 from pubsub import pub
+import logging
 
 import wx
 import wx.aui as aui
@@ -12,6 +13,8 @@ from . import misc
 
 
 # TODO: implement a 'set attribute changed' event
+
+logger = logging.getLogger('pom')
 
 class Interactor(object):
     def Install(self, controller, view):
@@ -60,7 +63,6 @@ class Interactor(object):
         pub.subscribe(self.OnTreeSelect, (self.view.instid, 'tree', 'select'))
         pub.subscribe(self.pubOnTreeDelete, (self.view.instid, 'tree', 'delete'))
         pub.subscribe(self.OnTreeRename, (self.view.instid, 'tree', 'rename'))
-        pub.subscribe(self.OnTreeMove, (self.view.instid, 'tree', 'move'))
         pub.subscribe(self.OnTreeHide, (self.view.instid, 'tree', 'hide'))
         pub.subscribe(self.OnTreeDuplicate, (self.view.instid, 'tree', 'duplicate'))
         pub.subscribe(self.OnTreeNewFromVisArea, (self.view.instid, 'tree', 'newfromvisarea'))
@@ -211,10 +213,6 @@ class Interactor(object):
         else:
             self.view.msg_dialog('File not found: \'{}\''.format(path), 'Error')
 
-    # TODO: obnsolete
-    def OnNotebookPageChanged(self, evt):
-        pub.sendMessage((self.view.instid, 'notebook', 'pagechanged'), msg=evt.GetEventObject().GetCurrentPage())
-
     def OnEditAnnotations(self, evt):
         self.controller.annotations_changed(self.view.annotations)
 
@@ -275,7 +273,7 @@ class Interactor(object):
     def OnSetFromGrid(self, data):
         self.controller.new_sets_from_grid(data)
 
-    def OnTreeCopyToGrid(self, msg):
+    def OnTreeCopyToGrid(self):
         self.controller.selection_to_grid()
 
     def OnTreeSelect(self, selection):
@@ -289,9 +287,6 @@ class Interactor(object):
         print('interactor:ontreerename')
         plot, set, name = msg
         wx.CallAfter(self.controller.rename_set, name, (plot, set))
-
-    def OnTreeMove(self, msg):
-        self.controller.move_set(*msg)
 
     def OnTreeHide(self):
         self.controller.hide_selection()
@@ -416,7 +411,7 @@ class Interactor(object):
         self.controller.notes_close()
 
     def OnNew(self, evt):
-        pub.sendMessage(('new'))
+        pub.sendMessage('new', path=None)
 
     def OnOpen(self, evt):
         path = self.view.load_file_dialog(misc.cwd())
@@ -426,8 +421,7 @@ class Interactor(object):
                 if self.controller.virgin:
                     self.controller.open_project(path)
                 else:
-                    pub.sendMessage((self.view.instid, 'new'), path=path)
-                    print('send new message')
+                    pub.sendMessage('new', path=path)
             else:
                 self.view.msg_dialog('File not found: \'{}\''.format(path), 'Error')
 

@@ -37,8 +37,9 @@ class BatchComponent(object):
         self.values.append(val)
 
 class BatchParameters(dict):
-    def __init__(self, name, par):
-        self.name = name
+    def __init__(self, plot, par):
+        self.plot = plot
+        self.name = plot.name
         self.par = par
         self.x = []
 
@@ -64,13 +65,13 @@ class BatchParameters(dict):
                     cl[compcount*(int(errors)+1)+int(errors)+1] = 'err. {}:{}'.format(comp,self.par)
                     data[idx,compcount*(int(errors)+1)+int(errors)+1] = self[comp].values[n].error
         data[:,0] = self.x
-        return data,[],cl
+        return data,[q.name for q in self.plot],cl
 
     def as_spec(self, item):
         xvalues = list(range(len(self[item].values)))
         for n,idx in enumerate(self[item].index):
             xvalues[n] = self.x[idx]
-        return PlotItem(xvalues, [q.value for q in self[item].values], '{}:{}:{}'.format(self.name,item,self.par))
+        return PlotItem(xvalues, [q.value for q in self[item].values], '{}:{}:{}'.format(self.plot.name,item,self.par))
 
     def __str__(self):
         return '\n'.join([str(q) for q in self.items()])

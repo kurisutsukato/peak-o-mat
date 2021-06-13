@@ -2,6 +2,10 @@ __author__ = 'kristukat'
 
 import wx
 import wx.dataview as dv
+from . import view as ideview
+import logging
+
+logger = logging.getLogger('pom')
 
 class Interactor:
 
@@ -9,23 +13,53 @@ class Interactor:
         self.controller = controller
         self.view = view
 
-        self.view.tree.Bind(dv.EVT_DATAVIEW_ITEM_CONTEXT_MENU, self.OnContextMenu)
-        self.view.tree.Bind(dv.EVT_DATAVIEW_SELECTION_CHANGED, self.OnSelectionChanged)
-        self.view.tree.Bind(dv.EVT_DATAVIEW_ITEM_START_EDITING, self.OnStartEditing)
-        self.view.tree.Bind(dv.EVT_DATAVIEW_ITEM_EDITING_DONE, self.OnEditingDone)
+        #self.view.tree.Bind(dv.EVT_DATAVIEW_ITEM_CONTEXT_MENU, self.OnContextMenu)
+        #self.view.tree.Bind(dv.EVT_DATAVIEW_SELECTION_CHANGED, self.OnSelectionChanged)
+        #self.view.tree.Bind(dv.EVT_DATAVIEW_ITEM_START_EDITING, self.OnStartEditing)
+        self.view.Bind(dv.EVT_DATAVIEW_ITEM_EDITING_DONE, self.OnEditingDone)
+        #self.view.lst_prj.Bind(dv.EVT_DATAVIEW_ITEM_EDITING_DONE, self.OnEditingDone)
 
-        self.view.btn_add.Bind(wx.EVT_BUTTON, self.OnAdd)
-        self.view.btn_delete.Bind(wx.EVT_BUTTON, self.OnDelete)
+        self.view.btn_add_local.Bind(wx.EVT_BUTTON, self.OnAdd)
+        self.view.btn_add_prj.Bind(wx.EVT_BUTTON, self.OnAdd)
+        self.view.btn_delete_local.Bind(wx.EVT_BUTTON, self.OnDelete)
+        self.view.btn_delete_prj.Bind(wx.EVT_BUTTON, self.OnDelete)
 
-        self.view.Bind(wx.EVT_IDLE, self.OnIdle)
+        self.view.Bind(ideview.EVT_CODELIST_SELECTION_LOST, self.OnSelectionLost)
+
+        #self.view.btn_delete.Bind(wx.EVT_BUTTON, self.OnDelete)
+
+        #self.view.Bind(wx.EVT_IDLE, self.OnIdle)
+
+        self.view.Bind(ideview.EVT_CODELIST_SELECTED, self.OnListSelect)
+
+    def get_source(self, evt):
+        scope = evt.GetEventObject().GetName().split('_')[1]
+        ctrl = getattr(self.view, 'lst_{}'.format(scope))
+        return scope, ctrl
+
+    def OnListSelect(self, evt):
+        evt.Skip()
+        scope = evt.name.split('_')[1]
+        ctrl = getattr(self.view, evt.name)
+        self.controller.editor_push_file(scope, ctrl._selected)
+
+    def OnSelectionLost(self, evt):
+        logger.warning('selection lost')
+        self.view.editor.SetValue('lost!')
 
     def OnEditingDone(self, evt):
-        print(dir(self.view.tree.Selection))
-        obj = self.controller.model.ItemToObject(self.view.tree.Selection)
-        if not self.controller.ask_for_rename(obj):
+        scope, ctrl = self.get_source(evt)
+        val = evt.GetValue()
+        model = evt.GetModel()
+        if val in model:
             evt.Veto()
         else:
-            evt.Skip()
+            evt.Allow()
+            def sort_and_select(model, ctrl, val):
+                model.sort()
+                row = model.index(val)
+                ctrl.select_row(row)
+            wx.CallAfter(sort_and_select, model, ctrl, val)
 
     def OnStartEditing(self, evt):
         obj = self.controller.model.ItemToObject(self.view.tree.Selection)
@@ -35,21 +69,24 @@ class Interactor:
             evt.Skip()
 
     def OnAdd(self, evt):
-        self.controller.add_entry()
+        scope = evt.GetEventObject().GetName().split('_')[1]
+        ctrl = getattr(self.view, 'lst_{}'.format(scope))
+        row = self.controller.add_entry(scope)
+        ctrl.select_row(row)
+        self.controller.editor_push_file(scope, ctrl._selected)
 
     def OnDelete(self, evt):
-        self.controller.delete_entry()
+        scope = evt.GetEventObject().GetName().split('_')[1]
+        ctrl = getattr(self.view, 'lst_{}'.format(scope))
+        self.controller.delete_entry(scope, ctrl._selected)
+        ctrl.select_row(max(0, ctrl._selected-1))
+        if ctrl._selected != -1:
+            self.controller.editor_push_file(scope, ctrl._selected)
 
     def OnIdle(self, evt):
+
         self.view.Freeze()
-        sel = self.view.tree.HasSelection()
-        if sel:
-            obj = self.controller.model.ItemToObject(self.view.tree.Selection)
-            self.view.btn_add.Enable(obj.isentry or not obj.toplevel)
-            self.view.btn_delete.Enable(obj.isentry)
-        else:
-            self.view.btn_add.Enable(sel)
-            self.view.btn_delete.Enable(sel)
+
         self.view.Thaw()
 
     def OnSelectionChanged(self, evt):

@@ -115,7 +115,7 @@ add('QB',
     ptype='BACKGROUND')
 
 add('GA',
-    func='amp*np.exp(-(np.power(x-pos,2)/(fwhm*fwhm/4.0/np.log(2.0))))',
+    func='amp*np.exp(-(np.power(x-pos,2)/(fwhm*fwhm/(4.0*np.log(2.0)))))',
     info='Symmetric gaussian lineshape',
     picker=pickers.LOPicker,
     ptype='PEAK')

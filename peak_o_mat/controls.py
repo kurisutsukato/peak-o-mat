@@ -722,7 +722,7 @@ class FigureListCtrl(misc_ui.WithMessage, wx.Panel):
 
     def set_tooltips(self):
         self.lst.SetToolTip('List of all figure objects. Double click on an item to open the figure.')
-        self.btn_fig_create.SetToolTip('Create a new figure based on the current plot.')
+        self.btn_fig_create.SetToolTip('Create a new figure.')
         self.btn_fig_del.SetToolTip('Delete the figure corresponding to the selected item.')
 
     def OnFigureClose(self):

@@ -15,7 +15,9 @@ a = Analysis(['peak-o-mat.py'],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
-             excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter'],
+             excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter',
+             'psutil','jedi','share','IPython','tcl','tornado','pandas','django'
+             'notebook','nbconvert','jupyter'],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher,
@@ -31,7 +33,7 @@ exe = EXE(pyz,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
-          console=True,
+          console=False,
           icon = 'peak-o-mat.ico')
 coll = COLLECT(exe,
                a.binaries,
@@ -40,7 +42,7 @@ coll = COLLECT(exe,
                strip=False,
                upx=True,
                upx_exclude=[],
-               name='peak-o-mat2-{version}')
+               name='peak-o-mat2')
 '''
 
 from os.path import join, abspath, normpath
@@ -74,7 +76,7 @@ def build():
             shutil.rmtree(d)
 
     from subprocess import run
-    run([r'pyinstaller.exe','peak-o-mat.spec'], shell=True)
+    run([r'pyinstaller.exe', 'peak-o-mat.spec'], shell=True)
 
 def package_win():
     tmp = []
