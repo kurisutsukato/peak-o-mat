@@ -2,135 +2,77 @@ __author__ = 'kristukat'
 
 import wx.dataview as dv
 from pubsub import pub
+import logging
+from operator import itemgetter
 
-class AutoSortList(list):
+logger = logging.getLogger('pom')
+
+class SortList(list):
     def append(self, item):
-        super(AutoSortList, self).append(item)
-        self[:] = sorted(self)
-        print('sort')
+        super(SortList, self).append(item)
+        self[:] = sorted(self, key=itemgetter(1))
 
-class Group(object):
-    def __init__(self, label=''):
-        self.scripts = ScriptGroup(label='Scripts')
-        self.models = ModelGroup(label='Models')
+class ListModel(dv.DataViewIndexListModel):
+    def __init__(self, data):
+        dv.DataViewIndexListModel.__init__(self, len(data))
+        self._data = data
 
-        self.children = []
-        self.label = label
+    def __contains__(self, item):
+        for a,name in self.data:
+            if name == item:
+                return True
+        return False
 
-    def add_script(self, label):
-        pass
+    def pop(self, row):
+        self._data.pop(row)
+        self.Reset(len(self._data))
 
-    def add_model(self, model):
-        pass
+    def index(self, item):
+        for n,(a,name) in enumerate(self.data):
+            if name == item:
+                return n
+        raise ValueError('\'{}\' not in list'.format(item))
 
-class ScriptGroup(Group):
-    isentry = False
-    type = 'script'
-    def __init__(self, parent=None, label=''):
-        self.parent = parent
-        self.label = label
-        self._children = AutoSortList()
+    def append(self, item):
+        self._data.append(item)
+        self.Reset(len(self._data))
+        return self._data.index(item)
 
-    def __setattribute__(self, attr, val):
-        print(attr,val)
-        if attr == 'children':
-            for q in val:
-                self._children.append(q)
-
-    def __getattr__(self, attr):
-        if attr == 'children':
-            return self._children
-
-class ModelGroup(Group):
-    type = 'model'
-
-class Entry:
-    isentry = True
-    def __init__(self, parent, label=''):
-        self.parent = parent
-        self.label = label
+    def sort(self):
+        self._data = sorted(self._data, key=itemgetter(1))
+        self.Reset(len(self._data))
 
     @property
-    def type(self):
-        p = self.parent
-        return p.parent.type, p.type
+    def data(self):
+        return self._data
 
-    @property
-    def islocal(self):
-        return self.parent.type == 'local'
+    @data.setter
+    def data(self, data):
+        self._data = data
+        self.Reset(len(data))
 
-class LocalGroup(Group):
-    type = 'local'
-
-class EmbeddedGroup(Group):
-    type = 'embedded'
-
-class ScriptingRoot(object):
-    def __init__(self):
-        self.local = LocalGroup(label='Local')
-        self.embedded = EmbeddedGroup(label='Embedded')
-
-class Model(dv.PyDataViewModel):
-    def __init__(self, root):
-        dv.PyDataViewModel.__init__(self)
-        self.root = root
-        #pub.subscribe(self.OnItemAdded, 'ITEM_ADDED')
-        self.objmapper.UseWeakRefs(True)
-
-    def GetColumnType(self, col):
-        return 'string'
-
-    def GetColumnCount(self):
-        return 1
-
-    def GetChildren(self, item, children):
-        if not item:
-            for r in self.root:
-                children.append(self.ObjectToItem(r))
-            return len(self.root)
-        elif isinstance(self.ItemToObject(item),Group):
-            obj = self.ItemToObject(item)
-            for child in obj.children:
-                #print "GetChildren called. Items returned = " + str([child.label for child in objct.children])
-                children.append(self.ObjectToItem(child))
-            return len(obj.children)
-        else:
+    def GetValueByRow(self, row, col):
+        try:
+            return str(self._data[row][col]) if col > 0 else self._data[row][col]
+        except IndexError:
+            print('getvaluebyrow index error row {}, col {}'.format(row, col))
             return 0
 
-    def IsContainer(self, item):
-        if not item:
-            return True
-        elif isinstance(self.ItemToObject(item), Group):
-            return (len(self.ItemToObject(item).children) != 0)
-        return False
-
-    def GetParent(self, item):
-        if not item:
-            return dv.NullDataViewItem
-        node = self.ItemToObject(item)
-        if node.parent is None:
-            return dv.NullDataViewItem
+    def SetValueByRow(self, value, row, col):
+        if col == 0:
+            self._data[row][col] = bool(value)
         else:
-            return self.ObjectToItem(node.parent)
+            self._data[row][col] = str(value)
+        return True
 
-    def GetValue(self, item, col):
-        if not item:
-            return None
-        else:
-            return self.ItemToObject(item).label
+    def update(self):
+        self.Reset(len(self.data))
 
-    def SetValue(self, val, item, col):
-        obj = self.ItemToObject(item)
-        obj.label = val
-        self.ItemChanged(item)
+    def GetColumnCount(self):
+        return 2
 
-    def GetAttr(self, item, col, attr):
-        node = self.ItemToObject(item)
-        if isinstance(node, Group):
-            attr.SetColour('blue')
-            attr.SetBold(True)
-            return True
-        return False
+    def GetColumnType(self, col):
+        return ['bool', 'string'][col]
 
 class Controller(object):
     def __init__(self, view=None, interactor=None):
@@ -138,44 +80,42 @@ class Controller(object):
         if interactor is not None:
             interactor.Install(self, view)
 
-        l = LocalGroup(label='Local')
-        l.children = [ScriptGroup(l,'Scripts'),ModelGroup(l,'Custom models')]
-        e = EmbeddedGroup(label='Embedded')
-        e.children = [ScriptGroup(e,'Scripts'),ModelGroup(e,'Custom models')]
-        c = e.children[0]
-        c.children = [Entry(c,q) for q in ['1','4','3']]
-        self.model = Model([l,e])
-        self.view.set_tree_model(self.model)
+        self.model_local = ListModel(SortList([[False, 'rename']]))
+        self.model_prj = ListModel(SortList([[False, 'fitmodel']]))
+
+        self.view.set_model('local', self.model_local)
+        self.view.set_model('prj', self.model_prj)
 
         self.view.run()
 
-    def delete_entry(self):
-        obj = self.model.ItemToObject(self.view.tree.Selection)
-        obj.parent.children.remove(obj)
-        self.model.ItemDeleted(self.model.GetParent(self.view.tree.Selection), self.view.tree.Selection)
+    def editor_push_file(self, scope, row):
+        self.view.editor.SetValue(getattr(self, 'model_{}'.format(scope)).data[row][1])
 
-    def add_entry(self):
-        obj = self.model.ItemToObject(self.view.tree.Selection)
-        if obj.isentry:
-            obj = obj.parent
-        en = Entry(obj, 'ganz neu')
-        obj.children.append(en)
-        item = self.model.ObjectToItem(en)
-        self.model.ItemAdded(self.model.GetParent(item),item)
-        self.view.tree.EnsureVisible(item)
-        self.view.tree.Select(item)
+    def delete_entry(self, scope, row):
+        model = getattr(self, 'model_{}'.format(scope))
+        logger.warning('delete row {}'.format(row))
+        model.pop(row)
+
+    def add_entry(self, scope):
+        model = getattr(self, 'model_{}'.format(scope))
+        count = 0
+        for a,name in model.data:
+            try:
+                name, num = name.split('-')
+            except ValueError:
+                num = 0
+            if name == 'untitled':
+                count = max(count, int(num)+1)
+        if count > 0:
+            row = model.append([False, 'untitled-{}'.format(count)])
+        else:
+            row = model.append([False, 'untitled'])
+        return row
 
     def ask_for_rename(self, obj):
         return not obj.label == 'Depp'
 
 if __name__ == '__main__':
-
-    a = AutoSortList()
-    a.append(1)
-    a.append(3)
-    a.append(2)
-    print(a)
-
 
     import wx
     from .view import View

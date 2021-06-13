@@ -4,7 +4,8 @@ from pubsub import pub
 from operator import add
 import copy
 import re
-import time
+import logging
+logger = logging.getLogger('pom')
 
 import numpy as np
 from scipy.signal import find_peaks as fp, peak_widths, peak_prominences
@@ -367,7 +368,7 @@ class FitController(object):
 
         comp,par = yexpr
 
-        data = fit.BatchParameters(name=pl.name, par=par)
+        data = fit.BatchParameters(pl, par=par)
         try:
             x = [float(q.strip()) for q in re.split('[,;]',xexpr)]
         except ValueError:
@@ -450,7 +451,8 @@ class FitController(object):
             #self.message('Fit canceled.')
 
     def start_fit(self, limit, fitopts):
-        pl,ds = self.selection
+        pl, ds = self.selection
+        logger.debug('start fit %s %s', pl, ds)
         self._orig_model = self.model.copy()
         if len(pl) == len(ds) and len(pl) > 1:
             # fit multi model
@@ -569,6 +571,7 @@ class WorkerThread(Thread):
         self.join()
 
     def run(self):
+        logger.debug('worker thread started')
         ds, mod, fitopts = self._job
         f = fit.Fit(ds, mod, **fitopts, stopflag=self.stopflag)
         self.res = f.run(self._notify)

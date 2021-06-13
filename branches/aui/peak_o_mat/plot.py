@@ -549,7 +549,7 @@ class Interactor:
                 self.view._setRubberBand(self._zoomCorner1, self._zoomCorner2)  # remove old
             else:
                 self._hasDragged = True
-            self._zoomCorner2[0], self._zoomCorner2[1] = self.view._getXY(evt)
+            self._zoomCorner2[0], self._zoomCorner2[1] = self.view.GetXY(evt)
             self.view._setRubberBand(self._zoomCorner1, self._zoomCorner2)  # add new
             self.view.Redraw()
         elif (self.view.state.eq('drag') and evt.LeftIsDown()) or evt.MiddleIsDown():
@@ -569,7 +569,7 @@ class Interactor:
                 self.view._Draw(graphics, xAxis, yAxis)
 
     def OnMouseLeftDown(self, evt):
-        self._zoomCorner1[0], self._zoomCorner1[1] = self.view._getXY(evt)
+        self._zoomCorner1[0], self._zoomCorner1[1] = self.view.GetXY(evt)
         self._screenCoordinates = np.array(evt.GetPosition())
         self._mousestart = self._mousestop = self.view.GetXY(evt)
 
@@ -1124,22 +1124,23 @@ class PlotCanvas(misc_ui.WithMessage, wx.Panel):
             self._Draw(graphics, xAxis, yAxis)
 
     def _getXY(self, evt):
-        """Takes a mouse evt and returns the XY user axis values."""
-        x, y = self.PositionScreenToUser(evt.GetPosition())
+        # returns user space coordinates without considering log axes
+        screenPos = np.array(evt.GetPosition())
+        x, y = (screenPos - self._pointShift) / self._pointScale
         return x, y
 
-    def GetXY(self, event):
-        """Wrapper around _getXY, which handles log scales"""
-        x, y = self._getXY(event)
-        if self.getLogScale()[0]:
-            x = np.power(10, x)
-        if self.getLogScale()[1]:
-            y = np.power(10, y)
+    def GetXY(self, evt):
+        x, y = self.PositionScreenToUser(evt.GetPosition())
         return x, y
 
     def PositionUserToScreen(self, pntXY):
         """Converts User position to Screen Coordinates"""
-        userPos = np.array(pntXY)
+        x, y = pntXY
+        if self.getLogScale()[0]:
+            x = np.log10(x)
+        if self.getLogScale()[1]:
+            y = np.log10(y)
+        userPos = np.array((x, y))
         x, y = userPos * self._pointScale + self._pointShift
         return x, y
 
@@ -1147,6 +1148,10 @@ class PlotCanvas(misc_ui.WithMessage, wx.Panel):
         """Converts Screen position to User Coordinates"""
         screenPos = np.array(pntXY)
         x, y = (screenPos - self._pointShift) / self._pointScale
+        if self.getLogScale()[0]:
+            x = np.power(10, x)
+        if self.getLogScale()[1]:
+            y = np.power(10, y)
         return x, y
 
     def SetXSpec(self, type='auto'):

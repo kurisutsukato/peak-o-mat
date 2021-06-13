@@ -135,13 +135,10 @@ API-MS-Win-Security-Base-L1-1-0.dll
 
     return configdict
 
-try:
-    from py2exe.build_exe import py2exe
-except ImportError:
-    if os.name != 'nt':
-        pass
-else:
-    class build_installer(py2exe):
+import py2exe
+from distutils.command import py2exe as p2e
+if True:
+    class build_installer(p2e):
         # This class first builds the exe file(s), then creates a Windows installer.
         # You need InnoSetup for it.
         def run(self):

@@ -5,7 +5,59 @@ import wx.dataview as dv
 import wx.lib.agw.flatnotebook as fnb
 
 from ..controls import PythonSTC
-import os
+import logging
+
+logger = logging.getLogger('pom')
+
+from wx.lib import newevent
+SelectEvent, EVT_CODELIST_SELECTED = newevent.NewCommandEvent()
+NoSelectionEvent, EVT_CODELIST_SELECTION_LOST = newevent.NewCommandEvent()
+
+class CodeList(dv.DataViewCtrl):
+    def __init__(self, parent, header, **kwargs):
+        super(CodeList, self).__init__(parent, style=wx.BORDER_THEME|dv.DV_ROW_LINES, **kwargs)
+        self._selected = -1
+
+        col_chk = self.AppendToggleColumn('', 0, width=40, mode=dv.DATAVIEW_CELL_ACTIVATABLE)
+        self.AppendTextColumn(header, 1, width=100, mode=dv.DATAVIEW_CELL_EDITABLE)
+
+        ### TODO: ist das noetig? langsam Doppelcklick aktiviert automatisch den Editor
+        ### ACTIVATE wird durch normalen Doppelklick getriggert
+        self.Bind(dv.EVT_DATAVIEW_ITEM_ACTIVATED, self.OnActivate, self)
+        self.Bind(dv.EVT_DATAVIEW_SELECTION_CHANGED, self.OnSelect)
+        parent.Bind(EVT_CODELIST_SELECTED, self.OnUnselect)
+
+    def OnUnselect(self, evt):
+        if evt.name != self.GetName():
+            self.UnselectAll()
+        evt.Skip()
+
+    def OnSelect(self, evt):
+        item = evt.GetItem()
+        model = evt.GetModel()
+        if item.IsOk():
+            self._selected = model.GetRow(item)
+            event = SelectEvent(self.GetId(), name=self.GetName())
+            wx.PostEvent(self, event)
+        elif self._selected != -1:
+            self.select_row(self._selected)
+
+    def OnActivate(self, evt):
+        logger.debug('activate event')
+        try:
+            self.EditItem(evt.GetItem(), self.GetColumn(evt.GetColumn()))
+        except:
+            print('double click on column generates silly event')
+
+    def select_row(self, row):
+        logger.warning('select row {}:{}'.format(self.GetName(), row))
+        if len(self.GetModel().data) > 0:
+            self.Select(self.GetModel().GetItem(row))
+            self._selected = row
+        else:
+            self._selected = -1
+            event = NoSelectionEvent(self.GetId(), name=self.GetName())
+            wx.PostEvent(self, event)
 
 class EditorContainer(wx.Panel):
     def __init__(self, parent):
@@ -30,41 +82,62 @@ class View(wx.Frame):
         self.setup_controls()
         self.layout()
 
+    def set_model(self, scope, model):
+        assert scope in ['local', 'prj']
+
+        if scope == 'local':
+            self.lst_local.AssociateModel(model)
+        elif scope == 'prj':
+            self.lst_prj.AssociateModel(model)
+
     def run(self):
         self.Show()
         wx.GetApp().MainLoop()
 
-    def set_tree_model(self, model):
-        self.tree.AssociateModel(model)
-
     def setup_controls(self):
-        self.split = wx.SplitterWindow(self, style=wx.SP_LIVE_UPDATE)
-        self.panel = p = wx.Panel(self.split)
+        self.split_v = wx.SplitterWindow(self, style=wx.SP_LIVE_UPDATE)
+        self.panel = p = wx.Panel(self.split_v)
 
-        self.tree = dvtc = dv.DataViewCtrl(p, style=dv.DV_ROW_LINES|dv.DV_NO_HEADER| dv.DV_VERT_RULES)
-        self.tree.AppendTextColumn("",   0, width=300, mode=dv.DATAVIEW_CELL_EDITABLE)
+        self.lst_local = CodeList(self.panel, 'Local', name='lst_local')
+        self.lst_prj = CodeList(self.panel, 'Embedded', name='lst_prj')
 
-        self.editor_container = EditorContainer(self.split)
-        self.editor_container.new_editor('title')
+        self.editor = CodeEditor(self.split_v)
 
-        self.btn_add = wx.Button(p, label='Add')
-        self.btn_delete = wx.Button(p, label='Delete')
+        self.btn_l2p = wx.Button(self.panel, label='Down')
+        self.btn_p2l = wx.Button(self.panel, label='Up')
 
+        self.btn_add_local = wx.Button(p, label='New', name='new_local')
+        self.btn_delete_local = wx.Button(p, label='Delete', name='del_local')
+        self.btn_add_prj = wx.Button(p, label='New', name='new_prj')
+        self.btn_delete_prj = wx.Button(p, label='Delete', name='del_prj')
 
     def layout(self):
         box = wx.BoxSizer(wx.VERTICAL)
-        box.Add(self.tree, 1, wx.EXPAND|wx.ALL, 0)
+        box.Add(self.lst_local, 1, wx.EXPAND|wx.ALL, 0)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(self.btn_add, 1, wx.EXPAND|wx.ALL|wx.BU_EXACTFIT, 2)
-        hbox.Add(self.btn_delete, 1, wx.EXPAND|wx.ALL, 2)
+        hbox.Add(self.btn_add_local, 1, wx.EXPAND|wx.ALL, 2)
+        hbox.Add(self.btn_delete_local, 1, wx.EXPAND|wx.ALL, 2)
         box.Add(hbox, 0, wx.EXPAND)
+
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(self.btn_l2p, 0, wx.ALL, 2)
+        hbox.Add(self.btn_p2l, 0, wx.ALL, 2)
+        box.Add(hbox, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 10)
+
+        box.Add(self.lst_prj, 1, wx.EXPAND | wx.ALL, 0)
+
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(self.btn_add_prj, 1, wx.EXPAND|wx.ALL|wx.BU_EXACTFIT, 2)
+        hbox.Add(self.btn_delete_prj, 1, wx.EXPAND|wx.ALL, 2)
+        box.Add(hbox, 0, wx.EXPAND)
+
         self.panel.SetSizer(box)
         #self.Fit()
 
         min_width = hbox.GetMinSize()[0]
-        self.split.SplitVertically(self.panel, self.editor_container, min_width*1.1)
-        self.split.SetMinimumPaneSize(min_width*1.1)
+        self.split_v.SplitVertically(self.panel, self.editor, int(min_width * 1.1))
+        self.split_v.SetMinimumPaneSize(int(min_width*1.1))
 
     def Hide(self):
         self.Show(False)
@@ -79,8 +152,6 @@ class CodeEditor(PythonSTC):
 
     # Some methods to make it compatible with how the wxTextCtrl is used
     def SetValue(self, value):
-        if wx.USE_UNICODE:
-            value = value.decode('iso8859_1')
         val = self.GetReadOnly()
         self.SetReadOnly(False)
         self.SetText(value)

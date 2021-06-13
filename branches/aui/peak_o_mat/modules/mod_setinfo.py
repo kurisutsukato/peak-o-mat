@@ -43,27 +43,25 @@ class TrafoListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, EditMixin):
         self.EnableCheckBoxes(True)
 
     def init_ctrl(self):
-        self.InsertColumn(0, "")
-        self.InsertColumn(1, "Axis")
-        self.InsertColumn(2, "Transformation")
-        self.InsertColumn(3, "Comment")
+        self.InsertColumn(0, "Axis")
+        self.InsertColumn(1, "Transformation")
+        self.InsertColumn(2, "Comment")
 
-        self.SetColumnWidth(0, wx.LIST_AUTOSIZE)
-        self.SetColumnWidth(1, 50)
-        self.SetColumnWidth(2, 300)
-        self.SetColumnWidth(3, wx.LIST_AUTOSIZE)
+        self.SetColumnWidth(0, 50)
+        self.SetColumnWidth(1, 300)
+        self.SetColumnWidth(2, wx.LIST_AUTOSIZE)
 
     def Insert(self, data):
         #TODO: sys.maxsize is zu gross, daher 20000
 
         index = self.InsertItem(20000, data[0])
         for col in range(3):
-            self.SetItem(index, col+1, data[col])
+            self.SetItem(index, col, data[col])
         self.SetItemData(index, index)
         self.CheckItem(index, not data[3])
 
     def OnBeginEdit(self, evt):
-        if evt.GetColumn() in [0, 1]:
+        if evt.GetColumn() in [0, 2]:
             evt.Veto()
 
 class XRCModule(module.XRCModule):
@@ -104,8 +102,7 @@ class XRCModule(module.XRCModule):
             trafo = list(ds.trafo[idx])
             trafo[3] = not state
             ds.trafo[idx] = tuple(trafo)
-            #TODO: replace by message
-            wx.CallAfter(self.controller.plot)
+            pub.sendMessage((self.instid, 'updateplot'))
 
     def OnMaskMakePermanent(self, evt):
         self.controller.active_set.make_mask_permanent()
@@ -126,10 +123,9 @@ class XRCModule(module.XRCModule):
         label = evt.GetLabel()
         ds = self.controller.active_set
         trafo = list(ds.trafo[idx])
-        trafo[col-1] = label
+        trafo[col] = label
         ds.trafo[idx] = tuple(trafo)
-        #TODO: replace by msg
-        self.controller.update_plot()
+        pub.sendMessage((self.instid, 'updateplot'))
 
     def OnTrafosMakePermanent(self, evt):
         self.controller.active_set.make_trafo_permanent()
