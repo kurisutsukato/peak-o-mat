@@ -30,7 +30,9 @@ class CodeList(dv.DataViewCtrl):
     def OnUnselect(self, evt):
         logger.warning('unselect event from {} received by {}'.format(evt.name, self.GetName()))
         if evt.name != self.GetName():
+            self.view.SetEvtHandlerEnabled(False)
             self.UnselectAll()
+            self.view.SetEvtHandlerEnabled(True)
         evt.Skip()
 
     def OnSelect(self, evt):
