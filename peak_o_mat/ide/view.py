@@ -21,9 +21,6 @@ class CodeList(dv.DataViewCtrl):
         col_chk = self.AppendToggleColumn('', 0, width=40, mode=dv.DATAVIEW_CELL_ACTIVATABLE)
         self.AppendTextColumn(header, 1, width=100, mode=dv.DATAVIEW_CELL_EDITABLE)
 
-        ### TODO: ist das noetig? langsam Doppelcklick aktiviert automatisch den Editor
-        ### ACTIVATE wird durch normalen Doppelklick getriggert
-        self.Bind(dv.EVT_DATAVIEW_ITEM_ACTIVATED, self.OnActivate, self)
         self.Bind(dv.EVT_DATAVIEW_SELECTION_CHANGED, self.OnSelect)
         parent.Bind(EVT_CODELIST_SELECTED, self.OnUnselect)
 
@@ -45,13 +42,6 @@ class CodeList(dv.DataViewCtrl):
             wx.PostEvent(self, event)
         elif self._selected != -1:
             self.select_row(self._selected)
-
-    def OnActivate(self, evt):
-        logger.debug('activate event')
-        try:
-            self.EditItem(evt.GetItem(), self.GetColumn(evt.GetColumn()))
-        except:
-            print('double click on column generates silly event')
 
     def select_row(self, row):
         logger.warning('select row {}:{}'.format(self.GetName(), row))

@@ -57,32 +57,41 @@ class Interactor:
     def OnEditingDone(self, evt):
         scope, ctrl = self.get_source(evt)
         row = evt.GetModel().GetRow(evt.GetItem())
-        val = evt.GetValue()
-        logger.warning('editing done, new val: {}'.format(val))
+        #val = evt.GetValue()
+        logger.warning('editing done, new val: "{}"'.format(evt.GetValue()))
         model = evt.GetModel()
 
-        if val is not None and val in model:
-            evt.Veto()
-        else:
-            oldval = model.data[row][1]
-            def sort_and_select(model, ctrl, val, row, oldval):
-                if val is None:
-                    val = model.data[row][1]
-                    model.data[row][1] = oldval
-                    if val in model:
-                        model.Reset(len(model.data))
-                        return
-                    else:
-                        model.data[row][1] = val
-                if self.controller.rename(model, oldval, row):
-                    model.sort()
-                    row = model.index(val)
-                    ctrl.select_row(row)
-                else:
-                    model.data[row][1] = oldval
-                    model.Reset(len(model.data))
+        oldval = model.data[row][1]
 
-            wx.CallAfter(sort_and_select, model, ctrl, val, row, oldval)
+        # evt.Veto() nringt nichts fuer OSX weil da der neue Wert noch nicht bekannt ist
+        # und bevor der event handler nicht beendet wird, sind die Modell Daten noch die alten
+
+        oldval = model.data[row][1]
+        logger.warning(oldval)
+        def sort_and_select(model, ctrl, row, oldval):
+            val = model.data[row][1]
+            try:
+                base, ext = val.split('.')
+            except ValueError:
+                val = val.replace('.','')+'.py'
+                logger.warning('name without extension')
+            else:
+                if ext != 'py':
+                    val = base+'.py'
+            model.data[row][1] = oldval
+            if val in model:
+                model.Reset(len(model.data))
+                return
+            else:
+                model.data[row][1] = val
+            if self.controller.rename(model, oldval, row):
+                model.sort()
+                row = model.index(val)
+                ctrl.select_row(row)
+            else:
+                model.data[row][1] = oldval
+                model.Reset(len(model.data))
+        wx.CallAfter(sort_and_select, model, ctrl, row, oldval)
 
     def OnStartEditing(self, evt):
         obj = self.controller.model.ItemToObject(self.view.tree.Selection)
@@ -143,11 +152,5 @@ class Interactor:
 
         self.view.split.PopupMenu(menu)
         menu.Destroy()
-
-    def OnTransfer(self, evt):
-        print(evt)
-
-    def OnRename(self, evt):
-        self.view.tree.EditItem(self.view.tree.Selection, self.view.tree.GetColumn(0))
 
 
