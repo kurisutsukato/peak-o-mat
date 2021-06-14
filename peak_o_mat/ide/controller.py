@@ -6,6 +6,7 @@ import logging
 from operator import itemgetter
 from glob import glob
 import os.path
+import os
 
 from ..appdata import configdir
 
@@ -91,7 +92,7 @@ class ListModel(dv.DataViewIndexListModel):
         return self._data.index(item)
 
     def sort(self):
-        self._data = sorted(self._data, key=itemgetter(1))
+        self._data[:] = sorted(self._data, key=itemgetter(1))
         self.Reset(len(self._data))
 
     @property
@@ -144,6 +145,18 @@ class Controller(object):
 
         self.view.run()
 
+    def rename(self, model, oldval, row):
+        logger.warning('renaming {}: {}->{}'.format(self.edit_mode, oldval, model.data[row][1]))
+        if hasattr(model.data, 'basepath'):
+            try:
+                os.rename(os.path.join(model.data.basepath, oldval),
+                          os.path.join(model.data.basepath, model.data[row][1]))
+            except OSError:
+                return False
+            return True
+        else:
+            pass
+        
     def model_update(self):
         val = self.view.editor.GetText()
         self.model[self.edit_mode].data.update(getattr(self.view,'lst_{}'.format(self.edit_mode))._selected, val)
@@ -176,9 +189,6 @@ class Controller(object):
         else:
             row = model.append('untitled')
         return row
-
-    def ask_for_rename(self, obj):
-        return not obj.label == 'Depp'
 
 
 if __name__ == '__main__':
