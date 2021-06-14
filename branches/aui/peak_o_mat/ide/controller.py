@@ -29,6 +29,7 @@ class ListModel(dv.DataViewIndexListModel):
 
     def index(self, item):
         for n,(a,name) in enumerate(self.data):
+            logger.warning('searching {}, found {}'.format(item, name))
             if name == item:
                 return n
         raise ValueError('\'{}\' not in list'.format(item))

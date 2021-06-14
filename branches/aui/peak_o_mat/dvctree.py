@@ -113,9 +113,11 @@ class TreeListModel(dv.PyDataViewModel):
 
     def GetAttr(self, item, col, attr):
         obj = self.ItemToObject(item)
+        attr.SetColour(wx.BLACK) # needed on OSX
+
         if isinstance(obj, Plot):
             if obj.model is not None:
-                attr.SetColour(wx.GREEN)
+                attr.SetColour(wx.Colour(0,120,0))
                 attr.SetBold(True)
                 return True
             else:
@@ -151,7 +153,7 @@ class TreeListModel(dv.PyDataViewModel):
                       }
             return mapper[col]
 
-    def Cleared(self, dvctrl=None):
+    def __Cleared(self, dvctrl=None):
         if dvctrl is not None:
             self.save_state(dvctrl)
             super(TreeListModel, self).Cleared()

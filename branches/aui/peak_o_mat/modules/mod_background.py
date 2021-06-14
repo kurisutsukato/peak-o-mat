@@ -46,6 +46,8 @@ class XRCModule(module.XRCModule):
         module.XRCModule.__init__(self, __file__, *args)
 
     def init(self):
+        self.view.Layout()
+
         self._has_attention = False
 
         self.page = 0
