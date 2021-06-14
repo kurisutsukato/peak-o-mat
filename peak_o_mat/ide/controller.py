@@ -4,13 +4,64 @@ import wx.dataview as dv
 from pubsub import pub
 import logging
 from operator import itemgetter
+from glob import glob
+import os.path
+
+from ..appdata import configdir
 
 logger = logging.getLogger('pom')
 
+prjscripts = [
+    [False, 'rename',
+     '''\
+for p in project:
+    for s in p:
+        print(p.name, s.name)
+''']
+]
+
 class SortList(list):
-    def append(self, item):
+    def _append(self, item):
         super(SortList, self).append(item)
         self[:] = sorted(self, key=itemgetter(1))
+
+    def index(self, item):
+        for n, i in enumerate(self):
+            if i[1] == item:
+                return n
+
+class LocalScripts(SortList):
+    def __init__(self, basepath):
+        self.basepath = basepath
+        fls = glob(os.path.join(basepath, '*.py'))
+
+        super(LocalScripts, self).__init__([[False, os.path.basename(q)] for q in fls])
+
+    def append(self, item):
+        super(SortList, self).append([False, item])
+        self[:] = sorted(self, key=itemgetter(1))
+
+    def load(self, row):
+        return open(os.path.join(self.basepath, self[row][1])).read()
+
+    def names(self):
+        for a, name in self:
+            yield name
+
+class PrjScripts(SortList):
+    def load(self, row):
+        return self[row][2]
+
+    def append(self, item):
+        super(SortList, self).append([False, item, ''])
+        self[:] = sorted(self, key=itemgetter(1))
+
+    def names(self):
+        for a, name, script in self:
+            yield name
+
+    def update(self, row, val):
+        self[row][2] = val
 
 class ListModel(dv.DataViewIndexListModel):
     def __init__(self, data):
@@ -18,7 +69,7 @@ class ListModel(dv.DataViewIndexListModel):
         self._data = data
 
     def __contains__(self, item):
-        for a,name in self.data:
+        for a, name in self.data:
             if name == item:
                 return True
         return False
@@ -28,7 +79,7 @@ class ListModel(dv.DataViewIndexListModel):
         self.Reset(len(self._data))
 
     def index(self, item):
-        for n,(a,name) in enumerate(self.data):
+        for n, (a, name) in enumerate(self.data):
             logger.warning('searching {}, found {}'.format(item, name))
             if name == item:
                 return n
@@ -75,49 +126,62 @@ class ListModel(dv.DataViewIndexListModel):
     def GetColumnType(self, col):
         return ['bool', 'string'][col]
 
+
 class Controller(object):
     def __init__(self, view=None, interactor=None):
         self.view = view
         if interactor is not None:
             interactor.Install(self, view)
 
-        self.model_local = ListModel(SortList([[False, 'rename']]))
-        self.model_prj = ListModel(SortList([[False, 'fitmodel']]))
+        self.model = {
+            'prj': ListModel(PrjScripts(prjscripts)),
+            'local': ListModel(LocalScripts(os.path.join(configdir(), 'userfunc')))
+        }
+        self.edit_mode = None   # maybe 'prj' or 'local'
 
-        self.view.set_model('local', self.model_local)
-        self.view.set_model('prj', self.model_prj)
+        self.view.set_model('local', self.model['local'])
+        self.view.set_model('prj', self.model['prj'])
 
         self.view.run()
 
+    def model_update(self):
+        val = self.view.editor.GetText()
+        self.model[self.edit_mode].data.update(getattr(self.view,'lst_{}'.format(self.edit_mode))._selected, val)
+
     def editor_push_file(self, scope, row):
-        self.view.editor.SetValue(getattr(self, 'model_{}'.format(scope)).data[row][1])
+        data = self.model[scope].data
+        cont = data.load(row)
+        logger.warning('stopping event handler, loading content')
+        self.view.SetEvtHandlerEnabled(False)  # TODO:does not work
+        self.view.editor.SetText(cont)
+        self.view.SetEvtHandlerEnabled(True)
 
     def delete_entry(self, scope, row):
-        model = getattr(self, 'model_{}'.format(scope))
+        model = self.model[scope]
         logger.warning('delete row {}'.format(row))
         model.pop(row)
 
     def add_entry(self, scope):
-        model = getattr(self, 'model_{}'.format(scope))
+        model = self.model[scope]
         count = 0
-        for a,name in model.data:
+        for name in model.data.names():
             try:
                 name, num = name.split('-')
             except ValueError:
                 num = 0
             if name == 'untitled':
-                count = max(count, int(num)+1)
+                count = max(count, int(num) + 1)
         if count > 0:
-            row = model.append([False, 'untitled-{}'.format(count)])
+            row = model.append('untitled-{}'.format(count))
         else:
-            row = model.append([False, 'untitled'])
+            row = model.append('untitled')
         return row
 
     def ask_for_rename(self, obj):
         return not obj.label == 'Depp'
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     import wx
     from .view import View
     from .interactor import Interactor

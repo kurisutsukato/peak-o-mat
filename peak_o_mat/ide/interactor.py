@@ -1,6 +1,7 @@
 __author__ = 'kristukat'
 
 import wx
+import wx.stc
 import wx.dataview as dv
 from . import view as ideview
 import logging
@@ -25,6 +26,7 @@ class Interactor:
         self.view.btn_delete_prj.Bind(wx.EVT_BUTTON, self.OnDelete)
 
         self.view.Bind(ideview.EVT_CODELIST_SELECTION_LOST, self.OnSelectionLost)
+        self.view.Bind(wx.stc.EVT_STC_MODIFIED, self.OnEditorModified)
 
         #self.view.btn_delete.Bind(wx.EVT_BUTTON, self.OnDelete)
 
@@ -37,10 +39,15 @@ class Interactor:
         ctrl = getattr(self.view, 'lst_{}'.format(scope))
         return scope, ctrl
 
+    def OnEditorModified(self, evt):
+        if evt.GetModificationType()&(wx.stc.STC_MOD_INSERTTEXT|wx.stc.STC_MOD_DELETETEXT):
+            self.controller.model_update()
+
     def OnListSelect(self, evt):
         evt.Skip()
         scope = evt.name.split('_')[1]
         ctrl = getattr(self.view, evt.name)
+        self.controller.edit_mode = scope
         self.controller.editor_push_file(scope, ctrl._selected)
 
     def OnSelectionLost(self, evt):
@@ -48,6 +55,7 @@ class Interactor:
         self.view.editor.SetValue('lost!')
 
     def OnEditingDone(self, evt):
+        print(evt.GetItem())
         scope, ctrl = self.get_source(evt)
         val = evt.GetValue()
         logger.warning('editing done, new val: {}'.format(val))

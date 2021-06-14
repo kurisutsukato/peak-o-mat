@@ -29,7 +29,7 @@ def homedirectory():
             return os.environ[name]
     # well, someone's being naughty, see if we can get ~ to expand to a directory...
     possible = os.path.abspath(os.path.expanduser( '~/' ))
-    if os.path.exists( possible ):
+    if os.path.exists(possible):
         #print 'home dir from expanduser'
         return possible
     raise OSError('Unable to determine user\'s application-data directory')
