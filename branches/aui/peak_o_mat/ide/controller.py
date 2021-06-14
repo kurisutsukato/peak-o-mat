@@ -13,7 +13,7 @@ from ..appdata import configdir
 logger = logging.getLogger('pom')
 
 prjscripts = [
-    [False, 'rename',
+    [False, 'rename.py',
      '''\
 for p in project:
     for s in p:
@@ -49,6 +49,9 @@ class LocalScripts(SortList):
         for a, name in self:
             yield name
 
+    def path(self, row):
+        return os.path.join(self.basepath, self[row][1])
+
 class PrjScripts(SortList):
     def load(self, row):
         return self[row][2]
@@ -70,8 +73,8 @@ class ListModel(dv.DataViewIndexListModel):
         self._data = data
 
     def __contains__(self, item):
-        for a, name in self.data:
-            if name == item:
+        for row in self.data:
+            if row[1] == item:
                 return True
         return False
 
@@ -80,9 +83,8 @@ class ListModel(dv.DataViewIndexListModel):
         self.Reset(len(self._data))
 
     def index(self, item):
-        for n, (a, name) in enumerate(self.data):
-            logger.warning('searching {}, found {}'.format(item, name))
-            if name == item:
+        for n, row in enumerate(self.data):
+            if row[1] == item:
                 return n
         raise ValueError('\'{}\' not in list'.format(item))
 
@@ -115,6 +117,9 @@ class ListModel(dv.DataViewIndexListModel):
         if col == 0:
             self._data[row][col] = bool(value)
         else:
+            for _r in self._data:
+                if _r[1] == str(value):
+                    return False
             self._data[row][col] = str(value)
         return True
 
@@ -151,15 +156,20 @@ class Controller(object):
             try:
                 os.rename(os.path.join(model.data.basepath, oldval),
                           os.path.join(model.data.basepath, model.data[row][1]))
-            except OSError:
+            except IOError:
                 return False
             return True
         else:
-            pass
+            return True
         
     def model_update(self):
         val = self.view.editor.GetText()
-        self.model[self.edit_mode].data.update(getattr(self.view,'lst_{}'.format(self.edit_mode))._selected, val)
+        ctrl = getattr(self.view,'lst_{}'.format(self.edit_mode))
+        if self.edit_mode == 'prj':
+            self.model[self.edit_mode].data.update(ctrl._selected, val)
+        elif self.edit_mode == 'local':
+            with open(self.model[self.edit_mode].data.path(ctrl._selected), 'w', encoding='utf-8') as fp:
+                fp.write(val)
 
     def editor_push_file(self, scope, row):
         data = self.model[scope].data
@@ -172,12 +182,21 @@ class Controller(object):
     def delete_entry(self, scope, row):
         model = self.model[scope]
         logger.warning('delete row {}'.format(row))
-        model.pop(row)
+        if scope == 'local':
+            try:
+                os.unlink(model.data.path(row))
+            except OSError:
+                raise
+            else:
+                model.pop(row)
+        else:
+            model.pop(row)
 
     def add_entry(self, scope):
         model = self.model[scope]
         count = 0
         for name in model.data.names():
+            name = name.rstrip('.py')
             try:
                 name, num = name.split('-')
             except ValueError:
@@ -185,9 +204,18 @@ class Controller(object):
             if name == 'untitled':
                 count = max(count, int(num) + 1)
         if count > 0:
-            row = model.append('untitled-{}'.format(count))
+            newname = 'untitled-{}.py'.format(count)
         else:
-            row = model.append('untitled')
+            newname = 'untitled.py'
+        if scope == 'local':
+            try:
+                open(os.path.join(model.data.basepath, newname), 'w')
+            except OSError:
+                raise
+            else:
+                row = model.append(newname)
+        else:
+            row = model.append(newname)
         return row
 
 
