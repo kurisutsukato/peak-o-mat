@@ -50,6 +50,7 @@ class Interactor:
     def OnEditingDone(self, evt):
         scope, ctrl = self.get_source(evt)
         val = evt.GetValue()
+        logger.warning('editing done, new val: {}'.format(val))
         model = evt.GetModel()
         if val in model:
             evt.Veto()

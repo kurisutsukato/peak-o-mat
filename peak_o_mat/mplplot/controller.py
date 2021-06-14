@@ -13,6 +13,8 @@ import io
 import PIL
 
 from threading import Thread
+import matplotlib
+matplotlib.use('agg')
 from matplotlib.ticker import FixedLocator, AutoLocator, AutoMinorLocator, LogLocator
 from matplotlib.ticker import FuncFormatter, NullFormatter, ScalarFormatter, LogFormatterMathtext
 
