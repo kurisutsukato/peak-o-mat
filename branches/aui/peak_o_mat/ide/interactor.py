@@ -55,20 +55,34 @@ class Interactor:
         self.view.editor.SetValue('lost!')
 
     def OnEditingDone(self, evt):
-        print(evt.GetItem())
         scope, ctrl = self.get_source(evt)
+        row = evt.GetModel().GetRow(evt.GetItem())
         val = evt.GetValue()
         logger.warning('editing done, new val: {}'.format(val))
         model = evt.GetModel()
-        if val in model:
+
+        if val is not None and val in model:
             evt.Veto()
         else:
-            evt.Allow()
-            def sort_and_select(model, ctrl, val):
-                model.sort()
-                row = model.index(val)
-                ctrl.select_row(row)
-            wx.CallAfter(sort_and_select, model, ctrl, val)
+            oldval = model.data[row][1]
+            def sort_and_select(model, ctrl, val, row, oldval):
+                if val is None:
+                    val = model.data[row][1]
+                    model.data[row][1] = oldval
+                    if val in model:
+                        model.Reset(len(model.data))
+                        return
+                    else:
+                        model.data[row][1] = val
+                if self.controller.rename(model, oldval, row):
+                    model.sort()
+                    row = model.index(val)
+                    ctrl.select_row(row)
+                else:
+                    model.data[row][1] = oldval
+                    model.Reset(len(model.data))
+
+            wx.CallAfter(sort_and_select, model, ctrl, val, row, oldval)
 
     def OnStartEditing(self, evt):
         obj = self.controller.model.ItemToObject(self.view.tree.Selection)
