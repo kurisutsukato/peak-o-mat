@@ -49,7 +49,9 @@ from . import datagrid
 from . import spec
 from . import project
 from . import module
-from . import codeeditor
+#from . import codeeditor
+from . import ide
+
 from .mplplot import controller as mplcontroller
 from .mplplot import model as mplmodel
 from .controls import FigureListController
@@ -130,7 +132,8 @@ class Controller(object):
 
             self.fit_controller = fitcontroller.FitController(self.selection_callback, fitview,
                                                               fitinteractor.FitInteractor())
-            self.codeeditor = codeeditor.new(self, view)
+            #self.codeeditor = codeeditor.new(self, view)
+            self.codeeditor = ide.new(self, view)
 
             self.datagrid = datagrid.create(self, self.view)
             self.datagrid.view.SetIcon(self.view.pom_ico)
@@ -222,7 +225,7 @@ class Controller(object):
             self.view.title = self.project.name
             self.view.annotations = self.project.annotations
 
-            self.codeeditor.data = self.project.code
+            self.codeeditor.load_from_project(self.project.code)
 
             if self.project.path is not None:
                 self.view.filehistory.AddFileToHistory(os.path.abspath(path))
@@ -243,6 +246,7 @@ class Controller(object):
         Save the current project to a file given by either the project's name or
         by the arg 'name'.
         """
+        self.project.code = self.codeeditor.save_to_project()
         if self.datagrid is not None:
             msg = self.project.Write(path, griddata=self.datagrid.gridcontrollers)
         else:
@@ -843,7 +847,7 @@ class Controller(object):
         self.view.check_menu('Notepad', show)
 
     def code_changed(self):
-        self.project.code = self.codeeditor.data
+        self.project.code = self.codeeditor.save_to_project()
         pub.sendMessage((self.view.instid, 'changed'))
 
     def show_codeeditor(self, show=False):

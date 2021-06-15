@@ -256,7 +256,7 @@ The spectra clearly reveal a striking dependency on ... blablabla
 
 test &amp; hallo
 </annotations>
-  <code name="new">from peak_o_mat.fit import Fit
+  <code name="batchfit.py">from peak_o_mat.fit import Fit
 
 base_model = project[2][4].model
 limits = project[2][4].limits
@@ -271,13 +271,10 @@ for s in project[2][-1::-1]:
     mod.update_from_fit(res)
     s.model = mod#.copy()
 sync()</code>
-  <code name="new">for p in project:
-				print(p,p.has_notifier)
+  <code name="names.py">for p in project:
 				for s in p:
-								print(s, hasattr(s, 'dvmodel'))
-
-
+								print(p,s)
 
 </code>
-  <code name="new">controller.view.tree.selection = 0,0</code>
+  <code name="select.py">controller.view.tree.selection = 0,0</code>
 </pom>

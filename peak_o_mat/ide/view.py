@@ -25,7 +25,7 @@ class CodeList(dv.DataViewCtrl):
         parent.Bind(EVT_CODELIST_SELECTED, self.OnUnselect)
 
     def OnUnselect(self, evt):
-        logger.warning('unselect event from {} received by {}'.format(evt.name, self.GetName()))
+        logger.debug('unselect event from {} received by {}'.format(evt.name, self.GetName()))
         if evt.name != self.GetName():
             self.SetEvtHandlerEnabled(False)
             self.UnselectAll()
@@ -33,7 +33,7 @@ class CodeList(dv.DataViewCtrl):
         evt.Skip()
 
     def OnSelect(self, evt):
-        logger.warning('select event at {}'.format(self.GetName()))
+        logger.debug('select event at {}'.format(self.GetName()))
         item = evt.GetItem()
         model = evt.GetModel()
         if item.IsOk():
@@ -44,7 +44,7 @@ class CodeList(dv.DataViewCtrl):
             self.select_row(self._selected)
 
     def select_row(self, row):
-        logger.warning('select row {}:{}'.format(self.GetName(), row))
+        logger.debug('select row {}:{}'.format(self.GetName(), row))
         if len(self.GetModel().data) > 0:
             self.Select(self.GetModel().GetItem(row))
             self._selected = row
@@ -85,8 +85,9 @@ class View(wx.Frame):
             self.lst_prj.AssociateModel(model)
 
     def run(self):
-        self.Show()
-        wx.GetApp().MainLoop()
+        pass
+        #self.Show()
+        #wx.GetApp().MainLoop()
 
     def setup_controls(self):
         self.split_v = wx.SplitterWindow(self, style=wx.SP_LIVE_UPDATE)
