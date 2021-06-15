@@ -146,7 +146,7 @@ class Interactor:
         self.view.btn_runcode.Bind(wx.EVT_BUTTON, self.OnExecute)
         self.view.btn_runselectedcode.Bind(wx.EVT_BUTTON, self.OnExecute)
         self.view.Bind(wx.EVT_CLOSE, self.OnClose)
-        self.view.Bind(stc.EVT_STC_MODIFIED, self.OnEditCode)
+        self.view.Bind(stc.EVT_STC_MODIFIED, self.on_code_modified)
 
         self.view.Bind(wx.EVT_IDLE, self.OnIdle)
 
@@ -177,7 +177,7 @@ class Interactor:
         self.controller.new_editor()
         pub.sendMessage((self.view.instid, 'code', 'changed'), msg=None)
 
-    def OnEditCode(self, evt):
+    def on_code_modified(self, evt):
         if evt.GetModificationType() & 3:  # char added or removed
             pub.sendMessage((self.view.instid, 'code', 'changed'), msg=None)
 

@@ -39,7 +39,7 @@ class LocalScripts(SortList):
         super(LocalScripts, self).__init__([[False, os.path.basename(q)] for q in fls])
 
     def append(self, item):
-        super(SortList, self).append([False, item])
+        super(SortList, self).append(item)
         self[:] = sorted(self, key=itemgetter(1))
 
     def load(self, row):
@@ -57,7 +57,7 @@ class PrjScripts(SortList):
         return self[row][2]
 
     def append(self, item):
-        super(SortList, self).append([False, item, ''])
+        super(SortList, self).append(item)
         self[:] = sorted(self, key=itemgetter(1))
 
     def names(self):
@@ -71,6 +71,12 @@ class ListModel(dv.DataViewIndexListModel):
     def __init__(self, data):
         dv.DataViewIndexListModel.__init__(self, len(data))
         self._data = data
+
+    def Reset(self, length=None):
+        if length is None:
+            super(ListModel, self).Reset(len(self.data))
+        else:
+            super(ListModel, self).Reset(length)
 
     def __contains__(self, item):
         for row in self.data:
@@ -134,7 +140,7 @@ class ListModel(dv.DataViewIndexListModel):
 
 
 class Controller(object):
-    def __init__(self, view=None, interactor=None):
+    def __init__(self, parent_controller, view=None, interactor=None):
         self.view = view
         if interactor is not None:
             interactor.Install(self, view)
@@ -151,7 +157,7 @@ class Controller(object):
         self.view.run()
 
     def rename(self, model, oldval, row):
-        logger.warning('renaming {}: {}->{}'.format(self.edit_mode, oldval, model.data[row][1]))
+        logger.debug('renaming {}: {}->{}'.format(self.edit_mode, oldval, model.data[row][1]))
         if hasattr(model.data, 'basepath'):
             try:
                 os.rename(os.path.join(model.data.basepath, oldval),
@@ -161,7 +167,28 @@ class Controller(object):
             return True
         else:
             return True
-        
+
+    def load_from_project(self, project_data):
+        self.model['prj'].data[:] = []
+        reg = {}
+        for name, cont in project_data:
+            if name not in reg.keys():
+                reg[name] = 0
+            else:
+                reg[name] += 1
+            if reg[name] > 0:
+                name += '-{}'.format(reg[name])
+            if name[-3:] != '.py':
+                name = name.replace('.','')
+                name += '.py'
+
+            self.model['prj'].data.append([False, name, cont])
+        self.model['prj'].Reset()
+
+    def save_to_project(self):
+        logger.debug('save to project')
+        return [[q,p] for _,q,p in self.model['prj'].data]
+
     def model_update(self):
         val = self.view.editor.GetText()
         ctrl = getattr(self.view,'lst_{}'.format(self.edit_mode))
@@ -174,14 +201,11 @@ class Controller(object):
     def editor_push_file(self, scope, row):
         data = self.model[scope].data
         cont = data.load(row)
-        logger.warning('stopping event handler, loading content')
-        self.view.SetEvtHandlerEnabled(False)  # TODO:does not work
-        self.view.editor.SetText(cont)
-        self.view.SetEvtHandlerEnabled(True)
+        self.view.editor.ChangeValue(cont)
 
     def delete_entry(self, scope, row):
         model = self.model[scope]
-        logger.warning('delete row {}'.format(row))
+        logger.debug('delete row {}'.format(row))
         if scope == 'local':
             try:
                 os.unlink(model.data.path(row))
@@ -213,9 +237,9 @@ class Controller(object):
             except OSError:
                 raise
             else:
-                row = model.append(newname)
+                row = model.append([False, newname])
         else:
-            row = model.append(newname)
+            row = model.append([False, newname, ''])
         return row
 
 

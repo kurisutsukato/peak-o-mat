@@ -51,14 +51,14 @@ class Interactor:
         self.controller.editor_push_file(scope, ctrl._selected)
 
     def OnSelectionLost(self, evt):
-        logger.warning('selection lost')
+        logger.debug('selection lost')
         self.view.editor.SetValue('lost!')
 
     def OnEditingDone(self, evt):
         scope, ctrl = self.get_source(evt)
         row = evt.GetModel().GetRow(evt.GetItem())
         #val = evt.GetValue()
-        logger.warning('editing done, new val: "{}"'.format(evt.GetValue()))
+        logger.debug('editing done, new val: "{}"'.format(evt.GetValue()))
         model = evt.GetModel()
 
         oldval = model.data[row][1]
@@ -67,14 +67,14 @@ class Interactor:
         # und bevor der event handler nicht beendet wird, sind die Modell Daten noch die alten
 
         oldval = model.data[row][1]
-        logger.warning(oldval)
+        logger.debug(oldval)
         def sort_and_select(model, ctrl, row, oldval):
             val = model.data[row][1]
             try:
                 base, ext = val.split('.')
             except ValueError:
                 val = val.replace('.','')+'.py'
-                logger.warning('name without extension')
+                logger.debug('name without extension')
             else:
                 if ext != 'py':
                     val = base+'.py'
