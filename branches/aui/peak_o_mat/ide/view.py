@@ -4,6 +4,7 @@ import wx
 import wx.dataview as dv
 import wx.lib.agw.flatnotebook as fnb
 
+from ..misc_ui import WithMessage
 from ..controls import PythonSTC
 import logging
 
@@ -69,9 +70,11 @@ class EditorContainer(wx.Panel):
     def new_editor(self, title):
         self.nb.AddPage(CodeEditor(self.nb), title)
 
-class View(wx.Frame):
+class View(wx.Frame, WithMessage):
     def __init__(self, parent):
         super(View, self).__init__(parent, size=(900,500))
+        WithMessage.__init__(self)
+
         self.parent = parent
         self.setup_controls()
         self.layout()
@@ -133,13 +136,6 @@ class View(wx.Frame):
         min_width = hbox.GetMinSize()[0]
         self.split_v.SplitVertically(self.panel, self.editor, int(min_width * 1.1))
         self.split_v.SetMinimumPaneSize(int(min_width*1.1))
-
-    def Hide(self):
-        self.Show(False)
-
-    def Show(self, state=True):
-        #self.parent.menubar.FindItemById(menu_ids['Data Grid']).Check(state)
-        super(View, self).Show(state)
 
 class CodeEditor(PythonSTC):
     def __init__(self, parent, style=wx.BORDER_NONE):
