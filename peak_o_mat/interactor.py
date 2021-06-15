@@ -46,6 +46,7 @@ class Interactor(object):
                 self.view.Bind(wx.EVT_MENU, lambda evt, mid=mid: self.OnMenuShowHideModule(evt, mid), id=mid)
 
         self.view.frame_annotations.Bind(wx.EVT_CLOSE, self.OnNotesClose)
+        self.controller.codeeditor.view.Bind(wx.EVT_CLOSE, self.OnEditorClose)
 
         self.view.Bind(wx.EVT_MENU_RANGE, self.OnFileHistory, id=wx.ID_FILE1, id2=wx.ID_FILE9)
 
@@ -409,6 +410,9 @@ class Interactor(object):
 
     def OnNotesClose(self, evt):
         self.controller.notes_close()
+
+    def OnEditorClose(self, evt):
+        self.controller.show_codeeditor(False)
 
     def OnNew(self, evt):
         pub.sendMessage('new', path=None)

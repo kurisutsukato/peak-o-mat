@@ -5,6 +5,7 @@ import wx.stc
 import wx.dataview as dv
 from . import view as ideview
 import logging
+from pubsub import pub
 
 logger = logging.getLogger('pom')
 
@@ -34,10 +35,16 @@ class Interactor:
 
         self.view.Bind(ideview.EVT_CODELIST_SELECTED, self.OnListSelect)
 
+        self.view.Bind(wx.EVT_CLOSE, self.OnClose)
+
+
     def get_source(self, evt):
         scope = evt.GetEventObject().GetName().split('_')[1]
         ctrl = getattr(self.view, 'lst_{}'.format(scope))
         return scope, ctrl
+
+    def OnClose(self, evt):
+        pub.sendMessage((self.view.instid, 'editor', 'close'))
 
     def OnEditorModified(self, evt):
         if evt.GetModificationType()&(wx.stc.STC_MOD_INSERTTEXT|wx.stc.STC_MOD_DELETETEXT):
