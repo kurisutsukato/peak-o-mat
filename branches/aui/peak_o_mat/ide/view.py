@@ -16,7 +16,7 @@ NoSelectionEvent, EVT_CODELIST_SELECTION_LOST = newevent.NewCommandEvent()
 
 class CodeList(dv.DataViewCtrl):
     def __init__(self, parent, header, **kwargs):
-        super(CodeList, self).__init__(parent, style=wx.BORDER_THEME|dv.DV_ROW_LINES, **kwargs)
+        super(CodeList, self).__init__(parent, style=wx.BORDER_THEME|dv.DV_NO_HEADER|dv.DV_ROW_LINES, **kwargs)
         self._selected = -1
 
         col_chk = self.AppendToggleColumn('', 0, width=40, mode=dv.DATAVIEW_CELL_ACTIVATABLE)
@@ -117,24 +117,27 @@ class View(wx.Frame, WithMessage):
 
     def layout(self):
         box = wx.BoxSizer(wx.VERTICAL)
-        box.Add(self.lst_local, 1, wx.EXPAND|wx.ALL, 0)
+        box.Add(wx.StaticText(self.panel_list, label='Local files'), 0, wx.LEFT|wx.TOP|wx.RIGHT, 5)
+        box.Add(self.lst_local, 1, wx.EXPAND|wx.ALL, 5)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(self.btn_add_local, 1, wx.EXPAND|wx.ALL, 2)
-        hbox.Add(self.btn_delete_local, 1, wx.EXPAND|wx.ALL, 2)
-        box.Add(hbox, 0, wx.EXPAND)
+        hbox.Add(self.btn_add_local, 1, wx.EXPAND|wx.ALL, 0)
+        hbox.Add(self.btn_delete_local, 1, wx.EXPAND|wx.ALL, 0)
+        box.Add(hbox, 0, wx.EXPAND|wx.LEFT|wx.RIGHT, 5)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(self.btn_l2p, 0, wx.ALL, 2)
         hbox.Add(self.btn_p2l, 0, wx.ALL, 2)
         box.Add(hbox, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 10)
 
-        box.Add(self.lst_prj, 1, wx.EXPAND | wx.ALL, 0)
+        box.Add(wx.StaticText(self.panel_list, label='Embedded files'), 0,  wx.LEFT|wx.TOP|wx.RIGHT, 5)
+        box.Add(self.lst_prj, 1, wx.EXPAND | wx.ALL, 5)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(self.btn_add_prj, 1, wx.EXPAND|wx.ALL|wx.BU_EXACTFIT, 2)
-        hbox.Add(self.btn_delete_prj, 1, wx.EXPAND|wx.ALL, 2)
-        box.Add(hbox, 0, wx.EXPAND)
+        hbox.Add(self.btn_add_prj, 1, wx.EXPAND|wx.ALL, 0)
+        hbox.Add(self.btn_delete_prj, 1, wx.EXPAND|wx.ALL, 0)
+        box.Add(hbox, 0, wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM, 5)
+
         self.panel_list.SetSizer(box)
         min_width = hbox.GetMinSize()[0]
 
