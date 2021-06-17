@@ -23,7 +23,7 @@ from peak_o_mat import module, spec
 
 import numpy as np
 
-from ..spec import Spec
+from ..spec import Dataset
 from ..filters import mavg_filter, bg_snip, bg_alq
 
 def roll(a, d):
@@ -98,7 +98,7 @@ class XRCModule(module.XRCModule):
                     x, y = self.calc_background_ALQ(dataset)
                 else:
                     return
-                self.plotme = 'Line', spec.Spec(x, y, 'bg_{}'.format(dataset.name))
+                self.plotme = 'Line', spec.Dataset(x, y, 'bg_{}'.format(dataset.name))
                 pub.sendMessage((self.instid, 'updateplot'))
 
     def OnCheckFilterSNIP(self, evt):
@@ -135,7 +135,7 @@ class XRCModule(module.XRCModule):
                     dataset -= y
                     pub.sendMessage((self.instid, 'updateplot'))
                 else:
-                    self.controller.add_set(spec.Spec(x, y, 'bg_{}'.format(dataset.name)))
+                    self.controller.add_set(spec.Dataset(x, y, 'bg_{}'.format(dataset.name)))
         self.update_background()
 
     def update_values(self):

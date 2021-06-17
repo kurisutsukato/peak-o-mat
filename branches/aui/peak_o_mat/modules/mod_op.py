@@ -166,7 +166,7 @@ class XRCModule(module.XRCModule):
                 break
             else:
                 newy = splev(pset.x, tcl)
-                sp = spec.Spec(pset.x, newy, pset.name + '_spline')
+                sp = spec.Dataset(pset.x, newy, pset.name + '_spline')
                 self.controller.add_set(sp)
 
     def AAop_waverage(self, name, plot, sel):
@@ -223,7 +223,7 @@ class XRCModule(module.XRCModule):
 
             try:
                 newspec = eval(trafo)
-                if type(newspec) != spec.Spec:
+                if type(newspec) != spec.Dataset:
                     raise TypeError('result is no set object')
             except Exception as msg:
                 self.message('caught exception: %s' % msg)

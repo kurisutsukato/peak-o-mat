@@ -3,6 +3,7 @@ import wx.aui as aui
 import wx.html as html
 import wx.adv as adv
 from datetime import datetime
+import logging
 
 import sys
 
@@ -17,6 +18,8 @@ from .misc_ui import xrc_resource
 from .dialog import ImportDialog, ExportDialog, ColumnDialog
 
 from peak_o_mat import __version__
+
+logger = logging.getLogger('pom')
 
 class Splash(adv.SplashScreen):
     def __init__(self, parent):
@@ -196,9 +199,10 @@ class MainFrame(wx.Frame):
         self.splash.Close()
 
     def start(self, startapp=False):
-        self.SetSize((1024,720))
-        self.CenterOnScreen()
-        self.Layout()
+        logger.debug('start view')
+        #self.SetSize((1024,720))
+        #self.Layout()
+        #self.CenterOnScreen()
         self.Show()
 
         if hasattr(self, 'splash'):

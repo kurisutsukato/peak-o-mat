@@ -469,7 +469,7 @@ class Controller(object):
             if success:
                 data = do.GetData()
                 data = pickle.loads(data)
-                if type(data) in [project.PlotItem, spec.Spec]:
+                if type(data) in [project.PlotItem, spec.Dataset]:
                     self.add_set(data)
                 elif type(data) == project.Plot:
                     self.project.add(data)
@@ -559,7 +559,7 @@ class Controller(object):
         gridname, data = source()
         self.project[plot].name = gridname
         for (x, y), name in data:
-            sp = spec.Spec(x, y, '%s_%s' % (gridname, name))
+            sp = spec.Dataset(x, y, '%s_%s' % (gridname, name))
             added = self.project[plot].add(sp)
         self.update_tree()
         self.view.tree.selection = plot, added
@@ -832,9 +832,9 @@ class Controller(object):
 
         if type(y) is tuple:
             for n, yn in enumerate(y):
-                self.project[plot].add(spec.Spec(x, yn, '{}_{}'.format(name, n + 1)))
+                self.project[plot].add(spec.Dataset(x, yn, '{}_{}'.format(name, n + 1)))
         else:
-            self.project[plot].add(spec.Spec(x, y, name))
+            self.project[plot].add(spec.Dataset(x, y, name))
         self.update_tree(plot)
         self.update_plot()
         self.project_modified = True

@@ -194,7 +194,7 @@ class XRCModule(module.XRCModule):
             M = bezierM(v, len(handles))
             points = M @ handles
             evx, evy = points.T
-            self.controller.plot(floating=spec.Spec(evx, evy, '{:d} pt. bezier'.format(len(handles))))
+            self.controller.plot(floating=spec.Dataset(evx, evy, '{:d} pt. bezier'.format(len(handles))))
             self.xrc_btn_create.Enable()
 
             # handles = handles.take(np.argsort(handles[:,0]),0)
@@ -207,7 +207,7 @@ class XRCModule(module.XRCModule):
             #    a = (yh[1]-yh[0])/(xh[1]-xh[0])
             #    b = yh[1]-a*xh[1]
             #    evy = evx*a+b
-            # self.controller.plot(floating=spec.Spec(evx,evy,'{:d} pt. bezier'.format(len(handles))))
+            # self.controller.plot(floating=spec.Dataset(evx,evy,'{:d} pt. bezier'.format(len(handles))))
             # self.xrc_btn_bez_load.Enable()
 
             # m = len(x)
@@ -215,7 +215,7 @@ class XRCModule(module.XRCModule):
             # evx = np.linspace(x[0],x[-1],100)
             # evy = splev(evx,sp)
             # self.spline = sp
-            # self.controller.plot(floating=spec.Spec(evx,evy,'spline'))
+            # self.controller.plot(floating=spec.Dataset(evx,evy,'spline'))
         self.handles = handles
 
     def OnLoad(self, evt):
@@ -252,7 +252,7 @@ class XRCModule(module.XRCModule):
                 'The expression\'s result must have shape %s. Probably \'x\' is missing in the expression.' % str(
                     x.shape), blink=False)
         else:
-            self.controller.add_set(spec.Spec(x, y, eq))
+            self.controller.add_set(spec.Dataset(x, y, eq))
             pub.sendMessage((self.instid, 'updateplot'))
 
     def create_bezier(self):
@@ -269,9 +269,9 @@ class XRCModule(module.XRCModule):
         points = M @ self.handles
         x, y = points.T
         if self.xrc_cb_bez_pts.Value:
-            set_bez = spec.Spec(x, y, '{:d} pt. Bezi\u00E9r'.format(len(self.handles)))
+            set_bez = spec.Dataset(x, y, '{:d} pt. Bezi\u00E9r'.format(len(self.handles)))
         elif self.xrc_cb_bez_fromset.Value:
-            tmp = spec.Spec(x, y, 'tmp')
+            tmp = spec.Dataset(x, y, 'tmp')
             tmp = s * 0 + tmp
             set_bez = tmp
             set_bez.name = '{:d} pt. Bezi\u00E9r'.format(len(self.handles))

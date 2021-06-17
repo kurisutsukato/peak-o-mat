@@ -3,11 +3,14 @@ __author__ = 'kristukat'
 import wx.dataview as dv
 from pubsub import pub
 import logging
+from io import StringIO
 from operator import itemgetter
 from glob import glob
-import os.path
-import os
+import os, re, sys
+import code
+import types
 
+from ..symbols import pom_globals
 from ..appdata import configdir
 
 logger = logging.getLogger('pom')
@@ -26,10 +29,11 @@ class SortList(list):
         super(SortList, self).append(item)
         self[:] = sorted(self, key=itemgetter(1))
 
-    def index(self, item):
+    def _index(self, item):
         for n, i in enumerate(self):
             if i[1] == item:
                 return n
+        raise IndexError
 
 class LocalScripts(SortList):
     def __init__(self, basepath):
@@ -41,6 +45,7 @@ class LocalScripts(SortList):
     def append(self, item):
         super(SortList, self).append(item)
         self[:] = sorted(self, key=itemgetter(1))
+        return self.index(item)
 
     def load(self, row):
         return open(os.path.join(self.basepath, self[row][1])).read()
@@ -59,6 +64,7 @@ class PrjScripts(SortList):
     def append(self, item):
         super(SortList, self).append(item)
         self[:] = sorted(self, key=itemgetter(1))
+        return self.index(item)
 
     def names(self):
         for a, name, script in self:
@@ -138,12 +144,80 @@ class ListModel(dv.DataViewIndexListModel):
     def GetColumnType(self, col):
         return ['bool', 'string'][col]
 
+class Locals(dict):
+    def __init__(self, *args):
+        self.autocall = []
+        super(Locals, self).__init__(*args)
+
+    def __getitem__(self, name):
+        if name in self.autocall:
+            return dict.__getitem__(self, name)()
+        else:
+            return dict.__getitem__(self, name)
+
+    def add(self, name, val, autocall=False):
+        self[name] = val
+        if autocall:
+            self.autocall.append(name)
+
+    def __setitem__(self, name, val):
+        if name in self.autocall:
+            raise Exception('overwriting \'%s\' not allowed' % name)
+        else:
+            dict.__setitem__(self, name, val)
+
+class Interpreter(code.InteractiveInterpreter):
+    def __init__(self, controller):
+        self.controller = controller
+        self.errline = None
+
+        code.InteractiveInterpreter.__init__(self, self.init_locals())
+
+        self.out = StringIO()
+
+    def init_locals(self):
+        locs = Locals(locals())
+        locs.add('add_plot', self.controller.add_plot)
+        locs.add('add_set', self.controller.add_set)
+        locs.add('project', self.controller.project)
+        locs.add('controller', self.controller)
+
+        def _get_model():
+            return self.controller.fit_controller.model
+
+        locs.add('model', _get_model, True)
+
+        def _update_view():
+            #TODO: should not be necesary anymore: # self.controller.update_tree()
+            self.controller.update_plot()
+
+        locs.add('sync', _update_view)
+
+        def _get_active_set():
+            return self.controller.active_set
+
+        locs.add('aset', _get_active_set, True)
+        locs.add('active_set', _get_active_set, True)
+        # locs.add('intro', intro, False)
+        return locs
+
+    def write(self, text):
+        self.out.write(text)
+        mat = re.match(r'.+, line (\d+)\D+', text)
+        if mat is not None:
+            self.errline = int(mat.groups()[0]) - 1
+
+    def getresult(self):
+        ret = self.out.getvalue(), self.errline
+        self.out = StringIO()
+        return ret
 
 class Controller(object):
     def __init__(self, parent_controller, view=None, interactor=None):
         self.view = view
         if interactor is not None:
             interactor.Install(self, view)
+        self.interpreter = Interpreter(parent_controller)
 
         self.model = {
             'prj': ListModel(PrjScripts(prjscripts)),
@@ -155,6 +229,31 @@ class Controller(object):
         self.view.set_model('prj', self.model['prj'])
 
         self.view.run()
+
+    def register_symbols(self, source):
+        '''das braucht man wohl um im code editor funktionen zu definieren,
+        die man spaeter zum fitten nehmen kann'''
+
+        try:
+            m = types.ModuleType('dynamic')
+            # m = imp.new_module('dynamic')
+            exec(source, {}, m.__dict__)
+        except:
+            return
+        else:
+            for name in dir(m):
+                sym = getattr(m, name)
+                if type(sym) in [types.FunctionType]: # TODO:, types.ModuleType, np.ufunc]:
+                    pom_globals.update({name: sym})
+
+    def run(self, source):
+        self.register_symbols(source)
+
+        tmp = sys.stdout
+        sys.stdout = self.interpreter
+        self.interpreter.runsource(source, symbol='exec')
+        sys.stdout = tmp
+        return self.interpreter.getresult()
 
     def rename(self, model, oldval, row):
         logger.debug('renaming {}: {}->{}'.format(self.edit_mode, oldval, model.data[row][1]))
@@ -241,7 +340,6 @@ class Controller(object):
         else:
             row = model.append([False, newname, ''])
         return row
-
 
 if __name__ == '__main__':
     import wx

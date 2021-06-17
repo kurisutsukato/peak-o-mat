@@ -72,7 +72,7 @@ class EditorContainer(wx.Panel):
 
 class View(wx.Frame, WithMessage):
     def __init__(self, parent):
-        super(View, self).__init__(parent, size=(900,500))
+        super(View, self).__init__(parent, title='Scripting central', size=(900, 500))
         WithMessage.__init__(self)
 
         self.parent = parent
@@ -94,20 +94,26 @@ class View(wx.Frame, WithMessage):
 
     def setup_controls(self):
         self.split_v = wx.SplitterWindow(self, style=wx.SP_LIVE_UPDATE)
-        self.panel = p = wx.Panel(self.split_v)
+        self.panel_list = wx.Panel(self.split_v)
+        self.panel_editor = wx.Panel(self.split_v)
 
-        self.lst_local = CodeList(self.panel, 'Local', name='lst_local')
-        self.lst_prj = CodeList(self.panel, 'Embedded', name='lst_prj')
+        self.lst_local = CodeList(self.panel_list, 'Local', name='lst_local')
+        self.lst_prj = CodeList(self.panel_list, 'Embedded', name='lst_prj')
 
-        self.editor = CodeEditor(self.split_v)
+        self.editor = CodeEditor(self.panel_editor)
+        self.editor.Hide()
+        self.dummy = wx.Panel(self.panel_editor)
 
-        self.btn_l2p = wx.Button(self.panel, label='Down')
-        self.btn_p2l = wx.Button(self.panel, label='Up')
+        self.btn_l2p = wx.Button(self.panel_list, label='Down')
+        self.btn_p2l = wx.Button(self.panel_list, label='Up')
 
-        self.btn_add_local = wx.Button(p, label='New', name='new_local')
-        self.btn_delete_local = wx.Button(p, label='Delete', name='del_local')
-        self.btn_add_prj = wx.Button(p, label='New', name='new_prj')
-        self.btn_delete_prj = wx.Button(p, label='Delete', name='del_prj')
+        self.btn_add_local = wx.Button(self.panel_list, label='New', name='new_local')
+        self.btn_delete_local = wx.Button(self.panel_list, label='Delete', name='del_local')
+        self.btn_add_prj = wx.Button(self.panel_list, label='New', name='new_prj')
+        self.btn_delete_prj = wx.Button(self.panel_list, label='Delete', name='del_prj')
+
+        self.btn_runcode = wx.Button(self.panel_editor, label='Run')
+        self.txt_result = wx.TextCtrl(self.panel_editor, size=(-1, 120), style=wx.TE_MULTILINE|wx.TE_READONLY)
 
     def layout(self):
         box = wx.BoxSizer(wx.VERTICAL)
@@ -129,12 +135,20 @@ class View(wx.Frame, WithMessage):
         hbox.Add(self.btn_add_prj, 1, wx.EXPAND|wx.ALL|wx.BU_EXACTFIT, 2)
         hbox.Add(self.btn_delete_prj, 1, wx.EXPAND|wx.ALL, 2)
         box.Add(hbox, 0, wx.EXPAND)
-
-        self.panel.SetSizer(box)
-        #self.Fit()
-
+        self.panel_list.SetSizer(box)
         min_width = hbox.GetMinSize()[0]
-        self.split_v.SplitVertically(self.panel, self.editor, int(min_width * 1.1))
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.editor, 3, wx.EXPAND|wx.ALL, 2)
+        vbox.Add(self.dummy, 3, wx.EXPAND|wx.ALL, 2)
+        vbox.Add(self.txt_result, 1, wx.EXPAND|wx.ALL, 2)
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(wx.Window(self.panel_editor), 1)
+        hbox.Add(self.btn_runcode, 0, wx.ALL|2)
+        vbox.Add(hbox, 0, wx.EXPAND|wx.TOP|wx.BOTTOM,10)
+        self.panel_editor.SetSizer(vbox)
+
+        self.split_v.SplitVertically(self.panel_list, self.panel_editor, int(min_width * 1.1))
         self.split_v.SetMinimumPaneSize(int(min_width*1.1))
 
 class CodeEditor(PythonSTC):

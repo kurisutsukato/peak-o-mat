@@ -21,7 +21,7 @@ import queue
 import scipy.odr.odrpack as O
     
 from .model import QuickEvaluate
-from .spec import Spec
+from .spec import Dataset
 from .project import PlotItem
 from . import misc_ui
 import wx
@@ -222,10 +222,10 @@ if __name__ == '__main__':
     for n in range(2):
         x = np.linspace(0,5,50)
         y = x*3+.5+np.random.randn(*x.shape)
-        ds.append(Spec(x,y,'bla'))
+        ds.append(Dataset(x, y, 'bla'))
 
     from .model import Model
-    from .spec import Spec
+    from .spec import Dataset
     m = Model('a*x,a*x+b*x**2+c')
     m = Model('a*x+b,a*x')
     m.parse()

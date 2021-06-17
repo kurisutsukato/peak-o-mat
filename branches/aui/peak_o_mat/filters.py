@@ -1,14 +1,14 @@
 from scipy import signal
 import numpy as np
 
-from .spec import Spec
+from .spec import Dataset
 from .misc import PomError
 
 
 def sg_filter(sp, window, order):
     newy = signal.savgol_filter(sp.y, window, order)
 
-    return Spec(sp.x, newy, 'SGfilt_%s' % sp.name)
+    return Dataset(sp.x, newy, 'SGfilt_%s' % sp.name)
 
 
 from scipy.interpolate import splrep, splev, UnivariateSpline
@@ -50,9 +50,9 @@ def spline_filter(sp, smoothing, sample=None):
     else:
         if type(sample) == int and sample > 1:
             nx = np.linspace(sp.x.min(), sp.x.max(), sample)
-            sp = Spec(nx, spl(nx), 'spline_{}'.format(sp.name))
+            sp = Dataset(nx, spl(nx), 'spline_{}'.format(sp.name))
         else:
-            sp = Spec(sp.x, spl(sp.x), 'spline_{}'.format(sp.name))
+            sp = Dataset(sp.x, spl(sp.x), 'spline_{}'.format(sp.name))
         return sp
 
 
@@ -63,17 +63,17 @@ def fft_filter(sp, noise_threshold=None):
         mags = abs(ft)  # We don't care about the phase information here
         phase = np.arctan2(ft.imag, ft.real) * 180 / np.pi
         phase[np.abs(mags) / np.max(np.abs(mags)) < noise_threshold] = 0.0
-        return Spec(freqs, mags, 'fftamp_{}'.format(sp.name)), \
-               Spec(freqs, phase, 'fftphase_{}'.format(sp.name))
+        return Dataset(freqs, mags, 'fftamp_{}'.format(sp.name)), \
+               Dataset(freqs, phase, 'fftphase_{}'.format(sp.name))
     else:
-        return Spec(freqs, ft.real, 'fftreal_{}'.format(sp.name)), \
-               Spec(freqs, ft.imag, 'fftimag_{}'.format(sp.name))
+        return Dataset(freqs, ft.real, 'fftreal_{}'.format(sp.name)), \
+               Dataset(freqs, ft.imag, 'fftimag_{}'.format(sp.name))
 
 
 def autocorrelation_filter(sp):
     y = np.correlate(sp.y, sp.y, mode='full')[-len(sp.y):]
 
-    return Spec(sp.x, y, 'autocrr._{}'.format(sp.name))
+    return Dataset(sp.x, y, 'autocrr._{}'.format(sp.name))
 
 
 def mavg_filter(sp, avg):
@@ -90,7 +90,7 @@ def mavg_filter(sp, avg):
     #e = avg - s
     #newx = sp.x[s:-e]
 
-    return Spec(sp.x, newy, '%dpt_avg_%s' % (avg, sp.name))
+    return Dataset(sp.x, newy, '%dpt_avg_%s' % (avg, sp.name))
 
 
 def emavg_filter(sp, win):
@@ -100,7 +100,7 @@ def emavg_filter(sp, win):
     a = [1, alpha - 1]
     zi = signal.lfiltic(b, a, sp.y[0:1], [0])
     newy = signal.lfilter(b, a, sp.y, zi=zi)[0]
-    return Spec(sp.x, newy, '%dpt_eavg_%s' % (win, sp.name))
+    return Dataset(sp.x, newy, '%dpt_eavg_%s' % (win, sp.name))
 
 
 def wmavg_filter(sp, step_size=0.05, width=1):
@@ -116,7 +116,7 @@ def wmavg_filter(sp, step_size=0.05, width=1):
         weights = gaussian(sp.x, mean=bin_center, sigma=width)
         bin_avg[index] = np.average(sp.y, weights=weights)
 
-    return Spec(bin_centers, bin_avg, 'wmavg_%s' % (sp.name))
+    return Dataset(bin_centers, bin_avg, 'wmavg_%s' % (sp.name))
 
 
 from numpy.lib.stride_tricks import as_strided

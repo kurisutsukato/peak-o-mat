@@ -116,6 +116,6 @@ class PlotServer:
         x = data['data'][0,:]
         y = np.atleast_2d(data['data'][1:,:])
         for n,_y in enumerate(y):
-            s = spec.Spec(x,_y,'{}_col{}'.format(data['name'],n))
+            s = spec.Dataset(x, _y, '{}_col{}'.format(data['name'], n))
             pub.sendMessage((self.instid, 'set.add'), spec=s)
 

@@ -192,7 +192,7 @@ class GridPanel(WithMessage,wx.Panel):
         nb = self.GetParent()
         for n in range(nb.GetPageCount()):
             if nb.GetPage(n) == self:
-                nb.RemovePage(n) #does not delete the panel
+                nb.RemovePage(n) #does not delete the panel_list
                 break
 
     def show_rename_dialog(self, val):

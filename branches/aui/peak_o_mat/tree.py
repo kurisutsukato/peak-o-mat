@@ -382,7 +382,7 @@ class TreeCtrl(CustomTreeCtrl, WithMessage):
                     data = pickle.loads(data)
                 except AttributeError:
                     return False
-                return type(data) == spec.Spec or type(data) == project.Plot or type(data) == list
+                return type(data) == spec.Dataset or type(data) == project.Plot or type(data) == list
         return False
     
     def isPlot(self, item):
