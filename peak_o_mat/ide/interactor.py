@@ -6,6 +6,7 @@ import wx.dataview as dv
 from . import view as ideview
 import logging
 from pubsub import pub
+from datetime import datetime
 
 logger = logging.getLogger('pom')
 
@@ -25,6 +26,7 @@ class Interactor:
         self.view.btn_add_prj.Bind(wx.EVT_BUTTON, self.OnAdd)
         self.view.btn_delete_local.Bind(wx.EVT_BUTTON, self.OnDelete)
         self.view.btn_delete_prj.Bind(wx.EVT_BUTTON, self.OnDelete)
+        self.view.btn_runcode.Bind(wx.EVT_BUTTON, self.OnExecute)
 
         self.view.Bind(ideview.EVT_CODELIST_SELECTION_LOST, self.OnSelectionLost)
         self.view.Bind(wx.stc.EVT_STC_MODIFIED, self.OnEditorModified)
@@ -43,6 +45,17 @@ class Interactor:
         ctrl = getattr(self.view, 'lst_{}'.format(scope))
         return scope, ctrl
 
+    def OnExecute(self, evt):
+        wx.BeginBusyCursor()
+        self.view.txt_result.AppendText('Code execution started at {}\n'.format(datetime.now().strftime('%H:%M:%S')))
+        val, errline = self.controller.run(self.view.editor.GetText())
+
+        self.view.txt_result.AppendText('{}\nCode execution finished.\n'.format(val))
+
+        if errline is not None:
+            self.view.editor.SelectLine(errline)
+        wx.EndBusyCursor()
+
     def OnClose(self, evt):
         pub.sendMessage((self.view.instid, 'editor', 'close'))
 
@@ -56,10 +69,15 @@ class Interactor:
         ctrl = getattr(self.view, evt.name)
         self.controller.edit_mode = scope
         self.controller.editor_push_file(scope, ctrl._selected)
+        self.view.dummy.Hide()
+        self.view.editor.Show()
+        self.view.panel_editor.Layout()
 
     def OnSelectionLost(self, evt):
         logger.debug('selection lost')
-        self.view.editor.SetValue('lost!')
+        self.view.dummy.Show()
+        self.view.editor.Hide()
+        self.view.panel_editor.Layout()
 
     def OnEditingDone(self, evt):
         scope, ctrl = self.get_source(evt)
@@ -70,7 +88,7 @@ class Interactor:
 
         oldval = model.data[row][1]
 
-        # evt.Veto() nringt nichts fuer OSX weil da der neue Wert noch nicht bekannt ist
+        # evt.Veto() bringt nichts fuer OSX weil da der neue Wert noch nicht bekannt ist
         # und bevor der event handler nicht beendet wird, sind die Modell Daten noch die alten
 
         oldval = model.data[row][1]
@@ -80,7 +98,7 @@ class Interactor:
             try:
                 base, ext = val.split('.')
             except ValueError:
-                val = val.replace('.','')+'.py'
+                val = val.replace('.', '')+'.py'
                 logger.debug('name without extension')
             else:
                 if ext != 'py':
@@ -100,64 +118,19 @@ class Interactor:
                 model.Reset(len(model.data))
         wx.CallAfter(sort_and_select, model, ctrl, row, oldval)
 
-    def OnStartEditing(self, evt):
-        obj = self.controller.model.ItemToObject(self.view.tree.Selection)
-        if not obj.isentry:
-            evt.Veto()
-        else:
-            evt.Skip()
-
     def OnAdd(self, evt):
-        scope = evt.GetEventObject().GetName().split('_')[1]
-        ctrl = getattr(self.view, 'lst_{}'.format(scope))
+        scope, ctrl = self.get_source(evt)
         row = self.controller.add_entry(scope)
+        logger.debug('add entry, row: {}'.format(row))
         ctrl.select_row(row)
         self.controller.editor_push_file(scope, ctrl._selected)
 
     def OnDelete(self, evt):
-        scope = evt.GetEventObject().GetName().split('_')[1]
-        ctrl = getattr(self.view, 'lst_{}'.format(scope))
+        scope, ctrl = self.get_source(evt)
         self.controller.delete_entry(scope, ctrl._selected)
         ctrl.select_row(max(0, ctrl._selected-1))
         if ctrl._selected != -1:
             self.controller.editor_push_file(scope, ctrl._selected)
 
-    def OnIdle(self, evt):
-
-        self.view.Freeze()
-
-        self.view.Thaw()
-
-    def OnSelectionChanged(self, evt):
-        ctrl = evt.GetEventObject()
-        print(ctrl.HasSelection())
-
-        #print self.controller.model.ItemToObject(ctrl.Selection).label
-
-    def OnContextMenu(self, event):
-        event.Skip()
-        obj = self.controller.model.ItemToObject(self.view.tree.Selection)
-
-        if not obj.isentry:
-            return
-
-        if not hasattr(self, "_id1"):
-            self._id1 = wx.NewId()
-            self._id2 = wx.NewId()
-            self.view.Bind(wx.EVT_MENU, self.OnTransfer, id=self._id1)
-            self.view.Bind(wx.EVT_MENU, self.OnRename, id=self._id2)
-
-        islocal = obj.type[0] == 'local'
-
-        # make a menu
-        menu = wx.Menu()
-        if islocal:
-            menu.Append(self._id1, "Embed in project file")
-        else:
-            menu.Append(self._id1, "Move to local storage")
-        menu.Append(self._id2, "Rename")
-
-        self.view.split.PopupMenu(menu)
-        menu.Destroy()
 
 

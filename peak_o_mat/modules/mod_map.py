@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw
 
 from .. import module
 from .. import plotcanvas
-from ..spec import Spec
+from ..spec import Dataset
 from .. import misc_ui
 
 def read():
@@ -251,7 +251,7 @@ class Interactor:
         coords = self.view.map.line_coords
         specs = []
         for y, x in coords:
-            specs.append(Spec(self.controller.wl, self.controller.data[:, y, x], 'x{}-y{}'.format(x, y)))
+            specs.append(Dataset(self.controller.wl, self.controller.data[:, y, x], 'x{}-y{}'.format(x, y)))
         pub.sendMessage((self.controller.instid, 'set', 'add'), spec=specs)
 
     def OnEnter(self, evt):

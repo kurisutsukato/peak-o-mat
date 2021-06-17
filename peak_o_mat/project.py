@@ -36,7 +36,7 @@ import textwrap as tw
 
 from numpy import array, sometrue, inf, nan, ndarray, take, searchsorted
 
-from .spec import Spec
+from .spec import Dataset
 from .model import Model,Var,UnknownToken
 from .weights import Weights,WeightsRegion
 
@@ -135,7 +135,7 @@ class ExtraBase(list):
     def extend(self, objlist):
         dvia = dv.DataViewItemArray()
         for obj in objlist:
-            if isinstance(obj, Spec):
+            if isinstance(obj, Dataset):
                 obj = PlotItem.from_spec(obj)
             elif isinstance(obj, Plot):
                 if self.has_notifier:
@@ -148,7 +148,7 @@ class ExtraBase(list):
             self.dvmodel.ItemsAdded(self.dvmodel.GetParent(dvi), dvia)
 
     def append(self, obj):
-        if isinstance(obj, Spec):
+        if isinstance(obj, Dataset):
             obj = PlotItem.from_spec(obj)
         elif isinstance(obj, Plot):
             if self.has_notifier:
@@ -159,7 +159,7 @@ class ExtraBase(list):
             self.dvmodel.ItemAdded(self.dvmodel.GetParent(dvi), dvi)
 
     def insert(self, n, obj):
-        if isinstance(obj, Spec):
+        if isinstance(obj, Dataset):
             obj = PlotItem.from_spec(obj)
         list.insert(self, n, obj)
         if self.has_notifier:
@@ -202,10 +202,10 @@ class ExtraBase(list):
             self.dvmodel.ItemsDeleted(dvipa, dviarr)
         if type(item) == slice:
             for o in obj:
-                if isinstance(o, Spec):
+                if isinstance(o, Dataset):
                     obj = PlotItem.from_spec(obj)
         else:
-            if isinstance(obj, Spec):
+            if isinstance(obj, Dataset):
                 obj = PlotItem.from_spec(obj)
         list.__setitem__(self, item, obj)
         if self.has_notifier:
@@ -299,10 +299,10 @@ class LData(ExtraBase):
                 return n
         raise IndexError(item)
 
-class PlotItem(Spec):
+class PlotItem(Dataset):
     def __init__(self, *args):
         self.uuid = UUID.uuid4().hex
-        Spec.__init__(self, *args)
+        Dataset.__init__(self, *args)
         self.hide = False
 
     def __eq__(self, other):
@@ -562,7 +562,7 @@ class Project(LData):
         return self.add(Plot(name=name))
 
     def insert_before(self, item, obj):
-        if isinstance(obj, Spec):
+        if isinstance(obj, Dataset):
             obj = PlotItem.from_spec(obj)
         n = self.index(item)
         list.insert(self, n, obj)

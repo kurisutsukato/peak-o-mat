@@ -101,10 +101,10 @@ class Module(module.BaseModule):
             self.submodules[cls.name] = cls(self.view.book)
 
         #self.calib = Calibration()
-        #self.xmlres.AttachUnknownControl('xrc_grid', CalibGrid(self.panel, self.calib))
+        #self.xmlres.AttachUnknownControl('xrc_grid', CalibGrid(self.panel_list, self.calib))
         #self.grid.GetParent().SetMinSize(self.grid.GetMinSize())
         #self.grid.GetParent().Refresh()
-        #self.panel.Layout()
+        #self.panel_list.Layout()
 
         #self.view.txt_op.Bind(wx.EVT_TEXT_ENTER, self.OnTrafo)
         #self.view.btn_repeat.Bind(wx.EVT_BUTTON, self.OnRepeat)

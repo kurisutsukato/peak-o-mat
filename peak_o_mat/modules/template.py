@@ -23,13 +23,13 @@ class XRCModule(module.XRCModule):
     
     Instance variables:
 
-    self.panel      : reference to the panel
+    self.panel_list      : reference to the panel_list
     self.controller : reference to the main controller
     self.project    : reference to the project data
     
     self.xrc_XXX    : reference to the wx control with XMLID xrc_XXX
 
-    self.Bind/Unbind are redirected to self.panel.Bind/Unbind for convenience
+    self.Bind/Unbind are redirected to self.panel_list.Bind/Unbind for convenience
 
     
     """

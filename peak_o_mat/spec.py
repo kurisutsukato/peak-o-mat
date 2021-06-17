@@ -41,9 +41,9 @@ class TrafoList(list):
         return data
 
 
-class Spec(object):
+class Dataset(object):
     """
-A class for storing spectral data. Spec arithmetics using +-/* act only on the y-values
+A class for storing spectral data. Dataset arithmetics using +-/* act only on the y-values
 like one expects when e.g. subtracting two spectra.  Interpolation is
 done automatically if the x-values differ. 
 
@@ -52,10 +52,10 @@ done automatically if the x-values differ.
 
     def __init__(self, *args):
         """
-Spec(filename)
+Dataset(filename)
 filename: load 2-column table data from file 'name'
 
-Spec(x,y,name)
+Dataset(x,y,name)
 x : array/list holding the x-values
 y : array/list holding the y-values
 name : short description of the data
@@ -81,7 +81,7 @@ name : short description of the data
             data = np.asarray([x,y])
             self.data = data
         elif len(args) == 1:
-            if isinstance(args[0], Spec):
+            if isinstance(args[0], Dataset):
                 self.data = args[0].xy.copy()
                 self.mod = copy.deepcopy(args[0].mod)
                 name = 'copy_of_'+args[0].name
@@ -121,7 +121,7 @@ name : short description of the data
     #             self.data = np.array([x,y])
 
     def __copy__(self):
-        return Spec(self.x.copy(), self.y.copy(), 'copy_%s'%self.name)
+        return Dataset(self.x.copy(), self.y.copy(), 'copy_%s' % self.name)
 
     def write(self, path):
         """
@@ -211,7 +211,7 @@ returns boundingBox of the data as
         a,b = np.searchsorted(self.data[0], xrng)
         if cp:
             x,y = self.data[:,a:b+1]
-            return Spec(x,y,'cropped_%s'%self.name)
+            return Dataset(x, y, 'cropped_%s' % self.name)
         else:
             self.data = self.data[:,a:b+1]
 
@@ -243,7 +243,7 @@ returns boundingBox of the data as
     
         #dy = y/(self.x[1:]-self.x[:-1])
         if cp:
-            return Spec(self.x,dy,'d_dx_%s'%self.name)
+            return Dataset(self.x, dy, 'd_dx_%s' % self.name)
         else:
             self.data = np.array([self.x,dy])
             self.mask = None
@@ -262,7 +262,7 @@ returns boundingBox of the data as
         e = avg-s
         newx = self.x[s:-e]
         if cp:
-            return Spec(newx,newy, '%dpt_avg_%s'%(avg, self.name))
+            return Dataset(newx, newy, '%dpt_avg_%s' % (avg, self.name))
         else:
             self.data = np.array([newx, newy])
             return None
@@ -281,7 +281,7 @@ returns boundingBox of the data as
             bin_avg[index] = np.average(self.y,weights=weights)
 
         if cp:
-            return Spec(bin_centers,bin_avg, 'wavg_%s'%(self.name))
+            return Dataset(bin_centers, bin_avg, 'wavg_%s' % (self.name))
         else:
             self.data = np.array([bin_centers,bin_avg])
             return None
@@ -289,7 +289,7 @@ returns boundingBox of the data as
     def sg_filter(self, window, order, cp=False):
         newy = savitzky_golay(self.y, window, order)
         if cp:
-            return Spec(self.x, newy, 'SGfiltered_%s'%self.name)
+            return Dataset(self.x, newy, 'SGfiltered_%s' % self.name)
         else:
             self.data = np.array([self.x, newy])
             return None
@@ -302,7 +302,7 @@ returns the interpolation of the y-data at the given positions.
         interpolate = interp1d(self.x, self.y)
         interp = interpolate(x)
         if cp:
-            return Spec(x,interp, '%dpts_interp_%s'%(len(x), self.name))
+            return Dataset(x, interp, '%dpts_interp_%s' % (len(x), self.name))
         else:
             self.data = np.array([x,interp],dtype=np.float64)
             return None
@@ -313,7 +313,7 @@ normalize the y-values to 1
 """
         y = np.array(self.y/max(self.y))
         if cp:
-            return Spec(self.x,y,'norm_'+self.name)
+            return Dataset(self.x, y, 'norm_' + self.name)
         else:
             self.data = np.array([self.x,y])
             return None
@@ -351,7 +351,7 @@ bbox : boundingbox of points to be removed
         return self.x < other
 
     def __getitem__(self, item):
-        return Spec(self.x[item], self.y[item], '{} subset'.format(self.name))
+        return Dataset(self.x[item], self.y[item], '{} subset'.format(self.name))
 
     def _getxrange(self):
         return np.minimum.reduce(self.x),np.maximum.reduce(self.x)
@@ -521,8 +521,8 @@ bbox : boundingbox of points to be removed
     xy_limited = property(_get_xy_limited, doc='returns masked x-y-data within limits, shape(2,x)')
 
     def __eq__(self, other):
-        print('calling Spec.__eq__')
-        if not isinstance(other, Spec):
+        print('calling Dataset.__eq__')
+        if not isinstance(other, Dataset):
             return False
 
         if np.alltrue(self.x == other.x) and np.alltrue(self.y == other.y):
@@ -531,7 +531,7 @@ bbox : boundingbox of points to be removed
             return False
         
     def __ne__(self, other):
-        if not isinstance(other, Spec):
+        if not isinstance(other, Dataset):
             return True
 
         if np.alltrue(self.x != other.x) or np.alltrue(self.y != other.y):
@@ -543,88 +543,88 @@ bbox : boundingbox of points to be removed
         return len(self.x)
 
     def __and__(self, other):
-        if not isinstance(other, Spec):
-            raise NotImplementedError('& operator used between non-Spec objects')
+        if not isinstance(other, Dataset):
+            raise NotImplementedError('& operator used between non-Dataset objects')
         res = self.join(other)
         return res
     
     def __truediv__(self, other):
-        if not isinstance(other, Spec):
-            return Spec(self.x, self.y/other, '%s/%s'%(self.name,other))
+        if not isinstance(other, Dataset):
+            return Dataset(self.x, self.y / other, '%s/%s' % (self.name, other))
         if not np.alltrue(self.x == other.x):
             a, b = overlap(self.x, other.x)
             interpolate = interp1d(other.x,other.y)
             interp = interpolate(self.x[a:b])
-            ret = Spec(self.x[a:b], np.divide(self.y[a:b],interp), '%s/%s'%(self.name,other.name))
+            ret = Dataset(self.x[a:b], np.divide(self.y[a:b], interp), '%s/%s' % (self.name, other.name))
         else:
-            ret =  Spec(self.x, np.divide(self.y,other.y), '%s/%s'%(self.name,other.name))
+            ret =  Dataset(self.x, np.divide(self.y, other.y), '%s/%s' % (self.name, other.name))
         return ret
 
     def __rtruediv__(self, other):
-        if not isinstance(other, Spec):
-            return Spec(self.x, other/self.y, '%s/%s'%(other,self.name))
+        if not isinstance(other, Dataset):
+            return Dataset(self.x, other / self.y, '%s/%s' % (other, self.name))
         if not np.alltrue(self.x == other.x):
             a, b = overlap(self.x, other.x)
             interpolate = interp1d(other.x,other.y)
             interp = interpolate(self.x[a:b])
-            ret = Spec(self.x[a:b], np.divide(interp,self.y[a:b]), '%s/%s'%(other.name,self.name))
+            ret = Dataset(self.x[a:b], np.divide(interp, self.y[a:b]), '%s/%s' % (other.name, self.name))
         else:
-            ret =  Spec(self.x, np.divide(other.y,self.y), '%s/%s'%(other.name,self.name))
+            ret =  Dataset(self.x, np.divide(other.y, self.y), '%s/%s' % (other.name, self.name))
         return ret
 
     def __mul__(self, other):
-        if not isinstance(other, Spec):
+        if not isinstance(other, Dataset):
             if np.isscalar(other):
                 name = 'scalar'
             else:
                 name = 'array'
-            return Spec(self.x, self.y*other, '%s*%s'%(self.name,name))
+            return Dataset(self.x, self.y * other, '%s*%s' % (self.name, name))
         if not np.alltrue(self.x == other.x):
             a, b = overlap(self.x, other.x)
             interpolate = interp1d(other.x,other.y)
             interp = interpolate(self.x[a:b])
-            ret = Spec(self.x[a:b], np.multiply(self.y[a:b],interp), '%s*%s'%(self.name,other.name))
+            ret = Dataset(self.x[a:b], np.multiply(self.y[a:b], interp), '%s*%s' % (self.name, other.name))
         else:
-            ret =  Spec(self.x, np.multiply(self.y,other.y), '%s*%s'%(self.name,other.name))
+            ret =  Dataset(self.x, np.multiply(self.y, other.y), '%s*%s' % (self.name, other.name))
         return ret
 
     __rmul__ = __mul__
 
     def __add__(self, other):
-        if not isinstance(other, Spec):
+        if not isinstance(other, Dataset):
             if np.isscalar(other):
                 name = 'scalar'
             else:
                 name = 'array'
-            return Spec(self.x, self.y+other, '%s+%s'%(self.name,name))
+            return Dataset(self.x, self.y + other, '%s+%s' % (self.name, name))
         else:
             if not np.alltrue(self.x == other.x):
                 a, b = overlap(self.x, other.x)
                 interpolate = interp1d(other.x,other.y)
                 interp = interpolate(self.x[a:b])
-                ret = Spec(self.x[a:b], self.y[a:b]+interp, '%s+%s'%(self.name,other.name))
+                ret = Dataset(self.x[a:b], self.y[a:b] + interp, '%s+%s' % (self.name, other.name))
             else:
-                ret = Spec(self.x, self.y+other.y, '%s+%s'%(self.name,other.name))
+                ret = Dataset(self.x, self.y + other.y, '%s+%s' % (self.name, other.name))
             return ret
 
     def __neg__(self):
-        return Spec(self.x, -self.y, '-%s'%self.name)
+        return Dataset(self.x, -self.y, '-%s' % self.name)
 
     def shifted(self, x):
-        return Spec(self.x-x, self.y, '{} shifted'.format(self.name))
+        return Dataset(self.x - x, self.y, '{} shifted'.format(self.name))
 
     def join(self, other):
         if self.x[0] < other.x[0] and self.x[-1] < other.x[0]:
-            res = Spec(np.concatenate((self.x,other.x)),np.concatenate((self.y,other.y)),self.name+'&'+other.name)
+            res = Dataset(np.concatenate((self.x, other.x)), np.concatenate((self.y, other.y)), self.name + '&' + other.name)
             return res
         elif self.x[0] > other.x[0] and self.x[0] > other.x[-1]:
-            res = Spec(np.concatenate((other.x,self.x)),np.concatenate((other.y,self.y)),self.name+'&'+other.name)
+            res = Dataset(np.concatenate((other.x, self.x)), np.concatenate((other.y, self.y)), self.name + '&' + other.name)
             return res
         else:
             raise Exception('Sets cannot be joined because of overlapping x-values.')
 
     def __isub__(self, other):
-        if not isinstance(other, Spec):
+        if not isinstance(other, Dataset):
             if np.isscalar(other):
                 name = 'scalar'
             else:
@@ -638,24 +638,24 @@ bbox : boundingbox of points to be removed
             return self
 
     def __sub__(self, other):
-        if not isinstance(other, Spec):
+        if not isinstance(other, Dataset):
             if np.isscalar(other):
                 name = 'scalar'
             else:
                 name = 'array'
-            return Spec(self.x, self.y-other, '%s-%s'%(self.name,name))
+            return Dataset(self.x, self.y - other, '%s-%s' % (self.name, name))
         if not np.alltrue(self.x == other.x):
             a, b = overlap(self.x, other.x)
             interpolate = interp1d(other.x,other.y)
             interp = interpolate(self.x[a:b])
-            ret = Spec(self.x[a:b], self.y[a:b]-interp, '%s-%s'%(self.name,other.name))
+            ret = Dataset(self.x[a:b], self.y[a:b] - interp, '%s-%s' % (self.name, other.name))
         else:
-            ret = Spec(self.x, self.y-other.y, '%s-%s'%(self.name,other.name))
+            ret = Dataset(self.x, self.y - other.y, '%s-%s' % (self.name, other.name))
         return ret
         
     def __pow__(self, expon):
         if np.isscalar(expon):
-            return Spec(self.x, np.power(self.y, expon), 'power(%s,%s)'%(self.name,expon))
+            return Dataset(self.x, np.power(self.y, expon), 'power(%s,%s)' % (self.name, expon))
         else:
             raise TypeError('only scalar exponents allowed')
         
@@ -746,7 +746,7 @@ def merge(s0in, s1in, mergeat=0.5, fitx=False):
     s0b = s0_mergeable[s0_mergeable<threshold]
     s1b = s1[s1>threshold]
 
-    return Spec(np.hstack([s0b.x, s1b.x]), np.hstack([s0b.y, s1b.y]), 'test')
+    return Dataset(np.hstack([s0b.x, s1b.x]), np.hstack([s0b.y, s1b.y]), 'test')
 
 import unittest
 
@@ -754,7 +754,7 @@ class SpecTests(unittest.TestCase):
     def setUp(self):
         x = np.array([2,5,8,10],dtype=float)
         y = np.sin(x)
-        self.s = Spec(x,y,'sin')
+        self.s = Dataset(x, y, 'sin')
 
     def test_limit_reverse(self):
         self.s.trafo.append(('x','1/x','inverse'))

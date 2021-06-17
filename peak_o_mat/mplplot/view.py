@@ -858,7 +858,7 @@ class ControlFrame(WithMessage,wx.Frame):
         self.panel_basic.SetSizer(vbox)
         vbox.SetSizeHints(self.panel_basic)
 
-        #main panel
+        #main panel_list
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(self.plot_layout, 0, wx.EXPAND|wx.ALL, 2)
         vbox.Add(self.pan_nb, 1, wx.EXPAND|wx.ALL, 2)

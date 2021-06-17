@@ -1,6 +1,6 @@
 import numpy as N
     
-from .spec import Spec
+from .spec import Dataset
 import copy
 
 class WeightsRegion(object):

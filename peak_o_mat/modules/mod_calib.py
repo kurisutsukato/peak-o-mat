@@ -137,7 +137,7 @@ class Module(module.BaseModule):
         self.view.Bind(wx.EVT_BUTTON, self.OnRestore, self.view.btn_restoresearch)
         self.view.Bind(wx.EVT_BUTTON, self.OnDispersion, self.view.btn_dispersion)
 
-        # self.panel.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.OnCellChanged, self.panel.grid)
+        # self.panel_list.Bind(wx.grid.EVT_GRID_CELL_CHANGE, self.OnCellChanged, self.panel_list.grid)
         self.view.Bind(dv.EVT_DATAVIEW_ITEM_VALUE_CHANGED, self.OnDataChanged, self.view.grid)
         self.view.Bind(wx.EVT_CHECKBOX, self.OnShow, self.view.chk_speclines)
         self.view.Bind(wx.EVT_BUTTON, self.OnStoreCalibration, self.view.btn_storecalibration)
@@ -153,8 +153,8 @@ class Module(module.BaseModule):
         pub.subscribe(self.update, (self.instid, 'setattrchanged'))
 
     def update_from_model(self):
-        # it = self.panel.ch_unit.FindString(self.calib.unit)
-        # self.panel.ch_unit.SetSelection(it)
+        # it = self.panel_list.ch_unit.FindString(self.calib.unit)
+        # self.panel_list.ch_unit.SetSelection(it)
         self.view.SetEvtHandlerEnabled(False)
         self.view.txt_tol.Value = str(self.calib.tol)
         self.view.txt_offset.Value = str(self.calib.offset)
@@ -162,7 +162,7 @@ class Module(module.BaseModule):
 
     def OnShow(self, evt):
         if evt.IsChecked():
-            self.plotme = 'Spikes', spec.Spec(*self.calib.spectrum)
+            self.plotme = 'Spikes', spec.Dataset(*self.calib.spectrum)
         else:
             self.plotme = None
         pub.sendMessage((self.instid, 'updateplot'))
@@ -200,8 +200,8 @@ class Module(module.BaseModule):
         self.view.spin_order.SetRange(0, 0)
 
         # for e in self.calib.element_list():
-        #    self.panel.ch_elem.Append(e)
-        # self.panel.ch_elem.SetStringSelection(self.calib.element)
+        #    self.panel_list.ch_elem.Append(e)
+        # self.panel_list.ch_elem.SetStringSelection(self.calib.element)
         for u in self.calib.unit_list():
             self.view.ch_unit.Append(u)
         self.view.ch_unit.SetStringSelection(self.calib.unit)
@@ -210,7 +210,7 @@ class Module(module.BaseModule):
 
     def selection_changed(self):
         self.update()
-        # self.panel.btn_update.Enable(self.parent_controller.active_set is not None)
+        # self.panel_list.btn_update.Enable(self.parent_controller.active_set is not None)
 
     def focus_changed(self, newfocus=None):
         if newfocus != self.title:
@@ -221,18 +221,18 @@ class Module(module.BaseModule):
         else:
             self.visible = True
             if self.view.chk_speclines.Value:
-                self.plotme = 'Spikes', spec.Spec(*self.calib.spectrum)
+                self.plotme = 'Spikes', spec.Dataset(*self.calib.spectrum)
             self.update()
 
     def OnDispersion(self, evt):
         trafo = self.calib.trafo(self.calib.selection, int(self.view.spin_order.Value))
         x, y = np.transpose(np.take(np.atleast_2d(self.calib.data), self.calib.selection, axis=0)[:, 2:4]).astype(float)
-        data = spec.Spec(x, y, 'data')
+        data = spec.Dataset(x, y, 'data')
         a = x[0] - x[0] / 1000.0
         b = x[-1] + x[-1] / 1000.0
         x = np.linspace(a, b, 100)
         y = eval(trafo)
-        regr = spec.Spec(x, y, 'regression')
+        regr = spec.Dataset(x, y, 'regression')
         plot = self.parent_controller.add_plot()
         self.parent_controller.add_set(data, plot)
         self.parent_controller.add_set(regr, plot)
@@ -243,7 +243,7 @@ class Module(module.BaseModule):
         self.lastsearch = None
 
         if self.view.chk_speclines.Value:
-            self.plotme = 'Spikes', spec.Spec(*self.calib.spectrum)
+            self.plotme = 'Spikes', spec.Dataset(*self.calib.spectrum)
             pub.sendMessage((self.instid, 'updateplot'))
 
     def OnElement(self, evt):
@@ -255,7 +255,7 @@ class Module(module.BaseModule):
             label = '/'.join(self.calib.element)
             self.view.btn_elem.SetLabel(label)
 
-            # self.calib.element = self.panel.ch_elem.GetStringSelection()
+            # self.calib.element = self.panel_list.ch_elem.GetStringSelection()
             self.view.grid.enable_edit(self.calib.element == ['Custom'])
 
             aset = self.parent_controller.active_set
@@ -271,7 +271,7 @@ class Module(module.BaseModule):
             self.calib.update()
 
             if self.view.chk_speclines.Value:
-                self.plotme = 'Spikes', spec.Spec(*self.calib.spectrum)
+                self.plotme = 'Spikes', spec.Dataset(*self.calib.spectrum)
                 pub.sendMessage((self.instid, 'updateplot'))
 
             self.lastsearch = None
@@ -304,7 +304,7 @@ class Module(module.BaseModule):
                 self.calib.findmatch(meas, recalc=True)
 
             if self.view.chk_speclines.Value:
-                self.plotme = 'Spikes', spec.Spec(*self.calib.spectrum)
+                self.plotme = 'Spikes', spec.Dataset(*self.calib.spectrum)
 
                 pub.sendMessage((self.instid, 'updateplot'))
 

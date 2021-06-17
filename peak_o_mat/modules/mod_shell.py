@@ -29,7 +29,7 @@ etc. In order to update the view call 'sync()'.
 add_set(spec, plotnum=None):  Add 'spec' as  a new set to  the current
 plot or to plot number 'plotnum'.
 
-   spec:    Instance of peak_o_mat.spec.Spec.
+   spec:    Instance of peak_o_mat.spec.Dataset.
    plotnum: Index of the plot to which the new set will be
             added. If omitted, the last plot will be used.
 
@@ -42,7 +42,7 @@ aset: a reference to the active set.
 
 model: a reference to the current model.
 
-Spec(x,  y, name): class  (peak_o_mat.spec.Spec)  representing a  peak_o_mat
+Dataset(x,  y, name): class  (peak_o_mat.spec.Dataset)  representing a  peak_o_mat
 dataset
    x: x-data
    y: y-data
@@ -109,7 +109,7 @@ class XRCModule(module.XRCModule):
         locs.add('intro', intro, False)
 
         sh = shell.Shell(self.view, -1, introText='peak-o-mat - shell module\ntype intro() to read a short introduction', showInterpIntro=False, locals=locs)
-        sh.push('from peak_o_mat.spec import Spec', True)
+        sh.push('from peak_o_mat.spec import Dataset', True)
         sh.push('import numpy as np', True)
         sh.autoCallTip = False
         sh.autoComplete = False

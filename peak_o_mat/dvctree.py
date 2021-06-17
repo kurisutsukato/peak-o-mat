@@ -190,7 +190,7 @@ class TreeCtrlPanel(wx.Panel, WithMessage):
         self.Bind(wx.EVT_KEY_DOWN, self.onkey)
 
     def onkey(self, evt):
-        logger.debug('panel key down')
+        logger.debug('panel_list key down')
 
 
 class TreeCtrl(dv.DataViewCtrl, WithMessage):

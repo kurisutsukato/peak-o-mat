@@ -294,7 +294,7 @@ class CodeEditorFrame(WithMessage, wx.Frame):
 
     def setup_controls(self):
         self.panel = wx.Panel(self)
-        # self.nb = wx.Notebook(self.panel)
+        # self.nb = wx.Notebook(self.panel_list)
         self.nb = fnb.FlatNotebook(self.panel, agwStyle=fnb.FNB_NO_X_BUTTON)
         self.editor = EditorsProxy(self.nb)
         self.editor.add('new')
