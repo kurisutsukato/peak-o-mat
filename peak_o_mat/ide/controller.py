@@ -15,14 +15,7 @@ from ..appdata import configdir
 
 logger = logging.getLogger('pom')
 
-prjscripts = [
-    [False, 'rename.py',
-     '''\
-for p in project:
-    for s in p:
-        print(p.name, s.name)
-''']
-]
+prjscripts = []
 
 class SortList(list):
     def _append(self, item):
@@ -220,7 +213,7 @@ class Controller(object):
         self.interpreter = Interpreter(parent_controller)
 
         self.model = {
-            'prj': ListModel(PrjScripts(prjscripts)),
+            'prj': ListModel(PrjScripts([])),
             'local': ListModel(LocalScripts(os.path.join(configdir(), 'userfunc')))
         }
         self.edit_mode = None   # maybe 'prj' or 'local'
