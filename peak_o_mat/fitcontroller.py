@@ -57,18 +57,19 @@ class FitController(object):
             return None
         else:
             return self._weights
-    weights = property(_get_weights,_set_weights)
+    weights = property(_get_weights, _set_weights)
 
     def _set_model(self, m):
+        logger.debug('fitcontroller set model: {}'.format(m))
         if self._model is not None:
             self._model.listener = None
         self._model = m
         if self._model is not None:
-            self._model.listener = self.refresh_pargrid
+            self._model.listener = self.refresh_pargrid # just triggers ui refresh
         self.view.pan_pars.pargrid.data = model.ModelTableProxy(self._model)
     def _get_model(self):
         return self._model
-    model = property(_get_model,_set_model)
+    model = property(_get_model, _set_model)
 
     def refresh_pargrid(self):
         #print('fitcontroller:refresh_pragrid')
@@ -77,7 +78,7 @@ class FitController(object):
     def set_limit_fitrange(self, state):
         self.view.silent = True
         self.view.limitfitrange = state
-        pub.sendMessage((self.view.instid, 'fitctrl','limitfitrange'),msg=state)
+        pub.sendMessage((self.view.instid, 'fitctrl', 'limitfitrange'),msg=state)
         self.view.silent = False
         
     def page_changed(self, page):

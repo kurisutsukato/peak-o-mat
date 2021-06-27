@@ -117,10 +117,14 @@ class Interactor(object):
 
         pub.subscribe(self.pubOnUpdatePlot, (self.view.instid, 'updateplot'))
 
-        #pub.subscribe(self.pubOnCancelSpecialMode, (self.view.instid, 'canvasmode'))
+        pub.subscribe(self.pubOnNewSymbols, (self.view.instid, 'codeeditor', 'newsymbols'))
 
     #def pubOnCancelSpecialMode(self):
     #    print('cancel')
+
+    def pubOnNewSymbols(self):
+        self.controller.retrieve_symbols()
+        pub.sendMessage((self.view.instid, 'modelbuttons'))
 
     def pubOnStopAll(self):
         return
@@ -145,9 +149,9 @@ class Interactor(object):
     def pubOnUpdatePlot(self):
         self.controller.update_plot()
 
-    def pubOnUpdateView(self):
+    def pubOnUpdateView(self, full=False):
         self.controller.update_plot()
-        self.controller.update_tree()
+        self.view.tree.update_attributes(full)
 
     def pubOnMessage(self, msg, blink=None):
         event = misc_ui.ShoutEvent(self.view.GetId(), msg=msg, target=1, blink=blink, forever=False)

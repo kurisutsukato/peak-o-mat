@@ -16,13 +16,13 @@ from scipy.sparse.linalg import spsolve
 from scipy import sparse
 
 def bg_snip(x, y, iter):
-    v = np.log(np.log(np.sqrt(y - y.min()) + 1) + 1)
+    v = np.log(np.log(np.sqrt(y - y.min(axis=0)) + 1) + 1)
     l = v.shape[0]
 
     # for p in range(1,niter+1):  # much better results with reverse indexing!!
     for p in range(iter, 0, -1):
-        v[p:l - p] = np.minimum(v[p:l - p], (np.roll(v, -p)[p:l - p] + np.roll(v, +p)[p:l - p]) / 2)
-    v = np.power(np.exp(np.exp(v) - 1) - 1, 2) + y.min()
+        v[p:l - p] = np.minimum(v[p:l - p], (np.roll(v, -p, axis=0)[p:l - p] + np.roll(v, +p, axis=0)[p:l - p]) / 2)
+    v = np.power(np.exp(np.exp(v) - 1) - 1, 2) + y.min(axis=0)
     return x, v
 
 def bg_alq(x, y, lam, p, niter):

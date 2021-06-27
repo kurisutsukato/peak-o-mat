@@ -4,11 +4,15 @@ import numpy as np
 from scipy import ndimage, misc
 from pubsub import pub
 from PIL import Image, ImageDraw
+import logging
 
 from .. import module
 from .. import plotcanvas
 from ..spec import Dataset
 from .. import misc_ui
+from ..filters import bg_snip
+
+logger = logging.getLogger('pom')
 
 def read():
     try:
@@ -243,9 +247,16 @@ class Interactor:
         self.view.map.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         self.view.map.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
 
-        self.view.Bind(wx.EVT_BUTTON, self.OnTransfer)
+        self.view.btn_transfer.Bind(wx.EVT_BUTTON, self.OnTransfer)
+        self.view.btn_bg_remove.Bind(wx.EVT_BUTTON, self.OnBgRemove)
 
         pub.subscribe(self.pubOnWlSelect, (self.view.instid, 'plot', 'xmarker'))
+
+    def OnBgRemove(self, evt):
+        l,r,c = self.controller.data.shape
+        x, y = bg_snip(self.controller.wl, self.controller.data[:,:,:], 45)
+        self.controller.data[:,:,:] -= y
+        self.controller.init_map()
 
     def OnTransfer(self, evt):
         coords = self.view.map.line_coords
@@ -348,6 +359,7 @@ class Module(module.BaseModule):
         sort = np.argsort(self.wl)
         self.wl = self.wl.take(sort)
         self.data = self.data.take(sort, axis=0)
+        logger.debug('map data shape: {}'.format(self.data.shape))
 
     def init_map(self):
         self.view.map.axes = self.axes
@@ -390,7 +402,7 @@ class Module(module.BaseModule):
             lines.append(line)
 
         pg = plotcanvas.Graphics(lines)
-        self.view.plot.setLogScale([False,True])
+        self.view.plot.setLogScale([False, False])
         self.view.plot.Draw(pg)
 
 class ControlPanel(misc_ui.WithMessage, wx.Panel):
@@ -405,6 +417,7 @@ class ControlPanel(misc_ui.WithMessage, wx.Panel):
         self.map = Map(self)
 
         self.plot = plotcanvas.Canvas(self)
+        self.btn_bg_remove = wx.Button(self, label='Remove background')
         self.plot.state.set('xmarker')
         self.plot.SetYSpec('min')
         self.plot.SetXSpec('min')
@@ -419,6 +432,7 @@ class ControlPanel(misc_ui.WithMessage, wx.Panel):
         box.Add(hbox, 1, wx.EXPAND | wx.ALL, 5)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(wx.Window(self), 1)
-        hbox.Add(self.btn_transfer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 5)
+        hbox.Add(self.btn_bg_remove, 0, wx.LEFT | wx.RIGHT, 5)
+        hbox.Add(self.btn_transfer, 0, wx.LEFT | wx.RIGHT, 5)
         box.Add(hbox, 0, wx.EXPAND | wx.BOTTOM, 5)
         self.SetSizer(box)

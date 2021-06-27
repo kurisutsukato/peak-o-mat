@@ -14,7 +14,6 @@
 ##     along with this program; if not, write to the Free Software
 ##     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-"""New implementation based on SNIP algorithm"""
 
 import wx
 from pubsub import pub
@@ -31,7 +30,6 @@ def roll(a, d):
         return np.pad(a, (d, 0), 'edge')[:-d]
     if d < 0:
         return np.pad(a, (0, abs(d)), 'edge')[abs(d):]
-
 
 def onedigit(a):
     digits = abs(min(0, int(np.log10(a)) - 1))

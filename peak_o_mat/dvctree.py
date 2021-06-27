@@ -20,7 +20,6 @@ class TreeListModel(dv.PyDataViewModel):
 
     @property
     def item_selection(self):
-        logger.debug('dataviewmodel slsection {}'.format(self._selection))
         return self._selection
 
     @property
@@ -234,7 +233,18 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         parent.Bind(wx.EVT_ENTER_WINDOW, self.on_mouseenter)
 
         wx.CallAfter(self.GetColumn(0).SetWidth, 300)
-        # for some reason somtimes the column width is very small otherwise
+        # for some reason sometimes the column width is very small otherwise
+
+    def update_attributes(self, full=False):
+        if full:
+            logger.debug('update full not implemented yet')
+        sel = self.dataviewmodel.item_selection
+        if len(sel) == 1:
+            if self.dataviewmodel.IsContainer(sel[0]):
+                childs = dv.DataViewItemArray()
+                self.dataviewmodel.GetChildren(sel[0], childs)
+                sel = childs
+        self.dataviewmodel.ItemsChanged(sel)
 
     def AssociateModel(self, model):
         self.dataviewmodel = model
@@ -303,26 +313,14 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
 
     def on_menuhide(self, evt):
         pub.sendMessage((self.instid, 'tree', 'hide'))
-        sel = self.dataviewmodel.item_selection
-        if len(sel) == 1:
-            if self.dataviewmodel.IsContainer(sel[0]):
-                childs = dv.DataViewItemArray()
-                self.dataviewmodel.GetChildren(sel[0], childs)
-                sel = childs
-        self.dataviewmodel.ItemsChanged(sel)
+        self.update_attributes()
 
     def on_menuremmask(self, evt=None):
         pub.sendMessage((self.instid, 'tree', 'unmask'))
 
     def on_menuremfit(self, evt=None):
-        sel = self.dataviewmodel.item_selection
-        if len(sel) == 1:
-            if self.dataviewmodel.IsContainer(sel[0]):
-                childs = dv.DataViewItemArray()
-                self.dataviewmodel.GetChildren(sel[0], childs)
-                sel = childs
-        self.dataviewmodel.ItemsChanged(sel)
         pub.sendMessage((self.instid, 'tree', 'remfit'))
+        self.update_attributes()
 
     def on_menuremweights(self, evt=None):
         pub.sendMessage((self.instid, 'tree', 'remerror'))

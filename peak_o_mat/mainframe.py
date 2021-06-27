@@ -203,7 +203,7 @@ class MainFrame(wx.Frame):
         #self.SetSize((1024,720))
         #self.Layout()
         #self.CenterOnScreen()
-        self.Show()
+        wx.CallAfter(self.Show)
 
         if hasattr(self, 'splash'):
             self.splash.Raise()
