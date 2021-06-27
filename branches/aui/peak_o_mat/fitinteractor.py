@@ -2,10 +2,13 @@
 import wx
 from pubsub import pub
 import re
+import logging
 
 from . import misc_ui
 from . import lineshapebase as lb
 from .fitpanel import dlg_set_from_model, dlg_export_parameters
+
+logger = logging.getLogger('pom')
 
 class FitInteractor(object):
     nb_last_sel = 0
@@ -37,7 +40,7 @@ class FitInteractor(object):
         self.view.Bind(wx.EVT_CHECKBOX, self.OnLimitFitRange, self.view.pan_options.cb_limitfitrange)
         self.view.Bind(wx.EVT_CHECKBOX, self.OnAutostep, self.view.pan_options.cb_autostep)
 
-        pub.subscribe(self.OnSelectionChanged, (self.view.instid, 'selection','changed'))
+        pub.subscribe(self.OnSelectionChanged, (self.view.instid, 'selection', 'changed'))
 
         self.view.Bind(misc_ui.EVT_GOTPARS, self.OnGotPars)
         #TODO: ist das in Ordnung so?
@@ -53,7 +56,6 @@ class FitInteractor(object):
         self.view.pan_batch.btn_export.Bind(wx.EVT_BUTTON, self.OnBatchExport)
         self.view.pan_batch.txt_xexpr.Bind(wx.EVT_TEXT, self.OnGenerateDatasetXExpr)
 
-
         self.view.Bind(wx.EVT_TOGGLEBUTTON, self.OnPlaceHandles, self.view.pan_weights.btn_placehandles)
         self.view.Bind(wx.EVT_BUTTON, self.OnAttachWeights, self.view.pan_weights.btn_storeweights)
         self.view.Bind(wx.EVT_BUTTON, self.OnClearWeightsRegion, self.view.pan_weights.btn_clearweights)
@@ -63,6 +65,7 @@ class FitInteractor(object):
         pub.subscribe(self.pubDelmod, (self.view.instid, 'delmod'))
 
         pub.subscribe(self.pub_module_focus_set, (self.view.instid, 'module', 'focuschanged'))
+        pub.subscribe(self.pubOnRefreshModelbuttons, (self.view.instid, 'modelbuttons'))
 
     def listen_to_handles(self, listen=True):
         if listen:
@@ -74,6 +77,9 @@ class FitInteractor(object):
                 #em.eventManager.DeregisterListener(self.OnHandles)
             except KeyError:
                 pass
+
+    def pubOnRefreshModelbuttons(self):
+        self.view.drawModelButtons()
 
     def pubDelmod(self):
         self.controller.sync_gui(batch=True)

@@ -17,7 +17,7 @@ NoSelectionEvent, EVT_CODELIST_SELECTION_LOST = newevent.NewCommandEvent()
 class CodeList(dv.DataViewCtrl):
     def __init__(self, parent, header, **kwargs):
         super(CodeList, self).__init__(parent, style=wx.BORDER_THEME|dv.DV_NO_HEADER|dv.DV_ROW_LINES, **kwargs)
-        self._selected = -1
+        self.selected = -1
 
         col_chk = self.AppendToggleColumn('', 0, width=40, mode=dv.DATAVIEW_CELL_ACTIVATABLE)
         self.AppendTextColumn(header, 1, width=100, mode=dv.DATAVIEW_CELL_EDITABLE)
@@ -38,42 +38,27 @@ class CodeList(dv.DataViewCtrl):
         item = evt.GetItem()
         model = evt.GetModel()
         if item.IsOk():
-            self._selected = model.GetRow(item)
+            self.selected = model.GetRow(item)
             event = SelectEvent(self.GetId(), name=self.GetName())
             wx.PostEvent(self, event)
-        elif self._selected != -1:
-            self.select_row(self._selected)
+        elif self.selected != -1:
+            self.select_row(self.selected)
 
     def select_row(self, row):
         logger.debug('select row {}:{}'.format(self.GetName(), row))
         if len(self.GetModel().data) > 0:
             self.Select(self.GetModel().GetItem(row))
-            self._selected = row
+            self.selected = row
         else:
-            self._selected = -1
+            self.selected = -1
             event = NoSelectionEvent(self.GetId(), name=self.GetName())
             wx.PostEvent(self, event)
-
-class EditorContainer(wx.Panel):
-    def __init__(self, parent):
-        super(EditorContainer, self).__init__(parent, style=wx.BORDER_THEME)
-
-        self.nb = fnb.FlatNotebook(self)
-
-        b = wx.BoxSizer(wx.VERTICAL)
-        b.Add(self.nb, 1, wx.EXPAND|wx.ALL, 0)
-        self.SetSizer(b)
-
-    def AddPage(self, *args, **kwargs):
-        self.nb.AddPage(*args, **kwargs)
-
-    def new_editor(self, title):
-        self.nb.AddPage(CodeEditor(self.nb), title)
 
 class View(wx.Frame, WithMessage):
     def __init__(self, parent):
         super(View, self).__init__(parent, title='Scripting central', size=(900, 500))
         WithMessage.__init__(self)
+        self._local_enabled = True
 
         self.parent = parent
         self.setup_controls()
@@ -98,14 +83,19 @@ class View(wx.Frame, WithMessage):
         self.panel_editor = wx.Panel(self.split_v)
 
         self.lst_local = CodeList(self.panel_list, 'Local', name='lst_local')
+        self.lst_dummy = wx.Panel(self.panel_list)
+        self.lst_dummy.Hide()
+        wx.StaticText(self.lst_dummy, label='userfunc directory\nnot configured', pos=(5,20))
         self.lst_prj = CodeList(self.panel_list, 'Embedded', name='lst_prj')
 
         self.editor = CodeEditor(self.panel_editor)
         self.editor.Hide()
         self.dummy = wx.Panel(self.panel_editor)
 
-        self.btn_l2p = wx.Button(self.panel_list, label='Down')
-        self.btn_p2l = wx.Button(self.panel_list, label='Up')
+        self.btn_l2p = wx.Button(self.panel_list, label='🠟', style=wx.BU_EXACTFIT, name='down')
+        self.btn_p2l = wx.Button(self.panel_list, label='🠝', style=wx.BU_EXACTFIT, name='up')
+        self.btn_p2l.Disable()
+        self.btn_l2p.Disable()
 
         self.btn_add_local = wx.Button(self.panel_list, label='New', name='new_local')
         self.btn_delete_local = wx.Button(self.panel_list, label='Delete', name='del_local')
@@ -119,6 +109,7 @@ class View(wx.Frame, WithMessage):
         box = wx.BoxSizer(wx.VERTICAL)
         box.Add(wx.StaticText(self.panel_list, label='Local files'), 0, wx.LEFT|wx.TOP|wx.RIGHT, 5)
         box.Add(self.lst_local, 1, wx.EXPAND|wx.ALL, 5)
+        box.Add(self.lst_dummy, 1, wx.EXPAND|wx.ALL, 5)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(self.btn_add_local, 1, wx.EXPAND|wx.ALL, 0)
@@ -126,8 +117,10 @@ class View(wx.Frame, WithMessage):
         box.Add(hbox, 0, wx.EXPAND|wx.LEFT|wx.RIGHT, 5)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(wx.Window(self.panel_list), 1)
         hbox.Add(self.btn_l2p, 0, wx.ALL, 2)
         hbox.Add(self.btn_p2l, 0, wx.ALL, 2)
+        hbox.Add(wx.Window(self.panel_list), 1)
         box.Add(hbox, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 10)
 
         box.Add(wx.StaticText(self.panel_list, label='Embedded files'), 0,  wx.LEFT|wx.TOP|wx.RIGHT, 5)
@@ -153,6 +146,49 @@ class View(wx.Frame, WithMessage):
 
         self.split_v.SplitVertically(self.panel_list, self.panel_editor, int(min_width * 1.1))
         self.split_v.SetMinimumPaneSize(int(min_width*1.1))
+
+    def enable_local(self, state=True):
+        for ctrl in [self.btn_p2l, self.btn_add_local, self.btn_delete_local]:
+            ctrl.Enable(state)
+        self.lst_local.Show(state)
+        self.lst_dummy.Show(not state)
+        self.panel_list.Layout()
+        self._local_enabled = state
+
+
+    def show_editor(self, state=True):
+        self.dummy.Show(not state)
+        self.editor.Show(state)
+        self.panel_editor.Layout()
+
+    def text_entry(self, text):
+        dlg = wx.TextEntryDialog(self, 'Script names must be unique, please enter a new name', value=text)
+        dlg.FindWindowById(3000).SetValidator(NotEmpty())
+        if dlg.ShowModal() == wx.ID_OK:
+            return True, dlg.GetValue()
+        return False, None
+
+class NotEmpty(wx.Validator):
+    def __init__(self, flag=None, pyVar=None):
+        wx.Validator.__init__(self)
+        self.flag = flag
+
+    def Clone(self):
+        return NotEmpty(self.flag)
+
+    def Validate(self, win):
+        tc = self.GetWindow()
+        val = tc.GetValue()
+        if val == '':
+            return False
+        else:
+            return True
+
+    def TransferFromWindow(self):
+        return True
+
+    def TransferToWindow(self):
+        return True
 
 class CodeEditor(PythonSTC):
     def __init__(self, parent, style=wx.BORDER_NONE):

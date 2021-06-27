@@ -3,6 +3,7 @@ import wx
 from wx import xrc
 from wx.lib.scrolledpanel import ScrolledPanel
 import re
+import logging
 
 from . import pargrid
 from . import weightsgrid
@@ -14,17 +15,19 @@ from . import lineshapebase
 import  wx.lib.mixins.listctrl  as  listmix
 import sys
 
-class FeatureList(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
-    def __init__(self, parent, ID=-1, pos=wx.DefaultPosition,
-                 size=wx.DefaultSize, style=0):
-        wx.ListCtrl.__init__(self, parent, ID, pos, size, style|wx.WANTS_CHARS)
-        listmix.ListCtrlAutoWidthMixin.__init__(self)
+logger = logging.getLogger('pom')
 
-        self.InsertColumn(0, "Type")
-        self.InsertColumn(1, "Feature")
+class FeatureList(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
+    def __init__(self, parent):
+        wx.ListCtrl.__init__(self, parent, style=wx.WANTS_CHARS | wx.LC_REPORT | wx.BORDER_NONE)
+        listmix.ListCtrlAutoWidthMixin.__init__(self)
+        #self.setResizeColumn(1)
+        #self.InsertColumn(0, "Type")
+        #self.InsertColumn(1, "Feature")
 
     # TODO: not used
-    def __populate(self, items):
+    def aa__populate(self, items):
+        self.ClearAll()
         self.ClearAll()
         for data in items:
             index = self.InsertStringItem(sys.maxsize, data[0])
@@ -196,8 +199,8 @@ class FitModelPanel(wx.Panel):
 
     def setup_controls(self):
         self.txt_model = wx.TextCtrl(self)
-        self.lab_peakinfo = wx.TextCtrl(self, style=wx.TE_MULTILINE|wx.TE_READONLY)
-        self.lst_features = FeatureList(self, style=wx.LC_REPORT|wx.BORDER_NONE)
+        self.lab_peakinfo = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        self.lst_features = FeatureList(self)
         self.btn_addfeature = wx.Button(self, label='Add')
         self.btn_addfeature.Disable()
         self.btn_modelclear = wx.Button(self, label='Clear')
@@ -577,19 +580,25 @@ class FitPanel(WithMessage, wx.Panel): #,ScrolledPanel):
         self.pan_pars.ch_pickpars.Enable(state)
 
     def drawModelButtons(self):
+        dc = wx.ClientDC(self)
+        width = 0
+        self.pan_model.lst_features.ClearAll()
+        self.pan_model.lst_features.InsertColumn(0, "Type")
+        self.pan_model.lst_features.InsertColumn(1, "Feature")
+
         for ptype in lineshapebase.lineshapes.ptypes:
             tokens = lineshapebase.lineshapes.group(ptype)
 
-            for n,name in enumerate(tokens):
-                self.pan_model.lst_features.Append((ptype.lower(),name))
-                #index = self.pan_model.lst_features.AppendItem(n, ptype.lower())
-                #self.pan_model.lst_features.SetStringItem(index, 1, name)
-        self.pan_model.lst_features.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+            for n, name in enumerate(tokens):
+                self.pan_model.lst_features.Append((ptype.lower(), name))
+                width = max(dc.GetTextExtent(name)[0], width)
         self.pan_model.lst_features.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        width += self.pan_model.lst_features.GetColumnWidth(0)
 
-        s = self.pan_model.lst_features.Size
-        self.pan_model.lst_features.SetMinSize((s[0]+20,-1))
-        self.pan_model.Fit()
+        self.pan_model.Layout()
+        diff = 2*(self.pan_model.lst_features.GetSize()[0]-self.pan_model.lst_features.GetClientSize()[0])
+        self.pan_model.lst_features.SetMinSize((width+diff, -1))
+        self.pan_model.Layout()
 
 class dlg_find_peaks(wx.Frame):
     def __init__(self, parent):

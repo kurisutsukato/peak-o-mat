@@ -24,7 +24,6 @@ import wx.aui as aui
 import os
 import glob
 import re
-import imp
 from importlib import import_module
 import logging
 import codecs
@@ -33,6 +32,7 @@ import inspect
 import pickle, json
 import sys
 from copy import deepcopy
+import logging
 
 from . import fio
 from . import misc
@@ -49,8 +49,10 @@ from . import datagrid
 from . import spec
 from . import project
 from . import module
-#from . import codeeditor
 from . import ide
+
+from peak_o_mat import pom_tmp
+from .lineshapebase import lineshapes
 
 from .mplplot import controller as mplcontroller
 from .mplplot import model as mplmodel
@@ -60,6 +62,9 @@ from .dvctree import TreeListModel
 from .main import new_controller
 
 from .appdata import configdir, logfile
+from .symbols import pom_globals
+
+logger = logging.getLogger('pom')
 
 if hasattr(sys, 'frozen') and sys.frozen == 'windows_exe':
     # in case peak-o-mat has been compiled with py2exe
@@ -109,6 +114,9 @@ class Controller(object):
         self.data_grids = []
         self._freeze = False
         self._selection = None
+
+        self._pom_script_symbols = {}
+        self._pom_script_lineshapes = {}
 
         self._updating = False
         self._modified = False
@@ -566,26 +574,6 @@ class Controller(object):
         self.message('created sets from grid data', blink=True)
         self.project_modified = True
 
-    def update_tree(self, plot=None):
-        """\
-        Synchronize the tree with the project data. If 'plot' is not None, update only
-        the nodes contained in 'plot'.
-        """
-        # TODO: should not be necesary anymore
-        return
-
-        if plot is None:
-            self.view.tree.update_node(-1, [x.name for x in self.project])
-            for n in range(len(self.project)):
-                self.update_tree(n)
-        else:
-            names = []
-            hides = []
-            models = []
-            if len(self.project[plot]) > 0:
-                names, hides, models = list(zip(*[(x.name, x.hide, x.model is not None) for x in self.project[plot]]))
-            self.view.tree.update_node(plot, names, hides, models)
-
     def hide_selection(self):
         """\
         Toggle the visibility of the current selectionp.
@@ -594,7 +582,6 @@ class Controller(object):
         for n, set in enumerate(self.project[plot]):
             if n in sel:
                 set.hide = not set.hide
-        self.update_tree(plot)
         self.update_plot()
         self.project_modified = True
 
@@ -845,6 +832,23 @@ class Controller(object):
         self.view.frame_annotations.Show(show)
         self.view.frame_annotations.CenterOnParent()
         self.view.check_menu('Notepad', show)
+
+    def retrieve_symbols(self):
+        global pom_tmp
+        for k in pom_tmp:
+            try:
+                lineshapes.pop(k)
+            except KeyError:
+                pass
+        pom_tmp.clear()
+
+        for k in self._pom_script_symbols.keys():
+            pom_globals.pop(k)
+        logger.debug('received new global symbols')
+
+        self._pom_script_symbols = self.codeeditor.get_activated_symbols()
+        pom_globals.update(self._pom_script_symbols)
+        lineshapes.update(pom_tmp)
 
     def code_changed(self):
         self.project.code = self.codeeditor.save_to_project()

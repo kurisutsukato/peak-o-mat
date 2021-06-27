@@ -9,67 +9,26 @@ from glob import glob
 import os, re, sys
 import code
 import types
+import numpy as np
 
 from ..symbols import pom_globals
 from ..appdata import configdir
+from peak_o_mat import config
 
 logger = logging.getLogger('pom')
 
 prjscripts = []
 
-class SortList(list):
-    def _append(self, item):
-        super(SortList, self).append(item)
-        self[:] = sorted(self, key=itemgetter(1))
-
-    def _index(self, item):
-        for n, i in enumerate(self):
-            if i[1] == item:
-                return n
-        raise IndexError
-
-class LocalScripts(SortList):
-    def __init__(self, basepath):
-        self.basepath = basepath
-        fls = glob(os.path.join(basepath, '*.py'))
-
-        super(LocalScripts, self).__init__([[False, os.path.basename(q)] for q in fls])
-
-    def append(self, item):
-        super(SortList, self).append(item)
-        self[:] = sorted(self, key=itemgetter(1))
-        return self.index(item)
-
-    def load(self, row):
-        return open(os.path.join(self.basepath, self[row][1])).read()
-
-    def names(self):
-        for a, name in self:
-            yield name
-
-    def path(self, row):
-        return os.path.join(self.basepath, self[row][1])
-
-class PrjScripts(SortList):
-    def load(self, row):
-        return self[row][2]
-
-    def append(self, item):
-        super(SortList, self).append(item)
-        self[:] = sorted(self, key=itemgetter(1))
-        return self.index(item)
-
-    def names(self):
-        for a, name, script in self:
-            yield name
-
-    def update(self, row, val):
-        self[row][2] = val
+class DoesExist(Exception):
+    pass
 
 class ListModel(dv.DataViewIndexListModel):
-    def __init__(self, data):
-        dv.DataViewIndexListModel.__init__(self, len(data))
-        self._data = data
+    def __init__(self):
+        dv.DataViewIndexListModel.__init__(self)
+        self._data = []
+
+    def RowChanged(self, row):
+        self.ItemChanged(self.GetItem(row))
 
     def Reset(self, length=None):
         if length is None:
@@ -83,6 +42,10 @@ class ListModel(dv.DataViewIndexListModel):
                 return True
         return False
 
+    def names(self):
+        for d in self.data:
+            yield d[1]
+
     def pop(self, row):
         self._data.pop(row)
         self.Reset(len(self._data))
@@ -95,6 +58,7 @@ class ListModel(dv.DataViewIndexListModel):
 
     def append(self, item):
         self._data.append(item)
+        self._data[:] = sorted(self._data, key=itemgetter(1))
         self.Reset(len(self._data))
         return self._data.index(item)
 
@@ -115,7 +79,7 @@ class ListModel(dv.DataViewIndexListModel):
         try:
             return str(self._data[row][col]) if col > 0 else self._data[row][col]
         except IndexError:
-            print('getvaluebyrow index error row {}, col {}'.format(row, col))
+            logger.warning('getvaluebyrow index error row {}, col {}'.format(row, col))
             return 0
 
     def SetValueByRow(self, value, row, col):
@@ -128,14 +92,103 @@ class ListModel(dv.DataViewIndexListModel):
             self._data[row][col] = str(value)
         return True
 
-    def update(self):
-        self.Reset(len(self.data))
-
     def GetColumnCount(self):
         return 2
 
     def GetColumnType(self, col):
         return ['bool', 'string'][col]
+
+class ProjectData(ListModel):
+    def get_source(self):
+        src = []
+        for act, name, val in self.data:
+            if act:
+                src.append(val)
+        return src
+
+    def append_from_local(self, srcmodel, row, newname=None):
+        act, name = srcmodel.data[row]
+        if newname is not None:
+            if newname[-3:] != '.py':
+                newname = newname.replace('.', '')
+                newname += '.py'
+            if newname in self.names():
+                raise DoesExist
+        with open(os.path.join(srcmodel.basepath, name), 'r') as fp:
+            script = fp.read()
+            self.append([act, name if newname is None else newname, script])
+
+    def update(self, row, val):
+        self.data[row][2] = val
+
+    def load(self, row):
+        return self.data[row][2]
+
+class LocalData(ListModel):
+    def __init__(self, basepath):
+        super(LocalData, self).__init__()
+        self.basepath = basepath
+
+        self.reload()
+
+    def get_source(self):
+        src = []
+        for n, (act, name) in enumerate(self.data):
+            if act:
+                src.append(self.load(n))
+        return src
+
+    def reload(self, selectedrow=None):
+        if self.basepath is not None:
+            try:
+                fls = [os.path.basename(q) for q in glob(os.path.join(self.basepath, '*.py'))]
+            except OSError:
+                raise
+
+        if fls == [q[1] for q in self.data]:
+            return
+
+        if selectedrow is not None:
+            selectedname = self.data[selectedrow][1]
+            if len(fls) == len(self.data):
+                if not self.data[selectedrow][1] in fls:
+                    for n, name in enumerate(fls):
+                        if name not in self:
+                            selectedname = name
+                self.data = [[False, q] for q in fls]
+                selectedrow = self.index(selectedname)
+            else:
+                self.data = [[False, q] for q in fls]
+                try:
+                    selectedrow = self.index(selectedname)
+                except ValueError:
+                    selectedrow = max(0, selectedrow-1)
+            return selectedrow
+        else:
+            self.data = [[False, q] for q in fls]
+
+    def path(self, row):
+        return os.path.join(self.basepath, self.data[row][1])
+
+    def append_from_embedded(self, srcmodel, row, newname=None):
+        act, name, script = srcmodel.data[row]
+        if newname is not None:
+            name = newname
+        if name[-3:] != '.py':
+            name = name.replace('.', '')
+            name += '.py'
+        if os.path.exists(os.path.join(self.basepath, name)):
+            raise DoesExist
+        else:
+            with open(os.path.join(self.basepath, name), 'w') as fp:
+                fp.write(script)
+                self.append([act, name])
+
+    def load(self, row):
+        try:
+            return open(os.path.join(self.basepath, self.data[row][1])).read()
+        except OSError:
+            return None
 
 class Locals(dict):
     def __init__(self, *args):
@@ -181,8 +234,7 @@ class Interpreter(code.InteractiveInterpreter):
         locs.add('model', _get_model, True)
 
         def _update_view():
-            #TODO: should not be necesary anymore: # self.controller.update_tree()
-            self.controller.update_plot()
+            pub.sendMessage((self.controller.view.instid, 'updateview'), full=True)
 
         locs.add('sync', _update_view)
 
@@ -208,39 +260,44 @@ class Interpreter(code.InteractiveInterpreter):
 class Controller(object):
     def __init__(self, parent_controller, view=None, interactor=None):
         self.view = view
+        self.do_not_listen = False
+
+        scriptpath = config.get('general', 'userfunc_dir')
+        self.script_path = scriptpath if os.path.exists(scriptpath) and os.path.isdir(scriptpath) else None
         if interactor is not None:
             interactor.Install(self, view)
         self.interpreter = Interpreter(parent_controller)
 
         self.model = {
-            'prj': ListModel(PrjScripts([])),
-            'local': ListModel(LocalScripts(os.path.join(configdir(), 'userfunc')))
+            'prj': ProjectData(),
+            'local': LocalData(self.script_path)
         }
         self.edit_mode = None   # maybe 'prj' or 'local'
 
         self.view.set_model('local', self.model['local'])
         self.view.set_model('prj', self.model['prj'])
 
+        self.view.enable_local(self.script_path is not None)
         self.view.run()
 
-    def register_symbols(self, source):
-        '''das braucht man wohl um im code editor funktionen zu definieren,
-        die man spaeter zum fitten nehmen kann'''
-
-        try:
-            m = types.ModuleType('dynamic')
-            # m = imp.new_module('dynamic')
-            exec(source, {}, m.__dict__)
-        except:
-            return
-        else:
-            for name in dir(m):
-                sym = getattr(m, name)
-                if type(sym) in [types.FunctionType]: # TODO:, types.ModuleType, np.ufunc]:
-                    pom_globals.update({name: sym})
+    def get_activated_symbols(self):
+        symbs = {}
+        for source in self.model['local'].get_source()+self.model['prj'].get_source():
+            try:
+                m = types.ModuleType('dynamic')
+                exec(source, m.__dict__, m.__dict__)
+            except:
+                pass
+            else:
+                for name in dir(m):
+                    sym = getattr(m, name)
+                    if type(sym) in [types.FunctionType, types.ModuleType, np.ufunc,
+                                     types.BuiltinFunctionType, types.BuiltinMethodType]:
+                        symbs.update({name: sym})
+        return symbs
 
     def run(self, source):
-        self.register_symbols(source)
+        #self.register_symbols(source)
 
         tmp = sys.stdout
         sys.stdout = self.interpreter
@@ -250,10 +307,10 @@ class Controller(object):
 
     def rename(self, model, oldval, row):
         logger.debug('renaming {}: {}->{}'.format(self.edit_mode, oldval, model.data[row][1]))
-        if hasattr(model.data, 'basepath'):
+        if hasattr(model, 'basepath'):
             try:
-                os.rename(os.path.join(model.data.basepath, oldval),
-                          os.path.join(model.data.basepath, model.data[row][1]))
+                os.rename(os.path.join(model.basepath, oldval),
+                          os.path.join(model.basepath, model.data[row][1]))
             except IOError:
                 return False
             return True
@@ -283,24 +340,32 @@ class Controller(object):
 
     def model_update(self):
         val = self.view.editor.GetText()
-        ctrl = getattr(self.view,'lst_{}'.format(self.edit_mode))
+        ctrl = getattr(self.view, 'lst_{}'.format(self.edit_mode))
         if self.edit_mode == 'prj':
-            self.model[self.edit_mode].data.update(ctrl._selected, val)
+            self.model[self.edit_mode].update(ctrl.selected, val)
         elif self.edit_mode == 'local':
-            with open(self.model[self.edit_mode].data.path(ctrl._selected), 'w', encoding='utf-8') as fp:
+            with open(self.model[self.edit_mode].path(ctrl.selected), 'w', encoding='utf-8') as fp:
                 fp.write(val)
+        self.model[self.edit_mode].data[ctrl.selected][0] = False
+        self.model[self.edit_mode].RowChanged(ctrl.selected)
 
     def editor_push_file(self, scope, row):
-        data = self.model[scope].data
-        cont = data.load(row)
-        self.view.editor.ChangeValue(cont)
+        self.do_not_listen = True
+        try:
+            cont = self.model[scope].load(row)
+        except OSError:
+            self.view.editor.ChangeValue('unable to read file')
+            self.view.show_editor(False)
+        else:
+            self.view.editor.ChangeValue(cont)
+        self.do_not_listen = False
 
     def delete_entry(self, scope, row):
         model = self.model[scope]
         logger.debug('delete row {}'.format(row))
         if scope == 'local':
             try:
-                os.unlink(model.data.path(row))
+                os.unlink(model.path(row))
             except OSError:
                 raise
             else:
@@ -311,7 +376,7 @@ class Controller(object):
     def add_entry(self, scope):
         model = self.model[scope]
         count = 0
-        for name in model.data.names():
+        for name in model.names():
             name = name.rstrip('.py')
             try:
                 name, num = name.split('-')
@@ -325,7 +390,7 @@ class Controller(object):
             newname = 'untitled.py'
         if scope == 'local':
             try:
-                open(os.path.join(model.data.basepath, newname), 'w')
+                open(os.path.join(model.basepath, newname), 'w')
             except OSError:
                 raise
             else:
@@ -334,10 +399,20 @@ class Controller(object):
             row = model.append([False, newname, ''])
         return row
 
-if __name__ == '__main__':
-    import wx
-    from .view import View
-    from .interactor import Interactor
+def test():
+    from peak_o_mat import config
+    m = LocalData(config.get('general', 'userfunc_dir'))
+    m.reload(1)
+    print(m.data)
 
-    app = wx.App()
-    Controller(View(None), Interactor())
+
+if __name__ == '__main__':
+    #import wx
+    #from .view import View
+    #from .interactor import Interactor
+
+    #app = wx.App()
+    #c = Controller(None, View(None), Interactor())
+    #app.MainLoop()
+
+    test()

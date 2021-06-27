@@ -1,4 +1,5 @@
 
+#TODO: rausschmeissen, ist jetzt map_mod
 
 import wx
 import numpy as np

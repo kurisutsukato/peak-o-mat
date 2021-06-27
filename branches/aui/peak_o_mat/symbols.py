@@ -1,4 +1,5 @@
 import numpy as np
+from .lineshapebase import LineShape
 
 class GlobalSymbols(dict):
     def __init__(self, data):
@@ -27,4 +28,3 @@ pom_globals = GlobalSymbols({
                   'sigma': 5.670373e-8, # Stefan Boltzmann constant (W m-2 K-4)
                   'm0': 9.10938215e-31, # electron mass (kg)
                   'pi': np.pi})
-
