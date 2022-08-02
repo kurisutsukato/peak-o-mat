@@ -41,18 +41,20 @@ def bg_alq(x, y, lam, p, niter):
     return x, z
 
 def spline_filter(sp, smoothing, sample=None):
-    if np.any(np.diff(sp.x) <= 0.0):
-        raise PomError('{}: X-values must be monotonously increasing.'.format(sp.name))
+    sidx = np.argsort(sp.x)
+    x, y = np.take(sp.xy, sidx, axis=1)
+    #if np.any(np.diff(sp.x) <= 0.0):
+    #    raise PomError('{}: X-values must be monotonously increasing.'.format(sp.name))
     try:
-        spl = UnivariateSpline(sp.x, sp.y, s=smoothing / len(sp.x))
+        spl = UnivariateSpline(x, y, s=smoothing / len(sp.x))
     except TypeError as er:
         raise PomError('error: %s' % er)
     else:
         if type(sample) == int and sample > 1:
-            nx = np.linspace(sp.x.min(), sp.x.max(), sample)
+            nx = np.linspace(x.min(), x.max(), sample)
             sp = Dataset(nx, spl(nx), 'spline_{}'.format(sp.name))
         else:
-            sp = Dataset(sp.x, spl(sp.x), 'spline_{}'.format(sp.name))
+            sp = Dataset(x, spl(x), 'spline_{}'.format(sp.name))
         return sp
 
 

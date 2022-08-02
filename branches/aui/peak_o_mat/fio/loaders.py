@@ -142,15 +142,16 @@ guess the columns delimiter and ignoring comments.
                 if collabels[0] == '':
                     collabels.pop(0)
             for line in datafile:
-                line = line.rstrip().rstrip(delimiter)
+                line = line.rstrip() #.rstrip(delimiter)
                 if fpc:
                     line = line.replace(',', '.')
                 line = mat.split(line.rstrip())
                 if rl:
                     rowlabels.append(line[0])
                 try:
-                    tmp = [float(q) for q in line[int(rl):] if q.strip() != '']
+                    tmp = [float(q) if q.strip() != '' else np.nan for q in line[int(rl):]]
                     if len(tmp) == 0 or (len(data) > 0 and len(tmp) != len(data[-1])):
+                        raise PomError('Unable to read file. Unaligned data found.')
                         break
                     else:
                         data.append(tmp)
@@ -161,7 +162,7 @@ guess the columns delimiter and ignoring comments.
             data = np.asarray(data, dtype=float)
         except ValueError:
             raise PomError('Unable to read file. Unaligned data found.')
-
+        print(data)
         r,c = data.shape
         if r < 5 and c>r*2:
             data = data.T

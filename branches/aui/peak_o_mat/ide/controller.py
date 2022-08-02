@@ -144,7 +144,8 @@ class LocalData(ListModel):
                 fls = [os.path.basename(q) for q in glob(os.path.join(self.basepath, '*.py'))]
             except OSError:
                 raise
-
+        else:
+            fls = []
         if fls == [q[1] for q in self.data]:
             return
 

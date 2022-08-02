@@ -186,6 +186,9 @@ class FitController(object):
             dset.limits = xr
             x, y = dset.get_xy_range(xr)
 
+            _, yb = filters.bg_snip(x, y, int(len(y)/10))
+            y -= yb
+
             numpeaks = len([True for f in self.model if str(f) in ls.peak])
 
             th = (y.max() - y.min())
@@ -220,6 +223,8 @@ class FitController(object):
 
                 n = 0
                 for f in self.model:
+                    if str(f) in ls.background:
+                        pass
                     if str(f) in ls.peak:
                         f.pos.value = pos[n]
                         f.amp.value = amp[n]

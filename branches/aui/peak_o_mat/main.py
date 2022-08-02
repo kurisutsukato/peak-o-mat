@@ -10,7 +10,6 @@ import numpy as np
 np.seterr(all='print', under='ignore')
 np.set_printoptions(precision=8)
 
-
 class LoggerWriter:
     def __init__(self, logfct):
         self.logfct = logfct
@@ -26,7 +25,6 @@ class LoggerWriter:
 
     def flush(self):
         pass
-
 
 import logging
 logging.getLogger().handlers = []

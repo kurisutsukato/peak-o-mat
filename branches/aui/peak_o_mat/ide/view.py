@@ -155,7 +155,6 @@ class View(wx.Frame, WithMessage):
         self.panel_list.Layout()
         self._local_enabled = state
 
-
     def show_editor(self, state=True):
         self.dummy.Show(not state)
         self.editor.Show(state)
