@@ -251,6 +251,7 @@ class LData(ExtraBase):
                 self.pop(i)
         else:
             self.pop(item)
+        return True # TODO: handle locks by figure editor
 
     def clear(self):
         del self[:]

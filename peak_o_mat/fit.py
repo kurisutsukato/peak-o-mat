@@ -147,10 +147,10 @@ class Fit:
             data = FitData(self.ds)
         guess = list(self.func.par_fit.values())
 
-        kwargs = {'maxit':1} # stop and redstart after each iteration
+        kwargs = {'maxit': 1} # stop and restart after each iteration
         self.maxiter = maxiter
         if not autostep:
-            kwargs.update({'stpb':np.ones((len(guess)))*stepsize})
+            kwargs.update({'stpb': np.ones((len(guess)))*stepsize})
 
         try:
             self.odr = O.ODR(data, fitmodel, guess, **kwargs)

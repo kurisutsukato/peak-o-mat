@@ -416,7 +416,7 @@ class Controller(object):
                     mod = import_module('.' + mod, 'peak_o_mat.modules')
                 except Exception as _e:
                     print('unable to load module \'{}\''.format(mod))
-                    logging.error(logging.traceback.format_exc())
+                    logger.error(logging.traceback.format_exc())
                 else:
                     for name, obj in inspect.getmembers(mod):
                         if inspect.isclass(obj):
@@ -438,8 +438,8 @@ class Controller(object):
                 # mod = imp.load_module(name, f, fname, descr)
                 mod = import_module(name)
             except Exception as _e:
-                logging.error('unable to load module \'{}\''.format(name))
-                logging.error(logging.traceback.format_exc())
+                logger.error('unable to load module \'{}\''.format(name))
+                logger.error(logging.traceback.format_exc())
             else:
                 for name, obj in inspect.getmembers(mod):
                     if inspect.isclass(obj):
@@ -604,7 +604,6 @@ class Controller(object):
                     # self.update_plot()
         else:
             self.project[plot].delete(sel)
-            self.update_tree(plot)
             if len(self.project[plot]) > 0:
                 set = max(min(max(sel) - len(sel) + 1, len(self.project[plot]) - 1), 0)
                 self.view.tree.selection = (plot, set)

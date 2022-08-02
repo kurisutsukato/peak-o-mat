@@ -15,7 +15,8 @@ from . import lineshapebase
 from .pickers import DummyPicker
 
 from .symbols import pom_globals
-
+from .filters import bg_snip
+#from .fit import FitModel, O
 
 class UnknownToken(Exception):
     pass
@@ -680,6 +681,25 @@ class TokenModel(BaseModel):
     def __str__(self):
         return ' '.join([str(q) for q in self])
 
+    def fit_bg(self, ds):
+        if not self.parsed:
+            return
+        x, y = ds.xy
+        bgmod = None
+        for comp in self:
+            if comp in lineshapebase.lineshapes.background:
+                bgmod = TokenModel(comp.name)
+                bgmod.parse()
+                bgmod[0].init_to_zero()
+                y = bg_snip(None, y)
+                func = QuickEvaluate(bgmod)
+                guess = list(func.par_fit.values())
+
+                #m = FitModel(func)
+                #dat = O.Data(x, y)
+
+
+
     def parse(self):
         if self.parsed or self.tokens == '':
             return
@@ -849,6 +869,10 @@ class Component(dict):
     @property
     def symbol_map(self):
         return dict([(q, self[q].count) for q in self.keys()])
+
+    def init_to_zero(self):
+        for k in self.keys():
+            self[k].value = 1.0
 
     def clear(self):
         for k in self.keys():

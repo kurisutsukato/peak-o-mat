@@ -106,19 +106,20 @@ def guess_format(path):
     mat = re.compile(delimiter)
 
     try:
-        data = [[float(x) for x in mat.split(line.rstrip())[skipcol:] if x.strip() != ''] for line in text[datastart:-1]]
-    except ValueError: # could happen if data is followed be rubbish
+        data = [[float(x) if x.strip() != '' else np.nan for x in mat.split(line.rstrip())[skipcol:]] for line in text[datastart:-1]]
+    except ValueError: # could happen if data is followed by rubbish
         data = []
         for line in text[datastart:-1]:
             line = mat.split(line.rstrip())
             try:
-                data.append([float(q) for q in line[skipcol:]])
+                data.append([float(q.strip()) if q != '' else np.nan for q in line[skipcol:]])
             except ValueError:
                 break
         if len(data) < 2:
             raise PomError('I tried my best but I am unable to identify the file format.')
-    data = np.asarray(data)
 
+    data = np.asarray(data)
+    print([len(q) for q in data])
     if len(data) == 0 or data.dtype == np.dtype('object'):
         raise PomError('I tried my best but I am unable to identify the file format.')
 

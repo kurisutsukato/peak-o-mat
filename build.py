@@ -76,7 +76,7 @@ def build():
             shutil.rmtree(d)
 
     from subprocess import run
-    run([r'pyinstaller.exe', 'peak-o-mat.spec'], shell=True)
+    run([r'pyinstaller.exe', '--clean', 'peak-o-mat.spec'], shell=True)
 
 def package_win():
     tmp = []
