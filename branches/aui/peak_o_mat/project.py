@@ -184,9 +184,10 @@ class ExtraBase(list):
         if self.has_notifier:
             dvi = self.dvmodel.ObjectToItem(obj)
             dvipa = self.dvmodel.GetParent(dvi)
-        list.remove(self, obj)
+        ret = list.remove(self, obj)
         if self.has_notifier:
             self.dvmodel.ItemDeleted(dvipa, dvi)
+        return ret
 
     def __setitem__(self, item, obj):
         if self.has_notifier:
@@ -245,13 +246,18 @@ class LData(ExtraBase):
 
     def delete(self, item):
         if type(item) == list:
+            out = []
+            for i in item:
+                out.append(self[i])
             item.sort()
             item.reverse()
             for i in item:
                 self.pop(i)
+            return out
         else:
-            self.pop(item)
-        return True # TODO: handle locks by figure editor
+            return self.pop(item)
+        return None
+        #TODO manchmal hakt's hier
 
     def clear(self):
         del self[:]

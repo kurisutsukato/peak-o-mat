@@ -595,8 +595,10 @@ class Controller(object):
         print('about to delete',plot,sel)
         if self.selection.isplot:
             if self.project.delete(plot) is None:
+                print('cannot delete')
                 self.view.msg_dialog('Plot cannot be deleted. It is referenced by a figure object.')
             else:
+                print('weg damit')
                 if len(self.project) > 0:
                     self.view.tree.selection = min(len(self.project) - 1, plot)
                 else:
