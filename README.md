@@ -7,9 +7,11 @@ other fitting task.  It allows for clearing, transforming, fitting, calibrating,
 etc. of spectra with few mouse clicks.  peak-o-mat can easily be extended by
 writing your own modules, it has been tested on windows, linux and OSX.
 
-Dependencies:
+Getting started
+=============
 
-- python >= 3.7
+You need at least python 3.7 and the folowing packages:
+
 - wxpython >= 4.2.1
 - PyPubSub
 - Pillow
@@ -18,4 +20,5 @@ Dependencies:
 - scipy
 
 All packages here above can be installed via pip, there is no need for any python package manager.
+Download the zip file (https://github.com/kurisutsukato/peak-o-mat/archive/refs/heads/master.zip) and run `peak-o-mat-py`.
 
