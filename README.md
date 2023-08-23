@@ -19,6 +19,9 @@ You need at least python 3.7 and the folowing packages:
 - numpy
 - scipy
 
-All packages here above can be installed via pip, there is no need for any python package manager.
-Download the zip file (https://github.com/kurisutsukato/peak-o-mat/archive/refs/heads/master.zip) and run `peak-o-mat-py`.
+All packages here above can be installed via pip, there is no need for any python package manager. Once all dependencies are installed, 
+download the zip file (https://github.com/kurisutsukato/peak-o-mat/archive/refs/heads/master.zip) and run `peak-o-mat-py`.
+
+A big thank goes to Rubin Dunn. Without him devellopping and mainting wxPython for over 20 years now, peak-o-mat would not exist.
+
 
