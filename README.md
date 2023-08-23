@@ -10,7 +10,7 @@ writing your own modules, it has been tested on windows, linux and OSX.
 Getting started
 =============
 
-You need at least python 3.7 and the folowing packages:
+You need at least python 3.7 and the following packages:
 
 - wxpython >= 4.2.1
 - PyPubSub
