@@ -233,6 +233,16 @@ class LData(ExtraBase):
             self.append(item)
         return len(self)-1
 
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for i in self:
+            result.append(copy.deepcopy(i, memo))
+        for k, v in self.__dict__.items():
+            setattr(result, k, copy.deepcopy(v, memo))
+        return result
+
     def copy(self, item):
         if type(item) == list:
             out = []
