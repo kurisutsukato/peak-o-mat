@@ -1141,7 +1141,7 @@ class PlotCanvas(misc_ui.WithMessage, wx.Panel):
         if self.getLogScale()[1]:
             y = np.log10(y)
         userPos = np.array((x, y))
-        x, y = userPos * self._pointScale + self._pointShift
+        x, y = (userPos * self._pointScale + self._pointShift).astype(int)
         return x, y
 
     def PositionScreenToUser(self, pntXY):
@@ -1307,7 +1307,7 @@ class PlotCanvas(misc_ui.WithMessage, wx.Panel):
         color.Set(r, g, b, 0x60)
         dc.SetBrush(wx.Brush(color))
 
-        dc.DrawRectangle(x0, y0, w, h)
+        dc.DrawRectangle(int(x0), int(y0), int(w), int(h))
 
     def _drawVerticalLine(self, dc):
         x, _ = self.PositionUserToScreen((self._xmarker, 1))

@@ -327,7 +327,7 @@ class Controller(object):
                             continue
                         order = {1: 'xyxy', 0: 'xyyy', 2: custom}.get(ordering)
                 else:
-                    plotname = None
+                    plotname = ''
                     order = 'xyyy'
                 if not plot_created or one_plot_each:
                     if not one_plot_each and len(path) > 1:
@@ -586,19 +586,19 @@ class Controller(object):
         self.project_modified = True
 
     def delete_selection(self):  # wholeplot=False)
-        # TODO wholeplot sollte man cniht mehr brauchen.
+        # TODO wholeplot sollte man nicht mehr brauchen.
         """\
         Delete the current selection. If 'wholeplot' is True, delete the whole plot
         including all sets.
         """
         plot, sel = self.selection
-        print('about to delete',plot,sel)
+        logger.info('about to delete {} {}'.format(plot,sel))
         if self.selection.isplot:
+            logger.info('isplot')
             if self.project.delete(plot) is None:
-                print('cannot delete')
+                logger.info('delete forbidden')
                 self.view.msg_dialog('Plot cannot be deleted. It is referenced by a figure object.')
             else:
-                print('weg damit')
                 if len(self.project) > 0:
                     self.view.tree.selection = min(len(self.project) - 1, plot)
                 else:

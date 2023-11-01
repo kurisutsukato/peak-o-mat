@@ -33,6 +33,7 @@ from functools import reduce
 import xml.etree.ElementTree as ET
 
 import textwrap as tw
+import logging
 
 from numpy import array, sometrue, inf, nan, ndarray, take, searchsorted
 
@@ -44,6 +45,7 @@ from .mplplot.model import MultiPlotModel, PlotData
 
 import wx.dataview as dv
 
+logger = logging.getLogger('pom')
 
 special_numbers=dict([('-1.#INF',-inf),('1.#INF',inf),
                       ('-1.#IND',nan),('-1.#IND00',nan),
@@ -159,12 +161,16 @@ class ExtraBase(list):
             self.dvmodel.ItemAdded(self.dvmodel.GetParent(dvi), dvi)
 
     def insert(self, n, obj):
+        logger.info('extrabase insert {} {} '.format(n, obj))
         if isinstance(obj, Dataset):
+            logger.info('extrabase insert converting to plotitem {}'.format(obj))
             obj = PlotItem.from_spec(obj)
+        elif isinstance(obj, Plot):
+            if self.has_notifier:
+                logger.info('extrabase attach notifier{}'.format(obj))
+                obj.attach_dvmodel(self.dvmodel)
         list.insert(self, n, obj)
         if self.has_notifier:
-            if isinstance(obj, Plot):
-                obj.attach_dvmodel(self.dvmodel)
             dvi = self.dvmodel.ObjectToItem(obj)
             self.dvmodel.ItemAdded(self.dvmodel.GetParent(dvi), dvi)
 
@@ -184,10 +190,9 @@ class ExtraBase(list):
         if self.has_notifier:
             dvi = self.dvmodel.ObjectToItem(obj)
             dvipa = self.dvmodel.GetParent(dvi)
-        ret = list.remove(self, obj)
+        list.remove(self, obj)
         if self.has_notifier:
             self.dvmodel.ItemDeleted(dvipa, dvi)
-        return ret
 
     def __setitem__(self, item, obj):
         if self.has_notifier:
@@ -224,14 +229,7 @@ class ExtraBase(list):
 class LData(ExtraBase):
     def __init__(self, *args):
         ExtraBase.__init__(self, *args)
-        self.name = ''
-
-    def add(self, item):
-        if type(item) == list:
-            self.extend(item)
-        else:
-            self.append(item)
-        return len(self)-1
+        #self.name = ''
 
     def __deepcopy__(self, memo):
         cls = self.__class__
@@ -242,6 +240,13 @@ class LData(ExtraBase):
         for k, v in self.__dict__.items():
             setattr(result, k, copy.deepcopy(v, memo))
         return result
+
+    def add(self, item):
+        if type(item) == list:
+            self.extend(item)
+        else:
+            self.append(item)
+        return len(self)-1
 
     def copy(self, item):
         if type(item) == list:
@@ -257,17 +262,13 @@ class LData(ExtraBase):
     def delete(self, item):
         if type(item) == list:
             out = []
-            for i in item:
-                out.append(self[i])
             item.sort()
             item.reverse()
             for i in item:
-                self.pop(i)
+                out.append(self.pop(i))
             return out
         else:
             return self.pop(item)
-        return None
-        #TODO manchmal hakt's hier
 
     def clear(self):
         del self[:]
@@ -280,6 +281,7 @@ class LData(ExtraBase):
         return c
 
     def move(self, frm, to):
+        logger.info('move {} {}'.forma(frm, to))
         if type(frm) == list:
             mv = set(frm)
             all = set(range(len(self)))
@@ -292,23 +294,6 @@ class LData(ExtraBase):
         elif to < frm:
             self[:] = ptake(self,list(range(to))+[frm]+list(range(to,frm))+list(range(frm+1,len(self))))
 
-    def _insert(self, pos, item):
-        if type(item) == list:
-            if pos == len(self):
-                self.extend(item)
-            else:
-                dest = self[pos]
-                for i in item:
-                    self.insert(self.index(dest), i)
-        else:
-            try:
-                list.insert(self, pos, item)
-            except IndexError:
-                if pos == len(self):
-                    self.append(item)
-                else:
-                    raise
-
     def position(self, item):
         #like index() but checks if objects are identicals
         for n,i in enumerate(self):
@@ -317,6 +302,7 @@ class LData(ExtraBase):
         raise IndexError(item)
 
 class PlotItem(Dataset):
+    hide = None
     def __init__(self, *args):
         self.uuid = UUID.uuid4().hex
         Dataset.__init__(self, *args)
@@ -343,7 +329,7 @@ class PlotItem(Dataset):
     @classmethod
     def from_spec(cls, s):
         s.uuid = UUID.uuid4().hex
-        s.hide = False
+        #s.hide = False
         s.__class__ = PlotItem
         return s
 
@@ -354,6 +340,7 @@ class Plot(LData):
         self._references = [] # mplplotitems
         self.uuid = uuid or UUID.uuid4().hex
         self.name = name
+        logger.info('Plot.__init__: {} {}'.format(name, self.uuid))
         LData.__init__(self)
 
         #TODO ueberdenken, sind alles attribute der datasets
@@ -367,13 +354,9 @@ class Plot(LData):
         return '{} name: {}'.format(self.__class__, self.name)
 
     def __getstate__(self):
-        #remove treedatamodel
-        if self.has_notifier:
-            m = self.dvmodel
-            del self.__dict__['dvmodel']
+        # needed for copying of tree items between distinct instances of peak-o-mat
         dict = copy.deepcopy(self.__dict__)
-        if self.has_notifier:
-            self.__dict__['dvmodel'] = m
+        del dict['dvmodel']
         dict['uuid'] = UUID.uuid4().hex
         dict['_references'] = []
         return dict
@@ -579,15 +562,12 @@ class Project(LData):
         return self.add(Plot(name=name))
 
     def insert_before(self, item, obj):
-        if isinstance(obj, Dataset):
-            obj = PlotItem.from_spec(obj)
         n = self.index(item)
-        list.insert(self, n, obj)
-        if self.has_notifier:
-            dvi = self.dvmodel.ObjectToItem(obj)
-            self.dvmodel.ItemAdded(self.dvmodel.GetParent(dvi), dvi)
+        self.insert(n, obj)
 
     def index(self, value):
+        if value == 0:
+            return 0
         for n,p in enumerate(self):
             if type(value) == str: # when referenced from mplplot
                 if p.uuid == value:

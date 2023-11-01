@@ -612,9 +612,9 @@ class LineControlPanel(WithMessage, wx.Panel):
 
 class BlitCanvas(wx.Window):
     def __init__(self, parent):
-        self._bmp = wx.Bitmap(1,1)
+        self._bmp = wx.Bitmap(600,600)
         self.needs_update = False
-        super(BlitCanvas, self).__init__(parent, style=wx.FULL_REPAINT_ON_RESIZE)
+        super(BlitCanvas, self).__init__(parent, style=wx.FULL_REPAINT_ON_RESIZE, size=(600,600))
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
     def OnPaint(self, evt):
@@ -624,7 +624,9 @@ class BlitCanvas(wx.Window):
 
 class MPLFrame(wx.Frame):
     def __init__(self, parent, xpos=None):
-        style =  wx.FRAME_FLOAT_ON_PARENT | wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER|wx.MAXIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX)
+        style = wx.FRAME_FLOAT_ON_PARENT | wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER|wx.MAXIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX)
+        style = wx.FRAME_FLOAT_ON_PARENT | wx.DEFAULT_FRAME_STYLE & ~(wx.MAXIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX)
+
         super(MPLFrame, self).__init__(parent, style= style, pos=_pos[1])
         if xpos is not None :
             self.SetPosition((xpos,-1))
@@ -651,8 +653,7 @@ class MPLFrame(wx.Frame):
         fbox.Add(self.panel, 1, wx.EXPAND)
         self.panel.SetSizer(vbox)
         self.panel.Layout()
-        self.SetSizer(fbox)
-        self.Fit()
+        self.panel.Fit()
 
 class ControlFrame(WithMessage,wx.Frame):
     def __init__(self, parent):
@@ -718,7 +719,6 @@ class ControlFrame(WithMessage,wx.Frame):
         self.spn_height.Value = mpmodel.height
 
         if mpmodel.selected is None:
-            print('controlframe update_from_model no selection model.shape', mpmodel.shape)
             self.plot_layout.update_from_model(mpmodel)
             self.enable_edit(False)
             self.line_control.associate_model([], [])
@@ -726,7 +726,6 @@ class ControlFrame(WithMessage,wx.Frame):
 
         else:
             self.enable_edit(True)
-            print('controlframe update_from_model model.shape', mpmodel.shape)
             self.plot_layout.update_from_model(mpmodel)
             ds_names = ['s{:d} {}'.format(n, q.name) for n,q in enumerate(mpmodel.project[mpmodel.selected.plot_ref])]
             if mpmodel.selected.plot_ref_secondary is not None:

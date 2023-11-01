@@ -5,6 +5,7 @@ import sys
 from pubsub import pub
 from pickle import dumps, loads
 import logging
+import copy
 
 from .project import Project, Plot, PlotData
 from .misc_ui import WithMessage
@@ -17,6 +18,13 @@ class TreeListModel(dv.PyDataViewModel):
         self._selection = []
         self.data = data
         self.data.attach_dvmodel(self)
+
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        setattr(result, 'data', copy.deepcopy(self.data, memo))
+        return result
 
     @property
     def item_selection(self):
@@ -294,12 +302,11 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         entries.append(wx.AcceleratorEntry(wx.ACCEL_NORMAL, wx.WXK_DELETE, idmap['Delete']))
         entries.append(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord('c'), idmap['Copy']))
         entries.append(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord('v'), idmap['Paste']))
-        entries.append(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord('v'), idmap['Paste']))
         entries.append(wx.AcceleratorEntry(wx.ACCEL_NORMAL, ord('d'), idmap['Duplicate']))
         entries.append(wx.AcceleratorEntry(wx.ACCEL_NORMAL, wx.WXK_SPACE, idmap['Toggle visibility']))
 
-        accel = wx.AcceleratorTable(entries)
-        self.SetAcceleratorTable(accel)
+        self.accel = wx.AcceleratorTable(entries)
+        self.SetAcceleratorTable(self.accel)
 
         # item = wx.MenuItem(self.minimal_menu, id=-1, text='paste')
         # item = self.minimal_menu.Append(item)
@@ -329,8 +336,12 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         pub.sendMessage((self.instid, 'tree', 'remtrafo'))
 
     def on_menuinsertplot(self, evt):
-        if self.dataviewmodel.selection[1][0] is not None:
-            pub.sendMessage((self.instid, 'tree', 'insert'), msg=self.dataviewmodel.selection[1][0])
+        try:
+            if self.dataviewmodel.selection[1][0] is not None:
+                pub.sendMessage((self.instid, 'tree', 'insert'), msg=self.dataviewmodel.selection[1][0])
+        except IndexError:
+            logger.warning('insert at 0')
+            pub.sendMessage((self.instid, 'tree', 'insert'), msg=0)
 
     def on_menuto_spreadsheat(self, evt):
         pub.sendMessage((self.instid, 'tree', 'togrid'))
@@ -370,8 +381,10 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
         self.GetParent().Bind(wx.EVT_ENTER_WINDOW, self.on_mouseenter)
 
         wx.CallAfter(obj.Destroy)
+        self.SetAcceleratorTable(self.accel)
 
     def on_activated(self, evt):
+        self.SetAcceleratorTable(wx.NullAcceleratorTable)
         self.GetParent().Unbind(wx.EVT_ENTER_WINDOW)
 
         rect = self.GetItemRect(evt.GetItem(), self.GetColumn(0))
@@ -526,6 +539,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
 
         mod = evt.GetModel()
         if instid != self.instid:
+            logger.debug('drag to other instance')
             paritem = mod.GetParent(evt.GetItem())
             if paritem == dv.NullDataViewItem and isplot:
                 if evt.GetItem().IsOk():
