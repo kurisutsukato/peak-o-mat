@@ -123,15 +123,18 @@ name : short description of the data
     def __copy__(self):
         return Dataset(self.x.copy(), self.y.copy(), 'copy_%s' % self.name)
 
-    def write(self, path):
+    def write(self, path, overwrite=False):
         """
 writes the current spectrum data in two columns
 path : obviously, the path
 """
         try:
-            f = open(path, 'w')
+            f = open(path, 'x' if overwrite else 'w')
         except IOError:
-            print('IOError: cannot write to %s' % (path))
+            print(f'IOError: cannot write to {path}')
+            return False
+        except FileExistsError:
+            print(f'FileExistError: {path}')
             return False
         
         data = np.transpose(np.array([self.x,self.y]))
