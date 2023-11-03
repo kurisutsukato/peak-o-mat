@@ -57,6 +57,8 @@ class Interactor(object):
 
         self.view.Bind(wx.EVT_TEXT, self.OnEditAnnotations, self.view.txt_annotations)
 
+        self.view.Bind(misc_ui.EVT_SHOUT, self.OnPopupMessage)
+
         self.view._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnModuleCloseButton)
         self.view._mgr.Bind(aui.EVT_AUI_PANE_ACTIVATED, self.OnModuleActivated)
 
@@ -159,6 +161,12 @@ class Interactor(object):
 
     def pubOnAddSet(self, spec):
         self.controller.add_set(spec)
+
+    def OnPopupMessage(self, evt):
+        if hasattr(evt, 'popup') and evt.popup:
+            wx.MessageBox(evt.msg)
+        else:
+            evt.Skip()
 
     def OnModuleCloseButton(self, evt):
         m = evt.GetPane().name

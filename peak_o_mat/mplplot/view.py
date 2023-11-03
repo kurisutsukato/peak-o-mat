@@ -905,9 +905,6 @@ class ControlFrame(WithMessage,wx.Frame):
         #self.Layout()
         self.Fit()
 
-    def warn_not_unique_plot_names(self):
-        wx.MessageBox('Only plots with unique names are accessible here.\nClose the window, change the plot names and come back.')
-
     def show_model_changed(self):
         wx.MessageBox('The plot object referenced by this figure has changed.\n'+\
                       'The figure might not look like what you would expect.','Warning')
