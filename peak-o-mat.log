@@ -1,0 +1,409 @@
+2023-11-02 17:38:59,515 pom.WARNING:main.py:82 - Unable to register .lpj extension. Rerun peak-o-mat as admin.
+2023-11-02 17:38:59,516 pom.DEBUG:main.py:84 - program start
+2023-11-02 17:38:59,516 pom.DEBUG:main.py:96 - new controller None False True
+2023-11-02 17:39:06,602 pom.INFO:main.py:21 - loading system modules
+2023-11-02 17:39:07,904 pom.DEBUG:mod_map.py:362 - map data shape: (1024, 41, 31)
+2023-11-02 17:39:09,041 pom.INFO:module.py:124 - registering module 'mod_setinfo'
+2023-11-02 17:39:09,233 pom.INFO:module.py:124 - registering module 'mod_op'
+2023-11-02 17:39:09,494 pom.INFO:module.py:124 - registering module 'mod_eval'
+2023-11-02 17:39:09,917 pom.INFO:module.py:124 - registering module 'mod_background'
+2023-11-02 17:39:10,070 pom.INFO:module.py:124 - registering module 'mod_ruby'
+2023-11-02 17:39:10,075 pom.INFO:main.py:21 - loading user modules from C:\Users\ckkar\AppData\Roaming\peak-o-mat\modules
+2023-11-02 17:39:11,546 pom.DEBUG:main.py:108 - starting view
+2023-11-02 17:39:11,547 pom.DEBUG:mainframe.py:202 - start view
+2023-11-02 17:39:24,220 pom.INFO:project.py:343 - Plot.__init__:  49503b677bb6482cbf36d4251c9d62ea
+2023-11-02 17:39:24,224 pom.DEBUG:model.py:800 - creating token model: [('', 'CB'), (' ', 'GBSTP1'), (' ', 'LO1')]
+2023-11-02 17:39:24,236 pom.INFO:project.py:343 - Plot.__init__:  4bcb422a3af84e7882baa81e3f107687
+2023-11-02 17:39:24,245 pom.INFO:project.py:343 - Plot.__init__:  2f5a8906c78546df8b58c8d4ec841d77
+2023-11-02 17:39:24,246 pom.DEBUG:model.py:800 - creating token model: [('', 'CB'), (' ', 'LO1'), (' ', 'GA1'), (' ', 'LO2')]
+2023-11-02 17:39:24,263 pom.INFO:project.py:343 - Plot.__init__:  f2c313b870c849e288ba79ab02dd566d
+2023-11-02 17:39:24,285 pom.INFO:main.py:21 - add ref 4bcb422a3af84e7882baa81e3f107687 42544e48259c4e1e972aa6f5c7ca20b9
+2023-11-02 17:39:24,286 pom.INFO:main.py:21 - add ref f2c313b870c849e288ba79ab02dd566d 1dbc8396fa1948fd8e7619b222cfb504
+2023-11-02 17:39:24,286 pom.INFO:main.py:21 - add ref 49503b677bb6482cbf36d4251c9d62ea c6e107b5afd54df386a77665947b1096
+2023-11-02 17:39:24,711 pom.INFO:main.py:21 - refresh figure list
+2023-11-02 17:39:24,751 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 17:39:24,868 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 17:39:29,755 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.Plot'>
+2023-11-02 17:39:29,755 pom.DEBUG:dvctree.py:629 - container on container [<class 'peak_o_mat.project.Plot'> name: exponential decay]-><class 'peak_o_mat.project.Plot'> name: raman
+2023-11-02 17:39:29,756 pom.INFO:project.py:164 - extrabase insert 2 <class 'peak_o_mat.project.Plot'> name: exponential decay 
+2023-11-02 17:39:29,756 pom.INFO:project.py:170 - extrabase attach notifier<class 'peak_o_mat.project.Plot'> name: exponential decay
+2023-11-02 17:39:32,842 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.Plot'>
+2023-11-02 17:39:32,842 pom.DEBUG:dvctree.py:629 - container on container [<class 'peak_o_mat.project.Plot'> name: exponential decay]-><class 'peak_o_mat.project.Plot'> name: step function
+2023-11-02 17:39:32,842 pom.INFO:project.py:164 - extrabase insert 0 <class 'peak_o_mat.project.Plot'> name: exponential decay 
+2023-11-02 17:39:32,843 pom.INFO:project.py:170 - extrabase attach notifier<class 'peak_o_mat.project.Plot'> name: exponential decay
+2023-11-02 17:39:33,814 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 17:39:34,607 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.Plot'>
+2023-11-02 17:39:34,607 pom.DEBUG:dvctree.py:629 - container on container [<class 'peak_o_mat.project.Plot'> name: ruby]-><class 'peak_o_mat.project.Plot'> name: raman
+2023-11-02 17:39:34,608 pom.INFO:project.py:164 - extrabase insert 2 <class 'peak_o_mat.project.Plot'> name: ruby 
+2023-11-02 17:39:34,608 pom.INFO:project.py:170 - extrabase attach notifier<class 'peak_o_mat.project.Plot'> name: ruby
+2023-11-02 17:39:34,620 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 17:39:37,038 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.Plot'>
+2023-11-02 17:39:37,039 pom.DEBUG:dvctree.py:629 - container on container [<class 'peak_o_mat.project.Plot'> name: step function]-><class 'peak_o_mat.project.Plot'> name: raman
+2023-11-02 17:39:37,039 pom.INFO:project.py:164 - extrabase insert 2 <class 'peak_o_mat.project.Plot'> name: step function 
+2023-11-02 17:39:37,039 pom.INFO:project.py:170 - extrabase attach notifier<class 'peak_o_mat.project.Plot'> name: step function
+2023-11-02 17:39:37,052 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 17:39:38,586 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.Plot'>
+2023-11-02 17:39:38,587 pom.DEBUG:dvctree.py:629 - container on container [<class 'peak_o_mat.project.Plot'> name: raman]-><class 'peak_o_mat.project.Plot'> name: ruby
+2023-11-02 17:39:38,587 pom.INFO:project.py:164 - extrabase insert 1 <class 'peak_o_mat.project.Plot'> name: raman 
+2023-11-02 17:39:38,587 pom.INFO:project.py:170 - extrabase attach notifier<class 'peak_o_mat.project.Plot'> name: raman
+2023-11-02 17:39:52,963 pom.WARNING:main.py:82 - Unable to register .lpj extension. Rerun peak-o-mat as admin.
+2023-11-02 17:39:52,964 pom.DEBUG:main.py:84 - program start
+2023-11-02 17:39:52,964 pom.DEBUG:main.py:96 - new controller None False True
+2023-11-02 17:39:55,830 pom.INFO:main.py:21 - loading system modules
+2023-11-02 17:39:56,630 pom.DEBUG:mod_map.py:362 - map data shape: (1024, 41, 31)
+2023-11-02 17:39:57,267 pom.INFO:module.py:124 - registering module 'mod_setinfo'
+2023-11-02 17:39:57,416 pom.INFO:module.py:124 - registering module 'mod_op'
+2023-11-02 17:39:57,637 pom.INFO:module.py:124 - registering module 'mod_eval'
+2023-11-02 17:39:58,091 pom.INFO:module.py:124 - registering module 'mod_background'
+2023-11-02 17:39:58,221 pom.INFO:module.py:124 - registering module 'mod_ruby'
+2023-11-02 17:39:58,224 pom.INFO:main.py:21 - loading user modules from C:\Users\ckkar\AppData\Roaming\peak-o-mat\modules
+2023-11-02 17:39:59,657 pom.DEBUG:main.py:108 - starting view
+2023-11-02 17:39:59,657 pom.DEBUG:mainframe.py:202 - start view
+2023-11-02 17:41:21,834 pom.WARNING:main.py:82 - Unable to register .lpj extension. Rerun peak-o-mat as admin.
+2023-11-02 17:41:21,834 pom.DEBUG:main.py:84 - program start
+2023-11-02 17:41:21,835 pom.DEBUG:main.py:96 - new controller None False True
+2023-11-02 17:41:24,512 pom.INFO:main.py:21 - loading system modules
+2023-11-02 17:41:25,952 pom.DEBUG:mod_map.py:362 - map data shape: (1024, 41, 31)
+2023-11-02 17:41:26,454 pom.INFO:module.py:124 - registering module 'mod_setinfo'
+2023-11-02 17:41:26,610 pom.INFO:module.py:124 - registering module 'mod_op'
+2023-11-02 17:41:26,888 pom.INFO:module.py:124 - registering module 'mod_eval'
+2023-11-02 17:41:27,374 pom.INFO:module.py:124 - registering module 'mod_background'
+2023-11-02 17:41:27,514 pom.INFO:module.py:124 - registering module 'mod_ruby'
+2023-11-02 17:41:27,517 pom.INFO:main.py:21 - loading user modules from C:\Users\ckkar\AppData\Roaming\peak-o-mat\modules
+2023-11-02 17:41:28,765 pom.DEBUG:main.py:108 - starting view
+2023-11-02 17:41:28,765 pom.DEBUG:mainframe.py:202 - start view
+2023-11-02 17:41:37,989 pom.INFO:project.py:343 - Plot.__init__:  49503b677bb6482cbf36d4251c9d62ea
+2023-11-02 17:41:37,993 pom.DEBUG:model.py:800 - creating token model: [('', 'CB'), (' ', 'GBSTP1'), (' ', 'LO1')]
+2023-11-02 17:41:38,004 pom.INFO:project.py:343 - Plot.__init__:  4bcb422a3af84e7882baa81e3f107687
+2023-11-02 17:41:38,014 pom.INFO:project.py:343 - Plot.__init__:  2f5a8906c78546df8b58c8d4ec841d77
+2023-11-02 17:41:38,016 pom.DEBUG:model.py:800 - creating token model: [('', 'CB'), (' ', 'LO1'), (' ', 'GA1'), (' ', 'LO2')]
+2023-11-02 17:41:38,032 pom.INFO:project.py:343 - Plot.__init__:  f2c313b870c849e288ba79ab02dd566d
+2023-11-02 17:41:38,053 pom.INFO:main.py:21 - add ref 4bcb422a3af84e7882baa81e3f107687 9d1e74646cb9444ca8d1a8c25ede3956
+2023-11-02 17:41:38,054 pom.INFO:main.py:21 - add ref f2c313b870c849e288ba79ab02dd566d 0f59226b99d54e11b99c019b5a0bffeb
+2023-11-02 17:41:38,054 pom.INFO:main.py:21 - add ref 49503b677bb6482cbf36d4251c9d62ea e0fa15cdda9c4f418885859894fbc1a5
+2023-11-02 17:41:38,467 pom.INFO:main.py:21 - refresh figure list
+2023-11-02 17:41:38,509 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 17:41:38,644 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 17:41:40,772 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 17:41:41,650 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.Plot'>
+2023-11-02 17:41:41,650 pom.DEBUG:dvctree.py:644 - child on container [<plotitem raw.dat>]-><class 'peak_o_mat.project.Plot'> name: raman
+2023-11-02 17:41:52,061 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 17:41:52,790 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.Plot'>
+2023-11-02 17:41:52,790 pom.DEBUG:dvctree.py:644 - child on container [<plotitem 1.93RBM.txt>]-><class 'peak_o_mat.project.Plot'> name: step function
+2023-11-02 17:41:52,806 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 17:41:55,008 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.Plot'>
+2023-11-02 17:41:55,009 pom.DEBUG:dvctree.py:629 - container on container [<class 'peak_o_mat.project.Plot'> name: step function]-><class 'peak_o_mat.project.Plot'> name: raman
+2023-11-02 17:41:55,009 pom.INFO:project.py:164 - extrabase insert 2 <class 'peak_o_mat.project.Plot'> name: step function 
+2023-11-02 17:41:55,009 pom.INFO:project.py:170 - extrabase attach notifier<class 'peak_o_mat.project.Plot'> name: step function
+2023-11-02 17:41:59,482 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 17:42:00,270 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.Plot'>
+2023-11-02 17:42:00,270 pom.DEBUG:dvctree.py:644 - child on container [<plotitem 1.92RBM.txt>]-><class 'peak_o_mat.project.Plot'> name: ruby
+2023-11-02 17:42:00,283 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 17:42:02,796 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.Plot'>
+2023-11-02 17:42:02,796 pom.DEBUG:dvctree.py:644 - child on container [<plotitem raw.dat>]-><class 'peak_o_mat.project.Plot'> name: step function
+2023-11-02 17:42:02,812 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 17:42:02,906 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 17:42:05,732 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.PlotItem'>
+2023-11-02 17:42:05,732 pom.DEBUG:dvctree.py:603 - drop child on child [<plotitem 1.93RBM.txt>]->set name: 1.90RBM.txt
+2023-11-02 17:42:05,733 pom.INFO:project.py:164 - extrabase insert 1 set name: 1.93RBM.txt 
+2023-11-02 17:42:05,733 pom.INFO:project.py:166 - extrabase insert converting to plotitem set name: 1.93RBM.txt
+2023-11-02 17:42:06,839 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 17:42:09,917 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.Plot'>
+2023-11-02 17:42:09,917 pom.DEBUG:dvctree.py:644 - child on container [<plotitem 1.92RBM.txt>]-><class 'peak_o_mat.project.Plot'> name: raman
+2023-11-02 17:42:12,973 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.PlotItem'>
+2023-11-02 17:42:12,974 pom.DEBUG:dvctree.py:603 - drop child on child [<plotitem 1.89RBM.txt>]->set name: ruby.dat
+2023-11-02 17:42:12,974 pom.INFO:project.py:164 - extrabase insert 0 set name: 1.89RBM.txt 
+2023-11-02 17:42:12,974 pom.INFO:project.py:166 - extrabase insert converting to plotitem set name: 1.89RBM.txt
+2023-11-02 17:42:14,531 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.Plot'>
+2023-11-02 17:42:14,531 pom.DEBUG:dvctree.py:644 - child on container [<plotitem 1.89RBM.txt>]-><class 'peak_o_mat.project.Plot'> name: raman
+2023-11-02 17:42:20,467 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.Plot'>
+2023-11-02 17:42:20,467 pom.DEBUG:dvctree.py:644 - child on container [<plotitem 1.93RBM.txt>, <plotitem 1.91RBM.txt>, <plotitem 1.89RBM.txt>]-><class 'peak_o_mat.project.Plot'> name: exponential decay
+2023-11-02 17:42:22,810 pom.DEBUG:dvctree.py:573 - targetobj is <class 'peak_o_mat.project.PlotItem'>
+2023-11-02 17:42:22,810 pom.DEBUG:dvctree.py:614 - drop child on child [<plotitem 1.93RBM.txt>, <plotitem 1.91RBM.txt>, <plotitem 1.89RBM.txt>]->set name: exp_noise.dat
+2023-11-02 17:42:22,810 pom.INFO:project.py:164 - extrabase insert 1 set name: 1.93RBM.txt 
+2023-11-02 17:42:22,810 pom.INFO:project.py:166 - extrabase insert converting to plotitem set name: 1.93RBM.txt
+2023-11-02 17:42:22,811 pom.INFO:project.py:164 - extrabase insert 2 set name: 1.91RBM.txt 
+2023-11-02 17:42:22,811 pom.INFO:project.py:166 - extrabase insert converting to plotitem set name: 1.91RBM.txt
+2023-11-02 17:42:22,811 pom.INFO:project.py:164 - extrabase insert 3 set name: 1.89RBM.txt 
+2023-11-02 17:42:22,812 pom.INFO:project.py:166 - extrabase insert converting to plotitem set name: 1.89RBM.txt
+2023-11-02 18:24:40,529 pom.WARNING:main.py:82 - Unable to register .lpj extension. Rerun peak-o-mat as admin.
+2023-11-02 18:24:40,530 pom.DEBUG:main.py:84 - program start
+2023-11-02 18:24:40,530 pom.DEBUG:main.py:96 - new controller None False True
+2023-11-02 18:24:44,124 pom.INFO:main.py:21 - loading system modules
+2023-11-02 18:24:45,123 pom.DEBUG:mod_map.py:362 - map data shape: (1024, 41, 31)
+2023-11-02 18:24:45,713 pom.INFO:module.py:124 - registering module 'mod_setinfo'
+2023-11-02 18:24:45,892 pom.INFO:module.py:124 - registering module 'mod_op'
+2023-11-02 18:24:46,106 pom.INFO:module.py:124 - registering module 'mod_eval'
+2023-11-02 18:24:46,548 pom.INFO:module.py:124 - registering module 'mod_background'
+2023-11-02 18:24:46,673 pom.INFO:module.py:124 - registering module 'mod_ruby'
+2023-11-02 18:24:46,676 pom.INFO:main.py:21 - loading user modules from C:\Users\ckkar\AppData\Roaming\peak-o-mat\modules
+2023-11-02 18:24:47,719 pom.DEBUG:main.py:108 - starting view
+2023-11-02 18:24:47,719 pom.DEBUG:mainframe.py:202 - start view
+2023-11-02 18:24:56,997 pom.INFO:project.py:343 - Plot.__init__:  49503b677bb6482cbf36d4251c9d62ea
+2023-11-02 18:24:57,002 pom.DEBUG:model.py:800 - creating token model: [('', 'CB'), (' ', 'GBSTP1'), (' ', 'LO1')]
+2023-11-02 18:24:57,012 pom.INFO:project.py:343 - Plot.__init__:  4bcb422a3af84e7882baa81e3f107687
+2023-11-02 18:24:57,021 pom.INFO:project.py:343 - Plot.__init__:  2f5a8906c78546df8b58c8d4ec841d77
+2023-11-02 18:24:57,023 pom.DEBUG:model.py:800 - creating token model: [('', 'CB'), (' ', 'LO1'), (' ', 'GA1'), (' ', 'LO2')]
+2023-11-02 18:24:57,038 pom.INFO:project.py:343 - Plot.__init__:  f2c313b870c849e288ba79ab02dd566d
+2023-11-02 18:24:57,059 pom.INFO:main.py:21 - add ref 4bcb422a3af84e7882baa81e3f107687 92fd380b81534da5ac89f2dec39edaa1
+2023-11-02 18:24:57,059 pom.INFO:main.py:21 - add ref f2c313b870c849e288ba79ab02dd566d eda3c1e72453445d9ef80f4c13296940
+2023-11-02 18:24:57,060 pom.INFO:main.py:21 - add ref 49503b677bb6482cbf36d4251c9d62ea e0c420a1bb394cedab0475aa401b03c7
+2023-11-02 18:24:57,438 pom.INFO:main.py:21 - refresh figure list
+2023-11-02 18:24:57,481 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 18:24:57,614 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 18:24:58,612 pom.INFO:main.py:21 - create or show True {(0, 1): <peak_o_mat.mplplot.model.PlotData object at 0x000001C35BCC9A30>, (0, 0): <peak_o_mat.mplplot.model.PlotData object at 0x000001C35BCC9CA0>} False
+2023-11-02 18:25:01,202 pom.INFO:main.py:21 - plot controller __init__ model.shape (1, 2)
+2023-11-02 18:25:01,207 pom.INFO:main.py:21 - plotlayout: update from model, mpmodel.shape (1, 2)
+2023-11-02 18:25:02,761 pom.INFO:main.py:21 - plotlayout: update from model, mpmodel.shape (1, 2)
+2023-11-02 18:25:13,621 pom.INFO:main.py:21 - create or show False None True
+2023-11-02 18:25:13,643 pom.INFO:main.py:21 - refresh figure list
+2023-11-02 18:25:30,830 pom.WARNING:main.py:82 - Unable to register .lpj extension. Rerun peak-o-mat as admin.
+2023-11-02 18:25:30,830 pom.DEBUG:main.py:84 - program start
+2023-11-02 18:25:30,830 pom.DEBUG:main.py:96 - new controller None False True
+2023-11-02 18:25:33,626 pom.INFO:main.py:21 - loading system modules
+2023-11-02 18:25:34,515 pom.DEBUG:mod_map.py:362 - map data shape: (1024, 41, 31)
+2023-11-02 18:25:35,007 pom.INFO:module.py:124 - registering module 'mod_setinfo'
+2023-11-02 18:25:35,145 pom.INFO:module.py:124 - registering module 'mod_op'
+2023-11-02 18:25:35,347 pom.INFO:module.py:124 - registering module 'mod_eval'
+2023-11-02 18:25:35,762 pom.INFO:module.py:124 - registering module 'mod_background'
+2023-11-02 18:25:35,892 pom.INFO:module.py:124 - registering module 'mod_ruby'
+2023-11-02 18:25:35,894 pom.INFO:main.py:21 - loading user modules from C:\Users\ckkar\AppData\Roaming\peak-o-mat\modules
+2023-11-02 18:25:36,871 pom.DEBUG:main.py:108 - starting view
+2023-11-02 18:25:36,871 pom.DEBUG:mainframe.py:202 - start view
+2023-11-02 18:26:03,896 pom.INFO:project.py:343 - Plot.__init__:  49503b677bb6482cbf36d4251c9d62ea
+2023-11-02 18:26:03,903 pom.DEBUG:model.py:800 - creating token model: [('', 'CB'), (' ', 'GBSTP1'), (' ', 'LO1')]
+2023-11-02 18:26:03,914 pom.INFO:project.py:343 - Plot.__init__:  4bcb422a3af84e7882baa81e3f107687
+2023-11-02 18:26:03,923 pom.INFO:project.py:343 - Plot.__init__:  2f5a8906c78546df8b58c8d4ec841d77
+2023-11-02 18:26:03,925 pom.DEBUG:model.py:800 - creating token model: [('', 'CB'), (' ', 'LO1'), (' ', 'GA1'), (' ', 'LO2')]
+2023-11-02 18:26:03,941 pom.INFO:project.py:343 - Plot.__init__:  f2c313b870c849e288ba79ab02dd566d
+2023-11-02 18:26:03,966 pom.INFO:main.py:21 - add ref 4bcb422a3af84e7882baa81e3f107687 f9daaa7686bb4e56a12bd72ffafe58b7
+2023-11-02 18:26:03,966 pom.INFO:main.py:21 - add ref f2c313b870c849e288ba79ab02dd566d b2e77233b4df4d1bb6606dd40a1ec933
+2023-11-02 18:26:03,967 pom.INFO:main.py:21 - add ref 49503b677bb6482cbf36d4251c9d62ea 546facdc74b747f8ae5e8210c816ebaa
+2023-11-02 18:26:04,411 pom.INFO:main.py:21 - refresh figure list
+2023-11-02 18:26:04,454 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 18:26:04,576 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-02 18:57:38,955 pom.WARNING:main.py:82 - Unable to register .lpj extension. Rerun peak-o-mat as admin.
+2023-11-02 18:57:38,956 pom.DEBUG:main.py:84 - program start
+2023-11-02 18:57:38,956 pom.DEBUG:main.py:96 - new controller None False True
+2023-11-02 18:57:44,362 pom.ERROR:main.py:21 - Traceback (most recent call last):
+2023-11-02 18:57:44,362 pom.ERROR:main.py:21 -   File "C:\Users\ckkar\Desktop\peak-o-mat\peak-o-mat.py", line 5, in <module>
+2023-11-02 18:57:44,364 pom.ERROR:main.py:21 -     main.run()
+2023-11-02 18:57:44,364 pom.ERROR:main.py:21 -   File "C:\Users\ckkar\Desktop\peak-o-mat\peak_o_mat\main.py", line 85, in run
+2023-11-02 18:57:44,366 pom.ERROR:main.py:21 -     new_controller(lpj_path, silent, startapp=True)
+2023-11-02 18:57:44,366 pom.ERROR:main.py:21 -   File "C:\Users\ckkar\Desktop\peak-o-mat\peak_o_mat\main.py", line 100, in new_controller
+2023-11-02 18:57:44,367 pom.ERROR:main.py:21 -     from .controller import Controller
+2023-11-02 18:57:44,367 pom.ERROR:main.py:21 -   File "C:\Users\ckkar\Desktop\peak-o-mat\peak_o_mat\controller.py", line 45, in <module>
+2023-11-02 18:57:44,368 pom.ERROR:main.py:21 -     from . import fitcontroller
+2023-11-02 18:57:44,368 pom.ERROR:main.py:21 -   File "C:\Users\ckkar\Desktop\peak-o-mat\peak_o_mat\fitcontroller.py", line 18, in <module>
+2023-11-02 18:57:44,369 pom.ERROR:main.py:21 -     from . import fit
+2023-11-02 18:57:44,369 pom.ERROR:main.py:21 -   File "C:\Users\ckkar\Desktop\peak-o-mat\peak_o_mat\fit.py", line 25, in <module>
+2023-11-02 18:57:44,370 pom.ERROR:main.py:21 -     from .project import PlotItem
+2023-11-02 18:57:44,370 pom.ERROR:main.py:21 -   File "C:\Users\ckkar\Desktop\peak-o-mat\peak_o_mat\project.py", line 44, in <module>
+2023-11-02 18:57:44,371 pom.ERROR:main.py:21 -     from .mplplot.model import MultiPlotModel, PlotData
+2023-11-02 18:57:44,371 pom.ERROR:main.py:21 -   File "C:\Users\ckkar\Desktop\peak-o-mat\peak_o_mat\mplplot\model.py", line 9, in <module>
+2023-11-02 18:57:44,372 pom.ERROR:main.py:21 -     from matplotlib.markers import MarkerStyle
+2023-11-02 18:57:44,372 pom.ERROR:main.py:21 - ModuleNotFoundError: No module named 'matplotlib'
+2023-11-02 18:58:41,506 pom.WARNING:main.py:82 - Unable to register .lpj extension. Rerun peak-o-mat as admin.
+2023-11-02 18:58:41,507 pom.DEBUG:main.py:84 - program start
+2023-11-02 18:58:41,507 pom.DEBUG:main.py:96 - new controller None False True
+2023-11-02 18:58:50,800 pom.INFO:main.py:21 - loading system modules
+2023-11-02 18:58:51,957 pom.DEBUG:mod_map.py:362 - map data shape: (1024, 41, 31)
+2023-11-02 18:58:52,578 pom.INFO:module.py:124 - registering module 'mod_setinfo'
+2023-11-02 18:58:52,754 pom.INFO:module.py:124 - registering module 'mod_op'
+2023-11-02 18:58:52,931 pom.INFO:module.py:124 - registering module 'mod_eval'
+2023-11-02 18:58:53,375 pom.INFO:module.py:124 - registering module 'mod_background'
+2023-11-02 18:58:53,493 pom.INFO:module.py:124 - registering module 'mod_ruby'
+2023-11-02 18:58:53,495 pom.INFO:main.py:21 - loading user modules from C:\Users\ckkar\AppData\Roaming\peak-o-mat\modules
+2023-11-02 18:58:54,698 pom.DEBUG:main.py:108 - starting view
+2023-11-02 18:58:54,698 pom.DEBUG:mainframe.py:202 - start view
+2023-11-07 15:24:09,282 pom.WARNING:main.py:82 - Unable to register .lpj extension. Rerun peak-o-mat as admin.
+2023-11-07 15:24:09,283 pom.DEBUG:main.py:84 - program start
+2023-11-07 15:24:09,283 pom.DEBUG:main.py:96 - new controller None False True
+2023-11-07 15:24:20,400 pom.INFO:main.py:21 - loading system modules
+2023-11-07 15:24:22,950 pom.DEBUG:mod_map.py:362 - map data shape: (1024, 41, 31)
+2023-11-07 15:24:26,082 pom.INFO:module.py:124 - registering module 'mod_setinfo'
+2023-11-07 15:24:26,325 pom.INFO:module.py:124 - registering module 'mod_op'
+2023-11-07 15:24:26,671 pom.INFO:module.py:124 - registering module 'mod_eval'
+2023-11-07 15:24:27,263 pom.INFO:module.py:124 - registering module 'mod_background'
+2023-11-07 15:24:27,389 pom.INFO:module.py:124 - registering module 'mod_ruby'
+2023-11-07 15:24:27,392 pom.INFO:main.py:21 - loading user modules from C:\Users\ckkar\AppData\Roaming\peak-o-mat\modules
+2023-11-07 15:24:28,663 pom.DEBUG:main.py:108 - starting view
+2023-11-07 15:24:28,663 pom.DEBUG:mainframe.py:202 - start view
+2023-11-07 15:53:06,045 pom.WARNING:main.py:82 - Unable to register .lpj extension. Rerun peak-o-mat as admin.
+2023-11-07 15:53:06,045 pom.DEBUG:main.py:84 - program start
+2023-11-07 15:53:06,046 pom.DEBUG:main.py:96 - new controller None False True
+2023-11-07 15:53:09,662 pom.INFO:main.py:21 - loading system modules
+2023-11-07 15:53:10,431 pom.DEBUG:mod_map.py:362 - map data shape: (1024, 41, 31)
+2023-11-07 15:53:11,089 pom.INFO:module.py:124 - registering module 'mod_setinfo'
+2023-11-07 15:53:11,294 pom.INFO:module.py:124 - registering module 'mod_op'
+2023-11-07 15:53:11,577 pom.INFO:module.py:124 - registering module 'mod_eval'
+2023-11-07 15:53:12,140 pom.INFO:module.py:124 - registering module 'mod_background'
+2023-11-07 15:53:12,299 pom.INFO:module.py:124 - registering module 'mod_ruby'
+2023-11-07 15:53:12,302 pom.INFO:main.py:21 - loading user modules from C:\Users\ckkar\AppData\Roaming\peak-o-mat\modules
+2023-11-07 15:53:13,675 pom.DEBUG:main.py:108 - starting view
+2023-11-07 15:53:13,675 pom.DEBUG:mainframe.py:202 - start view
+2023-11-07 15:54:01,864 pom.INFO:project.py:343 - Plot.__init__:  49503b677bb6482cbf36d4251c9d62ea
+2023-11-07 15:54:01,870 pom.DEBUG:model.py:800 - creating token model: [('', 'CB'), (' ', 'GBSTP1'), (' ', 'LO1')]
+2023-11-07 15:54:01,883 pom.INFO:project.py:343 - Plot.__init__:  4bcb422a3af84e7882baa81e3f107687
+2023-11-07 15:54:01,893 pom.INFO:project.py:343 - Plot.__init__:  2f5a8906c78546df8b58c8d4ec841d77
+2023-11-07 15:54:01,894 pom.DEBUG:model.py:800 - creating token model: [('', 'CB'), (' ', 'LO1'), (' ', 'GA1'), (' ', 'LO2')]
+2023-11-07 15:54:01,913 pom.INFO:project.py:343 - Plot.__init__:  f2c313b870c849e288ba79ab02dd566d
+2023-11-07 15:54:01,944 pom.INFO:main.py:21 - add ref 4bcb422a3af84e7882baa81e3f107687 ae4e1800955943ed9e49b4e38aa7bd44
+2023-11-07 15:54:01,944 pom.INFO:main.py:21 - add ref f2c313b870c849e288ba79ab02dd566d ea08b1fdd0704d1780f53bb58964685f
+2023-11-07 15:54:01,945 pom.INFO:main.py:21 - add ref 49503b677bb6482cbf36d4251c9d62ea 061dbe6d57344fb592517a96a6eeae9e
+2023-11-07 15:54:02,428 pom.INFO:main.py:21 - refresh figure list
+2023-11-07 15:54:02,435 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 15:54:02,476 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-07 15:54:02,592 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 15:54:02,599 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-07 15:54:16,654 pom.INFO:main.py:21 - selection changed: (0, [1])
+2023-11-07 15:54:23,953 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 15:54:23,971 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-07 15:54:25,701 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 15:54:33,519 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 15:54:33,533 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-07 15:54:41,486 pom.INFO:main.py:21 - selection changed: (0, [1])
+2023-11-07 15:54:42,451 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 15:54:42,457 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-07 15:54:43,855 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 15:54:46,080 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 15:54:46,088 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-07 15:54:49,631 pom.INFO:main.py:21 - selection changed: (0, [3])
+2023-11-07 15:54:55,625 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 15:54:55,639 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-07 15:55:01,930 pom.INFO:main.py:21 - selection changed: (0, [4])
+2023-11-07 15:55:08,873 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 15:55:08,890 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-07 15:55:16,196 pom.INFO:main.py:21 - selection changed: (0, [5])
+2023-11-07 15:55:18,856 pom.INFO:main.py:21 - selection changed: (0, [3])
+2023-11-07 15:55:19,461 pom.INFO:main.py:21 - selection changed: (0, [1, 2, 3])
+2023-11-07 15:55:20,185 pom.INFO:controller.py:595 - about to delete 0 [1, 2, 3]
+2023-11-07 15:55:20,189 pom.INFO:main.py:21 - selection changed: (0, [1])
+2023-11-07 15:55:23,285 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 15:55:33,763 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 15:55:33,772 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-07 15:55:44,567 pom.INFO:main.py:21 - selection changed: (0, [3])
+2023-11-07 15:55:46,225 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 15:55:46,627 pom.INFO:main.py:21 - selection changed: (0, [1, 2])
+2023-11-07 15:55:47,340 pom.INFO:controller.py:595 - about to delete 0 [1, 2]
+2023-11-07 15:55:47,342 pom.INFO:main.py:21 - selection changed: (0, [1])
+2023-11-07 15:56:00,709 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 15:56:00,728 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-07 15:56:05,534 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 15:56:10,403 pom.INFO:main.py:21 - selection changed: (0, [1])
+2023-11-07 15:56:10,775 pom.INFO:main.py:21 - selection changed: (0, [0, 1])
+2023-11-07 15:56:12,526 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 15:56:22,776 pom.INFO:main.py:21 - selection changed: (0, [1])
+2023-11-07 15:56:23,153 pom.INFO:main.py:21 - selection changed: (0, [0, 1])
+2023-11-07 15:56:24,541 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 15:56:25,061 pom.INFO:main.py:21 - selection changed: (1, [0, 1])
+2023-11-07 15:56:25,980 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 15:56:25,993 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-07 15:56:31,633 pom.INFO:main.py:21 - selection changed: (0, [3])
+2023-11-07 15:56:33,904 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 15:56:34,433 pom.INFO:main.py:21 - selection changed: (0, [1, 2])
+2023-11-07 15:56:35,171 pom.INFO:main.py:21 - selection changed: (0, [0, 1, 2])
+2023-11-07 15:56:36,667 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 15:56:36,678 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-07 15:56:40,348 pom.INFO:main.py:21 - selection changed: (0, [3])
+2023-11-07 15:56:46,583 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 15:56:46,600 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-07 15:56:48,624 pom.INFO:main.py:21 - selection changed: (0, [4])
+2023-11-07 15:56:57,399 pom.INFO:main.py:21 - selection changed: (0, [3])
+2023-11-07 15:56:57,962 pom.INFO:main.py:21 - selection changed: (0, [4])
+2023-11-07 15:56:58,820 pom.INFO:controller.py:595 - about to delete 0 [4]
+2023-11-07 15:56:58,824 pom.INFO:main.py:21 - selection changed: (0, [3])
+2023-11-07 15:57:00,895 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 15:57:00,904 pom.DEBUG:fitcontroller.py:63 - fitcontroller set model: CB GBSTP1 LO1
+2023-11-07 15:57:12,762 pom.INFO:main.py:21 - selection changed: (0, [5])
+2023-11-07 15:57:12,768 pom.INFO:main.py:21 - selection changed: (0, [5])
+2023-11-07 15:58:11,247 pom.WARNING:main.py:82 - Unable to register .lpj extension. Rerun peak-o-mat as admin.
+2023-11-07 15:58:11,248 pom.DEBUG:main.py:84 - program start
+2023-11-07 15:58:11,248 pom.DEBUG:main.py:96 - new controller None False True
+2023-11-07 15:58:13,777 pom.INFO:main.py:21 - loading system modules
+2023-11-07 15:58:14,688 pom.DEBUG:mod_map.py:362 - map data shape: (1024, 41, 31)
+2023-11-07 15:58:15,295 pom.INFO:module.py:124 - registering module 'mod_setinfo'
+2023-11-07 15:58:15,480 pom.INFO:module.py:124 - registering module 'mod_op'
+2023-11-07 15:58:15,762 pom.INFO:module.py:124 - registering module 'mod_eval'
+2023-11-07 15:58:16,335 pom.INFO:module.py:124 - registering module 'mod_background'
+2023-11-07 15:58:16,485 pom.INFO:module.py:124 - registering module 'mod_ruby'
+2023-11-07 15:58:16,488 pom.INFO:main.py:21 - loading user modules from C:\Users\ckkar\AppData\Roaming\peak-o-mat\modules
+2023-11-07 15:58:17,743 pom.INFO:main.py:21 - unable to read perspective
+2023-11-07 15:58:17,759 pom.DEBUG:main.py:108 - starting view
+2023-11-07 15:58:17,760 pom.DEBUG:mainframe.py:202 - start view
+2023-11-07 15:58:38,102 pom.INFO:project.py:343 - Plot.__init__: None c554c3fa35104c2c99ed45f45575a5b4
+2023-11-07 15:58:53,040 pom.INFO:controller.py:595 - about to delete 0 [0]
+2023-11-07 15:59:13,207 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 15:59:13,212 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 16:00:25,192 pom.INFO:main.py:21 - selection changed: (0, [1])
+2023-11-07 16:00:25,659 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 16:00:59,166 pom.INFO:main.py:21 - selection changed: (0, [4])
+2023-11-07 16:00:59,172 pom.INFO:main.py:21 - selection changed: (0, [4])
+2023-11-07 16:01:03,258 pom.INFO:main.py:21 - selection changed: (0, [3, 4])
+2023-11-07 16:01:04,611 pom.INFO:controller.py:595 - about to delete 0 [3, 4]
+2023-11-07 16:01:04,614 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 16:01:21,951 pom.INFO:main.py:21 - selection changed: (0, [3])
+2023-11-07 16:01:33,632 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 16:01:34,230 pom.INFO:main.py:21 - selection changed: (0, [3])
+2023-11-07 16:01:35,615 pom.INFO:main.py:21 - selection changed: (0, [5])
+2023-11-07 16:01:35,729 pom.INFO:main.py:21 - selection changed: (0, [5])
+2023-11-07 16:02:00,734 pom.INFO:main.py:21 - selection changed: (0, [4])
+2023-11-07 16:02:10,251 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 16:02:11,032 pom.INFO:main.py:21 - selection changed: (0, [0, 1, 2, 3, 4, 5])
+2023-11-07 16:02:12,905 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 16:02:13,361 pom.INFO:main.py:21 - selection changed: (0, [1])
+2023-11-07 16:02:13,724 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 16:02:14,043 pom.INFO:main.py:21 - selection changed: (0, [3])
+2023-11-07 16:02:14,385 pom.INFO:main.py:21 - selection changed: (0, [4])
+2023-11-07 16:02:14,832 pom.INFO:main.py:21 - selection changed: (0, [5])
+2023-11-07 16:02:15,541 pom.INFO:main.py:21 - selection changed: (0, [0, 1, 2, 3, 4, 5])
+2023-11-07 16:02:16,288 pom.INFO:main.py:21 - selection changed: (0, [0, 1, 2, 3, 4, 5])
+2023-11-07 16:02:18,308 pom.INFO:main.py:21 - selection changed: (0, [0, 1, 2, 3, 4, 5])
+2023-11-07 16:02:19,231 pom.INFO:main.py:21 - selection changed: (0, [0, 1, 2, 3, 4, 5])
+2023-11-07 16:02:19,360 pom.ERROR:main.py:21 - Traceback (most recent call last):
+2023-11-07 16:02:19,360 pom.ERROR:main.py:21 -   File "C:\Users\ckkar\Desktop\peak-o-mat\peak_o_mat\dvctree.py", line 407, in on_activated
+2023-11-07 16:02:19,378 pom.ERROR:main.py:21 -     txt.SetValue(lab)
+2023-11-07 16:02:19,379 pom.ERROR:main.py:21 - TypeError: TextEntry.SetValue(): argument 1 has unexpected type 'NoneType'
+2023-11-07 16:02:21,935 pom.INFO:main.py:21 - selection changed: (0, [0, 1, 2, 3, 4, 5])
+2023-11-07 16:02:23,702 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 16:02:24,349 pom.INFO:main.py:21 - selection changed: (0, [0, 1, 2, 3, 4, 5])
+2023-11-07 16:02:26,083 pom.INFO:main.py:21 - selection changed: (0, [0, 1, 2, 3, 4, 5])
+2023-11-07 16:02:26,443 pom.ERROR:main.py:21 - Traceback (most recent call last):
+2023-11-07 16:02:26,443 pom.ERROR:main.py:21 -   File "C:\Users\ckkar\Desktop\peak-o-mat\peak_o_mat\dvctree.py", line 407, in on_activated
+2023-11-07 16:02:26,445 pom.ERROR:main.py:21 -     txt.SetValue(lab)
+2023-11-07 16:02:26,445 pom.ERROR:main.py:21 - TypeError: TextEntry.SetValue(): argument 1 has unexpected type 'NoneType'
+2023-11-07 16:02:26,774 pom.INFO:main.py:21 - selection changed: (0, [0, 1, 2, 3, 4, 5])
+2023-11-07 16:02:28,229 pom.ERROR:main.py:21 - Traceback (most recent call last):
+2023-11-07 16:02:28,229 pom.ERROR:main.py:21 -   File "C:\Users\ckkar\Desktop\peak-o-mat\peak_o_mat\dvctree.py", line 407, in on_activated
+2023-11-07 16:02:28,231 pom.ERROR:main.py:21 -     txt.SetValue(lab)
+2023-11-07 16:02:28,231 pom.ERROR:main.py:21 - TypeError: TextEntry.SetValue(): argument 1 has unexpected type 'NoneType'
+2023-11-07 16:03:21,060 pom.WARNING:main.py:82 - Unable to register .lpj extension. Rerun peak-o-mat as admin.
+2023-11-07 16:03:21,060 pom.DEBUG:main.py:84 - program start
+2023-11-07 16:03:21,061 pom.DEBUG:main.py:96 - new controller None False True
+2023-11-07 16:03:24,270 pom.INFO:main.py:21 - loading system modules
+2023-11-07 16:03:25,377 pom.DEBUG:mod_map.py:362 - map data shape: (1024, 41, 31)
+2023-11-07 16:03:26,131 pom.INFO:module.py:124 - registering module 'mod_setinfo'
+2023-11-07 16:03:26,292 pom.INFO:module.py:124 - registering module 'mod_op'
+2023-11-07 16:03:26,544 pom.INFO:module.py:124 - registering module 'mod_eval'
+2023-11-07 16:03:27,016 pom.INFO:module.py:124 - registering module 'mod_background'
+2023-11-07 16:03:27,156 pom.INFO:module.py:124 - registering module 'mod_ruby'
+2023-11-07 16:03:27,160 pom.INFO:main.py:21 - loading user modules from C:\Users\ckkar\AppData\Roaming\peak-o-mat\modules
+2023-11-07 16:03:28,287 pom.DEBUG:main.py:108 - starting view
+2023-11-07 16:03:28,288 pom.DEBUG:mainframe.py:202 - start view
+2023-11-07 16:03:34,910 pom.INFO:project.py:343 - Plot.__init__:  35285540126d473ba4a87e16347b2ebc
+2023-11-07 16:03:34,938 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 16:03:35,027 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 16:03:35,041 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 16:03:50,589 pom.INFO:main.py:21 - selection changed: (0, [1])
+2023-11-07 16:03:52,050 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 16:03:53,629 pom.INFO:controller.py:595 - about to delete 0 [0]
+2023-11-07 16:03:53,633 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 16:04:03,289 pom.INFO:main.py:21 - selection changed: (0, [1])
+2023-11-07 16:04:05,234 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 16:04:07,000 pom.INFO:controller.py:595 - about to delete 0 [0]
+2023-11-07 16:04:07,005 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 16:04:16,058 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 16:04:16,107 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 16:04:23,039 pom.INFO:main.py:21 - selection changed: (0, [0])
+2023-11-07 16:04:24,363 pom.INFO:main.py:21 - selection changed: (0, [2])
+2023-11-07 16:04:25,705 pom.INFO:main.py:21 - selection changed: (0, [1])
