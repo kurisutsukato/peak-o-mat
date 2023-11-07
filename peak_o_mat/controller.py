@@ -511,7 +511,6 @@ class Controller(object):
         Add an empty plot.
         """
         added = self.project.add(project.Plot(name=name))
-        # self.update_tree()
         self.view.tree.selection = added
         self.project_modified = True
         pub.sendMessage((self.view.instid, 'plot_added'), plotlist=['p{}'.format(n) for n in range(len(self.project))])
