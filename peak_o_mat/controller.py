@@ -368,7 +368,7 @@ class Controller(object):
                 nall += 1
                 if dataset.hide and only_vis:
                     continue
-                name = dataset.name
+                name = re.sub('[:/\?\*]+','-', dataset.name)
                 if ext is not None:
                     if name.find('.') == -1:
                         name = name + '.' + ext
@@ -506,7 +506,7 @@ class Controller(object):
         #self.update_tree()
         self.project_modified = True
 
-    def add_plot(self, name=None):
+    def add_plot(self, name=''):
         """\
         Add an empty plot.
         """
