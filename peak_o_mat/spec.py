@@ -129,14 +129,14 @@ writes the current spectrum data in two columns
 path : obviously, the path
 """
         try:
-            f = open(path, 'x' if overwrite else 'w')
-        except IOError:
-            print(f'IOError: cannot write to {path}')
-            return False
+            f = open(path, 'w' if overwrite else 'x')
         except FileExistsError:
             print(f'FileExistError: {path}')
             return False
-        
+        except IOError:
+            print(f'IOError: cannot write to {path}')
+            return False
+
         data = np.transpose(np.array([self.x,self.y]))
         if config.getboolean('general','floating_point_is_comma'):
             f.write('\n'.join(['{:.15g}\t{:.15g}'.format(x,y).replace('.',',') for x,y in data]))

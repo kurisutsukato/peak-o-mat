@@ -177,8 +177,8 @@ class Controller(object):
                 wx.CallAfter(self.view.SetSize, size)
             interactor.Install(self, self.view)
 
-    def message(self, msg, blink=False, forever=False):
-        event = misc_ui.ShoutEvent(self.view.GetId(), msg=msg, target=1, blink=blink, time=5000, forever=forever)
+    def message(self, msg, blink=False, forever=False, popup=False):
+        event = misc_ui.ShoutEvent(self.view.GetId(), msg=msg, target=1, blink=blink, time=5000, forever=forever, popup=popup)
         wx.PostEvent(self.view, event)
 
     def load_filehistory(self):
@@ -376,7 +376,7 @@ class Controller(object):
                         name = re.sub(r'\.(\w*$)', '.' + ext, name)
                 nwritten += int(dataset.write(os.path.join(path, name), overwrite))
             misc.set_cwd(path)
-            self.message('saved %d of %d set(s)' % (nwritten, nall))
+            self.message(f'{nwritten} of {nall} set(s) exported.', popup=True)
         else:
             if self.active_set.write(path):
                 misc.set_cwd(path)
