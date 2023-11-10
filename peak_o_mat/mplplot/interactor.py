@@ -148,6 +148,7 @@ class Interactor:
         #self.view.btn_example.Enable(len(self.view.editor.GetText().strip()) == 0)
         if self.view.plot_view.canvas.needs_update:
             self.view.plot_view.canvas.Refresh()
+            self.view.plot_view.canvas.needs_update = False
 
         if hasattr(self.view, '_redraw_requested') and self.view._redraw_requested is not None:
             update,force = self.view._redraw_requested

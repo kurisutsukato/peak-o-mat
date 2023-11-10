@@ -6,6 +6,9 @@ from wx.lib import newevent
 from wx.lib.floatcanvas import FloatCanvas
 from functools import reduce
 
+import logging
+logger = logging.getLogger('pom')
+
 SelectEvent, EVT_RECT_SELECT = newevent.NewEvent()
 ReorderEvent, EVT_RECT_REORDER = newevent.NewEvent()
 
@@ -23,7 +26,7 @@ class PlotOrderPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
 
-        self.Canvas = FloatCanvas.FloatCanvas(self, BackgroundColor = "LIGHT BLUE")
+        self.Canvas = FloatCanvas.FloatCanvas(self, BackgroundColor="LIGHT BLUE")
         self.Canvas.InitAll()
 
         MainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -297,7 +300,7 @@ class PlotLayout(wx.Panel):
 
     def OnSelect(self, evt):
         #TODO: remove
-        print('plotlayout on select should not be called')
+        logger.debug('plotlayout on select should not be called')
         evt.Skip()
         if evt.name != '':
             self.ch_plot_pri.SetSelection(self.ch_plot_pri.FindString(evt.name))

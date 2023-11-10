@@ -612,9 +612,9 @@ class LineControlPanel(WithMessage, wx.Panel):
 
 class BlitCanvas(wx.Window):
     def __init__(self, parent):
-        self._bmp = wx.Bitmap(600,600)
+        self._bmp = wx.Bitmap(1,1)
         self.needs_update = False
-        super(BlitCanvas, self).__init__(parent, style=wx.FULL_REPAINT_ON_RESIZE, size=(600,600))
+        super(BlitCanvas, self).__init__(parent, style=wx.FULL_REPAINT_ON_RESIZE)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
     def OnPaint(self, evt):
@@ -649,11 +649,7 @@ class MPLFrame(wx.Frame):
         hbox.Add(self.btn_export_code, 0, wx.EXPAND|wx.ALL, 5)
         hbox.Add(self.btn_export_figure, 0, wx.EXPAND|wx.ALL, 5)
         vbox.Add(hbox, 0, wx.EXPAND)
-        fbox = wx.BoxSizer(wx.HORIZONTAL)
-        fbox.Add(self.panel, 1, wx.EXPAND)
         self.panel.SetSizer(vbox)
-        self.panel.Layout()
-        self.panel.Fit()
 
 class ControlFrame(WithMessage,wx.Frame):
     def __init__(self, parent):
@@ -746,7 +742,7 @@ class ControlFrame(WithMessage,wx.Frame):
 
     def resize_canvas(self, w, h, dpi):
         self.figure.set_size_inches(w,h,True)
-        self.plot_view.canvas.SetMinSize((dpi*w,dpi*h))
+        self.plot_view.canvas.SetMinSize((int(dpi*w),int(dpi*h))) # setting floats does not have any effect!!
         self.plot_view.SetClientSize(self.plot_view.panel.GetBestSize())
         self.figure.canvas.draw()
 

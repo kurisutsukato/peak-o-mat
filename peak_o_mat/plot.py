@@ -133,7 +133,7 @@ class PolyLine(PolyPoints):
         pen.SetCap(wx.CAP_BUTT)
         dc.SetPen(pen)
         if len(self.scaled) > 0:
-            dc.DrawLines(self.scaled.astype(int))
+            dc.DrawLinesFromBuffer(self.scaled.astype('intc'))
 
     def getSymExtent(self):
         """Width and Height of Marker"""

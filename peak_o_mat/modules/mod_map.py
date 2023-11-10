@@ -62,6 +62,7 @@ class Map(wx.Window):
 
         self._buffer = None
 
+
     @property
     def imdata(self):
         return self._imdata
@@ -163,6 +164,7 @@ class Map(wx.Window):
         w, h = self.GetClientSize()
         w = max(1, w)
         h = max(1, h)
+        print(f'on size {w}/{h}')
         self._buffer = wx.Bitmap(w, h)
         self.Redraw(True)
         self.Refresh()
@@ -200,7 +202,7 @@ class Map(wx.Window):
             tw, th = dc.GetTextExtent('888')
 
             self.canvas_size = cw, ch = int(float(h) * x / y) - tw, h - th
-            self.SetMinSize((h * x / y, h))
+            self.SetMinSize((int(h * x / y), int(h)))
 
             if cw > 1 and ch > 1:
                 dummy = np.zeros((y * x), dtype='uint8')
