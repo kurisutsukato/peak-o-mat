@@ -163,7 +163,9 @@ class Controller(object):
             except:
                 pass
             else:
-                wx.CallAfter(self.view.aui_restore_perspective, perspective, self._modules)
+                pass
+                #TODO: sometimes AuiPanes stay hidden after loading an old perspective
+                #wx.CallAfter(self.view.aui_restore_perspective, perspective, self._modules)
 
             sfile = os.path.join(configdir(), 'geom')
             try:

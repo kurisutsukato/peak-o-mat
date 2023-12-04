@@ -479,9 +479,6 @@ if __name__ == '__main__':
 
             res.LoadFrame(self, None, "frame_annotations")
 
-            #self.Create(None)
-            #self.SetTitle('test')
-            print(wx.FindWindowByName('canvas',self))
             return
 
     app = wx.App()
