@@ -570,7 +570,7 @@ class Controller(object):
         for (x, y), name in data:
             sp = spec.Dataset(x, y, '%s_%s' % (gridname, name))
             added = self.project[plot].add(sp)
-        self.update_tree()
+        #self.update_tree()
         self.view.tree.selection = plot, added
         self.message('created sets from grid data', blink=True)
         self.project_modified = True
