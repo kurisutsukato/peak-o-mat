@@ -100,7 +100,7 @@ class XRCModule(module.XRCModule):
             return self.controller.fit_controller.model
         locs.add('model', _get_model, True)
         def _update_view():
-            self.controller.update_tree()
+            #self.controller.update_tree()
             self.controller.update_plot()
         locs.add('sync', _update_view)
         def _get_active_set():
