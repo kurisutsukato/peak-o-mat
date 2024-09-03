@@ -240,8 +240,7 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
 
         parent.Bind(wx.EVT_ENTER_WINDOW, self.on_mouseenter)
 
-        wx.CallAfter(self.GetColumn(0).SetWidth, 300)
-        # for some reason sometimes the column width is very small otherwise
+        wx.CallAfter(self.GetColumn(0).SetWidth, wx.COL_WIDTH_AUTOSIZE)
 
     def update_attributes(self, full=False):
         if full:
