@@ -242,8 +242,13 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
 
         wx.CallAfter(self.GetColumn(0).SetWidth, wx.COL_WIDTH_AUTOSIZE)
 
+    def update_item(self, item):
+        dvm = self.dataviewmodel
+        dvm.ItemChanged(dvm.ObjectToItem(item))
+
     def update_attributes(self, full=False):
         if full:
+            self.dataviewmodel.Cleared()
             logger.debug('update full not implemented yet')
         sel = self.dataviewmodel.item_selection
         if len(sel) == 1:

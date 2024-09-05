@@ -446,6 +446,8 @@ class FitController(object):
         self.view.pan_batch.txt_log.AppendText(
             '{}: {}\n'.format(ds.name,','.join(result[-1])))
 
+        pub.sendMessage((self.view.instid, 'updatetreeitem'), item=ds)
+
     def stop_batch_fit(self):
         if hasattr(self, '_worker'):
             self._worker.cancel()

@@ -111,6 +111,7 @@ class Interactor(object):
         pub.subscribe(self.pubOnAddSet, (self.view.instid, 'set', 'add'))
 
         pub.subscribe(self.pubOnUpdateView, (self.view.instid, 'updateview'))
+        pub.subscribe(self.pubOnUpdateTreeItem, (self.view.instid, 'updatetreeitem'))
 
         pub.subscribe(self.pubOnGenerateDataset, (self.view.instid, 'generate_dataset'))
         pub.subscribe(self.pubOnGenerateGrid, (self.view.instid, 'generate_grid'))
@@ -150,6 +151,9 @@ class Interactor(object):
 
     def pubOnUpdatePlot(self):
         self.controller.update_plot()
+
+    def pubOnUpdateTreeItem(self, item):
+        self.view.tree.update_item(item)
 
     def pubOnUpdateView(self, full=False):
         self.controller.update_plot()
