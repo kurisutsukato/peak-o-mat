@@ -248,7 +248,7 @@ class Interactor(object):
     def pubOnStartFit(self, msg):
         self.controller.start_fit(*msg)
 
-    def pubOnAddPlot(self, msg):
+    def pubOnAddPlot(self):
         self.controller.add_plot()
 
     def OnTreeUnmask(self):

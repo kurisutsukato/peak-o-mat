@@ -193,8 +193,11 @@ class TreeCtrlPanel(wx.Panel, WithMessage):
         box.Add(self.tree, 1, wx.EXPAND)
         box.Add(self.btn_addplot, 0, wx.EXPAND)
         self.SetSizer(box)
-
+        self.Bind(wx.EVT_BUTTON, self.onaddplot)
         self.Bind(wx.EVT_KEY_DOWN, self.onkey)
+
+    def onaddplot(self, evt):
+        pub.sendMessage((self.instid, 'tree', 'addplot'))
 
     def onkey(self, evt):
         logger.debug('panel_list key down')
