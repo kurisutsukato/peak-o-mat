@@ -35,7 +35,7 @@ import xml.etree.ElementTree as ET
 import textwrap as tw
 import logging
 
-from numpy import array, sometrue, inf, nan, ndarray, take, searchsorted
+from numpy import array, any, inf, nan, ndarray, take, searchsorted
 
 from .spec import Dataset
 from .model import Model,Var,UnknownToken
@@ -872,7 +872,7 @@ class Project(LData):
                         trafo_elem = ET.SubElement(set_elem, 'trafo')
                         trafo_elem.attrib = {'axis':axis, 'trafo':trafo,'comment':slash(comment),'skip':repr(skip)}
 
-                if sometrue(self[p][s].mask != 0):
+                if any(self[p][s].mask != 0):
                     mask_elem = ET.SubElement(set_elem, 'mask')
                     mask_elem.attrib = {'data':a2unicode(self[p][s].mask)}
 

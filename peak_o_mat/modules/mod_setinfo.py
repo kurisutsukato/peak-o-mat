@@ -166,8 +166,8 @@ class XRCModule(module.XRCModule):
             self.xrc_btn_trafo_remove_all.Enable(len(ds.trafo) > 0)
             self.xrc_btn_trafo_permanent.Enable(len(ds.trafo) > 0)
             
-            self.xrc_btn_mask_remove.Enable(np.sometrue(ds.mask))
-            self.xrc_btn_mask_permanent.Enable(np.sometrue(ds.mask))
+            self.xrc_btn_mask_remove.Enable(bool(np.any(ds.mask)))
+            self.xrc_btn_mask_permanent.Enable(bool(np.any(ds.mask)))
             
             for data in ds.trafo:
                 self.xrc_lc_trafo.Insert(data)

@@ -2,7 +2,7 @@ import numpy as np
     
 from scipy.special import wofz
 
-from scipy.integrate import trapz
+from scipy.integrate import trapezoid
 
 from . import pickers
 from .lineshapebase import add

@@ -339,7 +339,7 @@ class Module(module.BaseModule):
         self.calib.update()
 
     def OnApply(self, evt):
-        # if np.sometrue(np.isnan(np.take(self.calib.data, self.calib.selection, axis=0).astype(float))):
+        # if np.any(np.isnan(np.take(self.calib.data, self.calib.selection, axis=0).astype(float))):
         #    self.message('NaN found in custom calibration data')
         if 1:
             ### TODO: remplace by message
