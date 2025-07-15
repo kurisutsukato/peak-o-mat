@@ -486,7 +486,7 @@ class Controller(object):
                 elif type(data) == list:
                     for s in data:
                         self.add_set(s)
-        self.update_tree()
+        #self.update_tree()
 
     def rename_set(self, name, item):
         """\
@@ -570,7 +570,7 @@ class Controller(object):
         for (x, y), name in data:
             sp = spec.Dataset(x, y, '%s_%s' % (gridname, name))
             added = self.project[plot].add(sp)
-        self.update_tree()
+        #self.update_tree()
         self.view.tree.selection = plot, added
         self.message('created sets from grid data', blink=True)
         self.project_modified = True
@@ -641,7 +641,7 @@ class Controller(object):
             newplot = plot
         for set in sel:
             self.project[newplot].add(self.project[plot][set].crop(xrng, cp=True))
-        self.update_tree()
+        #self.update_tree()
         self.view.tree.selection = (newplot, set)
         self.project_modified = True
 
@@ -824,7 +824,7 @@ class Controller(object):
                 self.project[plot].add(spec.Dataset(x, yn, '{}_{}'.format(name, n + 1)))
         else:
             self.project[plot].add(spec.Dataset(x, y, name))
-        self.update_tree(plot)
+        #self.update_tree(plot)
         self.update_plot()
         self.project_modified = True
 

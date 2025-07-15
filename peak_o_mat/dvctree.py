@@ -193,8 +193,11 @@ class TreeCtrlPanel(wx.Panel, WithMessage):
         box.Add(self.tree, 1, wx.EXPAND)
         box.Add(self.btn_addplot, 0, wx.EXPAND)
         self.SetSizer(box)
-
+        self.Bind(wx.EVT_BUTTON, self.onaddplot)
         self.Bind(wx.EVT_KEY_DOWN, self.onkey)
+
+    def onaddplot(self, evt):
+        pub.sendMessage((self.instid, 'tree', 'addplot'))
 
     def onkey(self, evt):
         logger.debug('panel_list key down')
@@ -240,11 +243,15 @@ class TreeCtrl(dv.DataViewCtrl, WithMessage):
 
         parent.Bind(wx.EVT_ENTER_WINDOW, self.on_mouseenter)
 
-        wx.CallAfter(self.GetColumn(0).SetWidth, 300)
-        # for some reason sometimes the column width is very small otherwise
+        wx.CallAfter(self.GetColumn(0).SetWidth, wx.COL_WIDTH_AUTOSIZE)
+
+    def update_item(self, item):
+        dvm = self.dataviewmodel
+        dvm.ItemChanged(dvm.ObjectToItem(item))
 
     def update_attributes(self, full=False):
         if full:
+            self.dataviewmodel.Cleared()
             logger.debug('update full not implemented yet')
         sel = self.dataviewmodel.item_selection
         if len(sel) == 1:
