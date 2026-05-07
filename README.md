@@ -4,11 +4,13 @@ other fitting task.  It allows for clearing, transforming, fitting, calibrating,
 etc. of spectra with few mouse clicks.  peak-o-mat can easily be extended by
 writing your own modules, it has been tested on windows, linux and OSX.
 
-iRunning peak-o-mat
+Installation
 =============
 
+Download the program as zip-file from https://github.com/kurisutsukato/peak-o-mat/archive/refs/heads/master.zip und unzip.
+  
 peak-o-mat is known to work with python 3.10 and python 3.12. All necesary packages can
-be installed by pip.
+be installed by pip. Inside the peak-o-mat-master folder run:
 
     pip install -r requirements.txt
     python peak-o-mat.py
