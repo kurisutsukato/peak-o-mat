@@ -114,8 +114,8 @@ def package_win():
 
         print(r'[Registry]', file=ofi)
         print(r'Root: HKCR; Subkey: ".lpj"; ValueType: string; ValueData: "%s"' % name, file=ofi)
-        print('Root: HKCR; Subkey: "%s\DefaultIcon"; ValueType: string; ValueData: "\'{app}\%s.ico\'"' % (name,name), file=ofi)
-        print('Root: HKCR; Subkey: "%s\shell\open\command"; ValueType: string; ValueData: "\"\"{app}\%s\"\" \"\"%%1\"\""' % (name,exe), file=ofi)
+        print(r'Root: HKCR; Subkey: "%s\DefaultIcon"; ValueType: string; ValueData: "\'{app}\%s.ico\'"' % (name,name), file=ofi)
+        print(r'Root: HKCR; Subkey: "%s\shell\open\command"; ValueType: string; ValueData: "\"\"{app}\%s\"\" \"\"%%1\"\""' % (name,exe), file=ofi)
 
         res = ctypes.windll.shell32.ShellExecuteA(0, "compile",
                                                   diss,

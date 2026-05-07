@@ -3,6 +3,22 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+2026-05-06
+----------
+
+peak-o-mat has moved to https://github.com/kurisutsukato/peak-o-mat. It is not actively maintained anymore.
+The author is still happy to answer questions though.
+
+Binary files are not available. All dependencies can be install via
+
+    pip install -r requirements.txt
+
+It is known to work with python 3.10 and 3.12.
+
+The old (sparse) documentation is still valid mostly.
+
+
+
 About
 ==========
 
