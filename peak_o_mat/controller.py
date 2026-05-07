@@ -370,7 +370,7 @@ class Controller(object):
                 nall += 1
                 if dataset.hide and only_vis:
                     continue
-                name = re.sub('[:/\?\*]+','-', dataset.name)
+                name = re.sub(r'[:/\?\*]+','-', dataset.name)
                 if ext is not None:
                     if name.find('.') == -1:
                         name = name + '.' + ext

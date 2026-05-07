@@ -1,7 +1,8 @@
 import os, sys
-from distutils.sysconfig import PREFIX
 import re
 import winreg as reg
+
+PREFIX = sys.prefix
 
 def basepath():
     thisdir,f = os.path.split(os.path.abspath(__file__))
