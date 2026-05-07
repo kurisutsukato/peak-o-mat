@@ -1,0 +1,5 @@
+wxpython
+scipy
+matplotlib
+Pillow
+PyPubSub
