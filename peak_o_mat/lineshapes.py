@@ -30,7 +30,7 @@ in the function definition in lineshapes.py.
     f = amp/np.pi
     xp = np.linspace(lo,up,pts)[:,np.newaxis]
     s2 = np.power(sigma,2)
-    i = trapz(sigma/(np.power(x-xp,2)+s2)/(1+np.exp(-sigmap*(xp-pos))), xp, axis=0)
+    i = trapezoid(sigma/(np.power(x-xp,2)+s2)/(1+np.exp(-sigmap*(xp-pos))), xp, axis=0)
     return f*i
 
 def gbstep(x,amp,pos,sigma,sigmap=100,rng=5,pts=1000):
@@ -56,7 +56,7 @@ in the function definition in lineshapes.py.
     up = x[-1]+rng*dx
     lo = x[0]-rng*dx
     xp = np.linspace(lo,up,pts)[:,np.newaxis]
-    i = trapz(np.exp(-np.power(x-xp,2)/s2)/(1+np.exp(-sigmap*(xp-pos))), xp, axis=0)
+    i = trapezoid(np.exp(-np.power(x-xp,2)/s2)/(1+np.exp(-sigmap*(xp-pos))), xp, axis=0)
     return f*i
 
 def pearson7(x, amp=1.0, pos=0.0, sigma=1.0, expon=1.0):
